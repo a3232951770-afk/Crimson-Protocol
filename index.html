@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赤字协议 | THE CRIMSON PROTOCOL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+</head>
+<body>
+
+    <!--  全局系统提示 -->
+    <div id="sys-toast"></div>
+
+    <!--  全局 UI 框架 -->
+    <nav id="global-nav">
+        <div class="nav-logo">[ 赤字协议 ]<br><span style="font-size: 0.7rem; letter-spacing: 5px; color:#666;">THE CRIMSON PROTOCOL</span></div>
+        <div class="nav-links">
+            <a onclick="switchPage('page-mother-star', this)" class="active">第一母星</a>
+            <a onclick="switchPage('page-chronicle', this)">编年史</a>
+            <a onclick="switchPage('page-mire', this)">女娲的泥潭</a>
+            <a onclick="switchPage('page-rubbing-pavilion', this)">拓片馆</a>
+        </div>
+        <!-- 频段接收按钮（进入母星后淡入）-->
+        <button id="btn-signal-nav" class="btn-signal-recv unread" onclick="openDrawer()"
+                style="opacity:0; pointer-events:none; transition: opacity 2s ease; font-size:0.9rem; padding: 8px 16px; letter-spacing:2px;">
+            <span class="btn-signal-text"><span style="font-size:1rem;">📡</span> 频段(3)</span>
+        </button>
+    </nav>
+    <button id="global-chisel-btn" onclick="openLabModal()">[+] 凿字 / 发帖</button>
+
+
+    <!-- ==========================================
+          启示录前导 (独立盖层)
+         ========================================== -->
+    <div id="p5-container">
+        <div id="start-screen" onclick="startExperience()">
+            <div class="pulse-text">[ 点击屏幕以激活协议 ]</div>
+        </div>
+        <div id="skip-btn" onclick="skipExperience()">[ 跳过 / SKIP ]</div>
+        <div class="scanlines"></div>
+        <div id="p5-canvas-container"></div>
+        <div id="interact-prompt">>> 警告：词源已受父权污染。请在屏幕划出漩涡，洗刷污名，夺回【女】之本原 <<</div>
+        <div id="protocol-text">正在执行赤字净化协议...</div>
+        <div id="home-terminal">
+            <div id="typewriter-content"></div><span class="cursor" id="cursor" style="display:none;"></span>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         🌍 Page 1: 第一母星 (Three.js 容器)
+         ========================================== -->
+    <div id="page-mother-star" class="page-section">
+        <div id="three-container">
+            <div id="three-canvas-container"></div>
+            <div id="glitch-text-container"></div>
+            <div id="ui-layer">
+                > <span class="highlight">赤字协议</span> 节点网络已同步。<br>
+                > 当前星域包含 400 个污染/净化锚点。<br>
+                > 拖拽以环顾，<span class="highlight">悬浮以探知语言星云</span>，点击以破译。
+            </div>
+
+            <div id="detail-card" class="glass-panel">
+                <div class="close-btn">✕</div>
+                <div class="card-header" id="card-title">嫌</div>
+                <div class="card-subtitle" id="card-type">旧世字典释义 · 污染等级 IV</div>
+                <div class="redacted-text" id="card-desc" onclick="this.classList.add('revealed')">
+                    嫌，怨也。从女，兼声。本义为厌恶、猜忌。常用于贬义女性特质。
+                </div>
+                <!-- 路线3：星空直达造字实验室 -->
+                <button class="btn-propose" onclick="openLabWithWord(document.getElementById('card-title').innerText)">拒绝接受！提交新提案 ➔</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         📖 Page 2: 编年史
+         ========================================== -->
+    <div id="page-chronicle" class="page-section">
+        <div class="chronicle-container">
+            <div class="dna-toggle-container">
+                <div class="dna-switch mode-def" id="mode-switch-wrapper">
+                    <div class="switch-glider"></div>
+                    <div class="switch-option opt-def" onclick="handleModeSwitch('def')">字典</div>
+                    <div class="switch-option opt-chro" onclick="handleModeSwitch('chro')">史记</div>
+                </div>
+            </div>
+
+            <!-- 字典模式 -->
+            <main id="layer-definition" class="view-layer active">
+                <div class="dict-sidebar" id="dict-sidebar">
+                    <div class="sidebar-toggle" onclick="document.getElementById('dict-sidebar').classList.toggle('collapsed')"></div>
+                    <div class="sidebar-content">
+                        <div class="def-controls">
+                            <div class="search-bar"><input type="text" placeholder="检索碑文..."></div>
+                            <div class="pinyin-matrix" id="az-container"></div>
+                        </div>
+                        <div class="term-list-container">
+                            <ul class="term-list" id="word-list-container"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="archive-card-wrapper bg-network" id="archive-wrapper">
+                    <div id="network-view">
+                        <canvas id="network-canvas"></canvas>
+                        <div id="network-dom-layer">
+                            <div class="network-center-node" id="network-center">
+                                <div class="center-dot"></div>
+                                <div class="center-hover-char">女</div>
+                            </div>
+                            <div id="network-orbit-nodes"></div>
+                        </div>
+                    </div>
+
+                    <div id="detail-view">
+                        <button class="btn-back-network" onclick="backToNetwork()">[ ↶ 返回星云节点 ]</button>
+                        <div class="card-header">
+                            <div class="card-char-display" id="ui-char">婊</div>
+                            <div class="sys-code" id="ui-meta"></div>
+                        </div>
+                        <div class="definition-area">
+                            <div class="old-def-label">旧世释义卷宗：</div>
+                            <div class="old-def-text" id="ui-old-def"></div>
+                            <div class="decipher-action">
+                                <button class="btn-decipher" id="btn-decipher" onclick="revealRedacted()">[ ⚠️ 侦察释义 ]</button>
+                                <div class="new-def" id="new-def-area">
+                                    <span class="new-def-label">[ 源自：女娲的泥潭 // 共识提案 ]</span>
+                                    <div id="ui-proposals-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- 史记模式 -->
+            <main id="layer-chronicle" class="view-layer">
+                <nav class="chronicle-nav">
+                    <div class="chron-tab active" onclick="switchDimension('huaxia', this)">华夏纪元</div>
+                    <div class="chron-tab" onclick="switchDimension('huanyu', this)">寰宇纪元</div>
+                    <div class="chron-tab" onclick="switchDimension('lingjing', this)">灵境空间</div>
+                </nav>
+                <div class="chronicle-content">
+                    <div class="timeline-axis" id="dna-sidebar-container">
+                        <canvas id="scroll-dna-canvas"></canvas>
+                    </div>
+                    <div class="chronicle-grid" id="timeline-scroll-area"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         🌊 Page 3: 女娲的泥潭
+         ========================================== -->
+    <div id="page-mire" class="page-section">
+        <div class="mire-container">
+            <nav class="mire-nav">
+                <div class="mire-tab active" onclick="switchMireTab('tab-glyphs', this)">凿字库 <span class="count">892</span></div>
+                <div class="mire-tab" onclick="switchMireTab('tab-parchments', this)">羊皮卷 <span class="count">304</span></div>
+                <div class="mire-tab" onclick="switchMireTab('tab-terracotta', this)">赤陶刻痕 <span class="count">12k+</span></div>
+                <div class="mire-tab" onclick="switchMireTab('tab-bonfire', this)">篝火阵 <span class="count">🔥</span></div>
+            </nav>
+
+            <main id="tab-glyphs" class="tab-content active waterfall-container">
+                <div class="post-card card-glyph" data-type="glyph" onclick="openPostModal(this)">
+                    <div class="glyph-display amber">嫉妒</div>
+                    <div class="glyph-def">被制度化的雌竞</div>
+                    <div class="glyph-sub">并非女性天性，而是资源被极度掠夺后，系统强制分配给下位者的生存模式。</div>
+                    <div class="card-meta"><span class="card-author">@真理黑客_01</span><span class="card-stats">5小时前</span></div>
+                    <div class="card-actions">
+                        <div class="action-group">
+                            <button class="action-btn vote" onclick="toggleCardAction(event, this, 'vote')">▵ 投票 <span>18.5k</span></button>
+                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ 共鸣 <span>2.1k</span></button>
+                        </div>
+                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>640</span></button>
+                    </div>
+                </div>
+                <div class="post-card card-glyph" data-type="glyph" onclick="openPostModal(this)">
+                    <div class="glyph-display">婊</div>
+                    <div class="glyph-def">表露欲望的主体</div>
+                    <div class="glyph-sub">拒绝被放置于道德神坛或耻辱柱上的主体。</div>
+                    <div class="card-meta"><span class="card-author">@提灯人_092</span><span class="card-stats">12小时前</span></div>
+                    <div class="card-actions">
+                        <div class="action-group">
+                            <button class="action-btn vote" onclick="toggleCardAction(event, this, 'vote')">▵ 投票 <span>14.2k</span></button>
+                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ 共鸣 <span>1.2k</span></button>
+                        </div>
+                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>304</span></button>
+                    </div>
+                </div>
+            </main>
+
+            <main id="tab-parchments" class="tab-content waterfall-container">
+                <div class="post-card card-parchment" data-type="parchment" onclick="openPostModal(this)">
+                    <div class="img-placeholder"></div>
+                    <div class="card-meta"><span class="card-author">@密码学家_007</span><span class="card-stats">刚刚</span></div>
+                    <h3>《女书》的密码学本质与母系精神网络</h3>
+                    <div class="card-content">在剥夺女性受教育权的时代，诞生于江永县的菱形文字，绝非简单的闺阁消遣，而是一套极其严密的抗审查密码系统。</div>
+                    <div class="read-more-hint">[ 展开阅读全文... ]</div>
+                    <div class="card-actions">
+                        <div class="action-group">
+                            <button class="action-btn vote" onclick="toggleCardAction(event, this, 'vote')">▵ 收录 <span>130k</span></button>
+                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ 共鸣 <span>32k</span></button>
+                        </div>
+                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>5.2k</span></button>
+                    </div>
+                </div>
+            </main>
+
+            <main id="tab-terracotta" class="tab-content waterfall-container">
+                <div class="post-card card-terracotta" data-type="terracotta" onclick="openPostModal(this)">
+                    <div class="card-meta"><span class="card-author">@匿名刻痕_A1</span></div>
+                    <div class="card-content">今天在会议上又被男同事打断了三次。第四次的时候，我盯着他的眼睛，没有提高音量，只是冷冷地说："我还没说完。"</div>
+                    <div class="card-actions">
+                        <div class="action-group">
+                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ <span>4.2k</span></button>
+                        </div>
+                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>210</span></button>
+                    </div>
+                </div>
+            </main>
+
+            <main id="tab-bonfire" class="tab-content waterfall-container">
+                <div class="post-card card-bonfire" data-type="bonfire" onclick="openPostModal(this)">
+                    <div class="card-meta"><span class="card-author">@星火坐标_北京</span><span class="card-stats">12分钟前</span></div>
+                    <h3>遇到职场性骚扰，已取证，求法律支援</h3>
+                    <div class="card-content">我已经录音并保留了聊天记录截图。HR 试图和稀泥让我息事宁人。我不接受调解，必须让他付出代价。急需指导下一步程序。</div>
+                    <div class="card-actions">
+                        <div class="action-group">
+                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ 关注 <span>890</span></button>
+                        </div>
+                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 支援 <span>142</span></button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         🏛️ Page 4: 拓片馆 (个人档案)
+         ========================================== -->
+    <div id="page-rubbing-pavilion" class="page-section">
+        <div class="mire-container">
+
+            <!-- 顶部档案区 -->
+            <div class="profile-top-section">
+                <!-- 左侧：头像与签名 -->
+                <div class="profile-left">
+                    <div class="avatar-box" onclick="alert('>>> 系统接口待接入：正在调取本地图腾档案库...')">
+                        <svg class="avatar-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M 50,5 A 45,45 0 1,1 48,5 Z" fill="none" stroke="var(--terracotta)" stroke-width="2" stroke-dasharray="15 3 8 2 20 4"/>
+                            <path d="M 50,8 A 42,42 0 1,1 49,8 Z" fill="none" stroke="var(--terracotta)" stroke-width="1" opacity="0.5"/>
+                            <path d="M 22,35 L 28,12 L 42,28" fill="none" stroke="var(--terracotta)" stroke-width="2.5" stroke-linejoin="round"/>
+                            <path d="M 78,35 L 72,12 L 58,28" fill="none" stroke="var(--terracotta)" stroke-width="2.5" stroke-linejoin="round"/>
+                            <circle cx="35" cy="48" r="4.5" fill="var(--terracotta)"/>
+                            <circle cx="65" cy="48" r="4.5" fill="var(--terracotta)"/>
+                            <circle cx="36" cy="47" r="1.5" fill="var(--obsidian)"/>
+                            <circle cx="66" cy="47" r="1.5" fill="var(--obsidian)"/>
+                            <path d="M 45,58 Q 50,62 55,58" fill="none" stroke="var(--terracotta)" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                        <div class="avatar-edit-overlay"><span>[ ✎ 变更图腾 ]</span></div>
+                    </div>
+                    <div class="signature-box editable-field" onclick="openEditField('signature')" title="点击雕刻铭文">
+                        <span id="val-signature">我们可以改变这个世界！</span>
+                        <span class="edit-hint">[ ✎ 编辑 ]</span>
+                    </div>
+                </div>
+
+                <!-- 右侧：代号、数据、勋章 -->
+                <div class="profile-right">
+                    <div class="id-header">
+                        <span class="id-label">PROTOCOL ID //</span>
+                    </div>
+                    <div class="id-codename editable-field" onclick="openEditField('codename')" title="点击重塑代号">
+                        <span id="val-codename">女娲的泥点_031</span>
+                        <span class="edit-hint">[ ✎ 编辑 ]</span>
+                    </div>
+                    <div class="id-stats">
+                        <div class="editable-field" onclick="openEditField('awakening')" title="校准觉醒日">
+                            觉醒日 <span class="stat-value" id="val-awakening">2023.11.24</span>
+                            <span class="edit-hint">[ ✎ 编辑 ]</span>
+                        </div>
+                        <div>共鸣频段 <span class="stat-value" style="cursor:default;">89.4 MHz</span></div>
+                    </div>
+                    <div class="medals-container">
+                        <div class="medal-card" onclick="openMedal('genesis')">
+                            <div class="medal-icon genesis">女</div>
+                            <div class="medal-info">
+                                <h4>创世字符</h4>
+                                <p>成功解构并升入母星轨道的字</p>
+                                <div class="count">03</div>
+                            </div>
+                        </div>
+                        <div class="medal-card" onclick="openMedal('chiseler')">
+                            <div class="medal-icon chiseler">史</div>
+                            <div class="medal-info">
+                                <h4>凿壁者勋章</h4>
+                                <p>被《编年史》正式收录的考据文献</p>
+                                <div class="count">12</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部：泥潭足迹 -->
+            <div class="section-title">泥潭足迹</div>
+            <div class="waterfall-container" id="footprints-container">
+                <div class="post-card card-glyph" data-type="glyph" onclick="openFootprint(this)">
+                    <div class="glyph-display">婊</div>
+                    <div class="glyph-def">表露欲望的主体</div>
+                    <div class="glyph-sub">拒绝被放置于道德神坛或耻辱柱上的主体。</div>
+                    <div class="card-meta"><span class="card-author">@女娲的泥点_031</span><span class="card-stats">12小时前</span></div>
+                    <div class="card-actions">
+                        <div class="action-group">
+                            <button class="action-btn vote" onclick="event.stopPropagation();">▵ 投票 <span>14.2k</span></button>
+                            <button class="action-btn like" onclick="event.stopPropagation();">❤ 共鸣 <span>1.2k</span></button>
+                        </div>
+                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>304</span></button>
+                    </div>
+                </div>
+                <div class="post-card card-parchment" data-type="parchment" onclick="openFootprint(this)">
+                    <div class="img-placeholder"></div>
+                    <div class="card-meta"><span class="card-author">@女娲的泥点_031</span><span class="card-stats">刚刚</span></div>
+                    <h3>《女书》的密码学本质与母系精神网络</h3>
+                    <div class="card-content">在剥夺女性受教育权的时代，诞生于江永县的菱形文字，绝非简单的闺阁消遣，而是一套极其严密的抗审查密码系统。</div>
+                    <div class="card-actions">
+                        <div class="action-group">
+                            <button class="action-btn vote" onclick="event.stopPropagation();">▵ 收录 <span>130k</span></button>
+                            <button class="action-btn like" onclick="event.stopPropagation();">❤ 共鸣 <span>32k</span></button>
+                        </div>
+                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>5.2k</span></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         🌐 全局弹窗与抽屉层
+         ========================================== -->
+
+    <!-- 泥潭帖子弹窗 -->
+    <div id="post-modal" class="modal-overlay" onclick="closePostModal(event)">
+        <div class="modal-container" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closePostModal(event)">[ ESC 关闭 ]</button>
+            <div class="modal-scroll-area">
+                <div id="modal-content-area"></div>
+                <div class="modal-interaction-bar" id="modal-interaction-area"></div>
+                <div class="comment-section">
+                    <h4>// 意识回响区 (COMMENTS)</h4>
+                    <textarea class="comment-input" placeholder="注入你的意识，支持 Markdown 语法..."></textarea>
+                    <div style="overflow:hidden;"><button class="comment-submit" onclick="showSysToast('>> 正在写入分布式区块...')">[ 提交回响 ]</button></div>
+                    <div class="comment-list">
+                        <div class="comment-item"><div class="comment-meta"><span>@游荡的信号_X</span> <span>刚刚</span></div><div class="comment-text">完全赞同。语言的底层协议已经被污染太久了，是时候夺回解释权了。支持提案！</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通讯抽屉 (全局) -->
+    <div id="comm-drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+    <div id="comm-drawer" class="comm-drawer">
+        <div class="drawer-header">
+            <div class="drawer-tab active" onclick="switchDrawerTab('view-announcements', this)">[ 宇宙公告 ]</div>
+            <div class="drawer-tab" onclick="switchDrawerTab('view-dms', this)">[ 脑波直连 ]</div>
+            <div class="drawer-close" onclick="closeDrawer()">✕</div>
+        </div>
+        <div id="view-announcements" class="drawer-view drawer-view-announcements active">
+            <div class="announcement-card alert">
+                <div class="annc-time alert">SYS.TIME<br>04:22</div>
+                <div class="annc-content alert">[ 庆贺 ]：你在造字实验室提交的提案【妒】，共鸣值突破阈值，已升入母星轨道化为星辰！</div>
+            </div>
+            <div class="announcement-card">
+                <div class="annc-time">SYS.TIME<br>昨天</div>
+                <div class="annc-content">你的羊皮卷考据已被 <span class="hl">@女书守护者_007</span> 引用为理论基础。</div>
+            </div>
+            <div class="announcement-card">
+                <div class="annc-time">SYS.TIME<br>3天前</div>
+                <div class="annc-content"><span class="hl">@赫斯提亚的火种</span> 等 42 人在你的篝火阵帖文中注入了共鸣。</div>
+            </div>
+        </div>
+        <div id="view-dms" class="drawer-view drawer-view-dms">
+            <div id="dms-list" class="dms-list-container active">
+                <div class="dm-contact-item" onclick="openChat('@盖娅的遗存_01')">
+                    <div class="dm-contact-name unread">@盖娅的遗存_01</div>
+                    <div class="dm-contact-preview">> 等待你的信号源更新。OVER_</div>
+                </div>
+                <div class="dm-contact-item" onclick="openChat('@女书守护者_007')">
+                    <div class="dm-contact-name">@女书守护者_007</div>
+                    <div class="dm-contact-preview">> 上次那篇关于女书密码学的资料我整理好了...</div>
+                </div>
+            </div>
+            <div id="dms-chat" class="dms-chat-container">
+                <div class="chat-header">
+                    <button class="btn-back-list" onclick="backToDmsList()">[ ↶ 返回列表 ]</button>
+                    <span id="current-chat-name" style="font-family: var(--font-mono); color: var(--bone); font-size: 0.9rem;"></span>
+                </div>
+                <div class="terminal-chat-area">
+                    <div class="term-msg incoming">
+                        <span class="sender">RECV_FROM: <span class="chat-target-id"></span></span>
+                        > 看到你刚发的考据了。<br>> 关于逻辑非常锋利，我已经保存到本地节点了。
+                    </div>
+                    <div class="term-msg outgoing">
+                        <span class="sender">SEND_TO: <span class="chat-target-id"></span></span>
+                        > 收到。防线的建立必须是物理与精神的双重加固。
+                    </div>
+                    <div class="term-msg incoming">
+                        <span class="sender">RECV_FROM: <span class="chat-target-id"></span></span>
+                        > 等待你的信号源更新。OVER_
+                    </div>
+                </div>
+                <div class="term-input-box">
+                    <textarea placeholder="> _ 输入发射指令..."></textarea>
+                    <button class="btn-transmit" onclick="showSysToast('>>> 频段发射器故障：暂未接通广域网模块 <<<')">[ 发射信号 ]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 资料编辑弹窗 -->
+    <div id="edit-modal" class="modal-overlay" onclick="closeEditModal()">
+        <div class="modal-container" style="max-width: 450px; padding: 2.5rem; text-align: center;" onclick="event.stopPropagation()">
+            <h3 id="edit-modal-title" style="font-family: var(--font-serif); color: var(--amber); margin-bottom: 2rem; letter-spacing: 2px;">>>> 资料重塑 <<<</h3>
+            <div id="edit-input-container"></div>
+            <div class="modal-actions-bar" style="border: none; padding: 0; margin-top: 2rem; justify-content: center; gap: 20px;">
+                <button class="crud-btn" style="padding: 10px 25px;" onclick="closeEditModal()">[ 废 弃 ]</button>
+                <button class="crud-btn" style="padding: 10px 25px; color: var(--terracotta); border-color: var(--terracotta);" onclick="saveEditField()">[ 确 定 ]</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 拓片馆帖子详情弹窗 -->
+    <div id="fp-modal" class="modal-overlay" onclick="closeFootprint(event)">
+        <div class="modal-container" id="fp-modal-container" onclick="event.stopPropagation()">
+            <div class="modal-actions-bar">
+                <button class="crud-btn edit" id="btn-edit" onclick="toggleEdit()">[ ▤ 重塑铭文 ]</button>
+                <div style="display:flex; gap:10px;">
+                    <button class="crud-btn delete" onclick="destroyRubbing()">[ 💥 销毁拓片 ]</button>
+                    <button class="crud-btn" onclick="closeFootprint(event)">[ ✕ ]</button>
+                </div>
+            </div>
+            <div class="modal-body" id="modal-content-box" spellcheck="false"></div>
+        </div>
+    </div>
+
+    <!-- 勋章展示弹窗 -->
+    <div id="medal-modal" class="modal-overlay" onclick="closeMedal()">
+        <div class="medal-showcase-box" onclick="event.stopPropagation()">
+            <div class="medal-glow-bg" id="medal-bg"></div>
+            <div class="medal-big-icon" id="medal-icon-big">女</div>
+            <div class="medal-lore-text">
+                <div class="medal-sys-code" id="medal-sys">>>> SYSTEM <<<</div>
+                <div id="medal-text">这里是勋章的传奇故事。</div>
+            </div>
+            <button class="btn-confirm-medal" onclick="closeMedal()">[ 确 认 收 录 ]</button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         🧪 造字实验室 全屏弹窗
+         ========================================== -->
+    <div id="lab-modal-overlay">
+        <button class="btn-close-lab" onclick="closeLabModal()">[ ESC 终止协议 ]</button>
+
+        <!-- 视图一：分流枢纽 -->
+        <div id="lab-view-crossroads" class="lab-view active">
+            <div class="folders-container">
+                <div class="folder-wrapper folder-lab" onclick="goToTerminal(event)">
+                    <div class="folder-tab-top">01 / GENESIS</div>
+                    <div class="folder-body">
+                        <h2>进入凿字实验室</h2>
+                        <p>解构旧字基因，重写定义。<br>将改造新词刻入母星轨道。</p>
+                    </div>
+                </div>
+                <div class="folder-wrapper folder-post" onclick="goToNormalPost(event)">
+                    <div class="folder-tab-top">02 / ARCHIVE</div>
+                    <div class="folder-body">
+                        <h2>篆刻泥板档案</h2>
+                        <p>记录日常刻痕，重构羊皮卷历史。<br>或向母星发起求助。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 视图二：旧世档案终端 -->
+        <div id="lab-view-terminal" class="lab-view">
+            <div class="terminal-container" onclick="event.stopPropagation()">
+                <div class="sys-prompt">>> 检索待解构的旧字_</div>
+                <div class="term-input-wrapper">
+                    <input type="text" id="term-search-input" class="term-input" autocomplete="off" placeholder="输入汉字，例如：嫉妒">
+                    <span class="term-cursor">_</span>
+                </div>
+                <div id="term-output-area" class="term-output-area"></div>
+                <textarea id="manual-old-def-input" class="cyber-terminal-input" placeholder=">_ 请在此录入该词的旧义..."></textarea>
+                <button id="btn-reject" class="btn-reject-huge" onclick="goToWorkbench(event)">拒绝接受！进入重塑台 ➔</button>
+            </div>
+        </div>
+
+        <!-- 视图三：基因重塑台 -->
+        <div id="lab-view-workbench" class="lab-view">
+            <div class="workbench-layout" onclick="event.stopPropagation()">
+                <div class="wb-sidebar">
+                    <div class="wb-tab active" onclick="switchWbTab('tab-new-meaning', this)">
+                        <span style="font-family: var(--font-mono); font-size:0.9rem; color:var(--ash);">[01]</span> 赋予新义
+                    </div>
+                    <div class="wb-tab" onclick="switchWbTab('tab-replace-word', this)">
+                        <span style="font-family: var(--font-mono); font-size:0.9rem; color:var(--ash);">[02]</span> 字词替换
+                    </div>
+                    <div class="wb-tab" onclick="switchWbTab('tab-radical-surgery', this)">
+                        <span style="font-family: var(--font-mono); font-size:0.9rem; color:var(--ash);">[03]</span> 偏旁手术
+                    </div>
+                </div>
+                <div class="wb-main-area">
+                    <div class="wb-content">
+                        <div class="mobile-accordion-header active" onclick="switchMobileAccordion('tab-new-meaning', this)">
+                            <span><span style="color:var(--ash);">[01]</span> 赋予新义</span>
+                            <span class="acc-icon">-</span>
+                        </div>
+                        <div id="tab-new-meaning" class="wb-panel active">
+                            <div class="target-word-display">【 旧字：<span class="target-word-placeholder"></span> 】</div>
+                            <div class="cyber-textarea-wrapper">
+                                <textarea class="wb-textarea" placeholder="在此注入不被父权污染的全新释义..."></textarea>
+                            </div>
+                        </div>
+                        <div class="mobile-accordion-header" onclick="switchMobileAccordion('tab-replace-word', this)">
+                            <span><span style="color:var(--ash);">[02]</span> 字词替换</span>
+                            <span class="acc-icon">+</span>
+                        </div>
+                        <div id="tab-replace-word" class="wb-panel">
+                            <div class="target-word-display" style="display:flex; justify-content:space-between; border:none; margin-bottom:1rem; padding:0;">
+                                <span>【 旧字：<span class="target-word-placeholder"></span> 】</span>
+                                <span style="color:var(--terracotta);">➔ 【 替换为 👇 】</span>
+                            </div>
+                            <div class="cyber-textarea-wrapper no-icon" style="flex:none; margin-bottom:2rem;">
+                                <input type="text" class="wb-textarea" style="height:90px; min-height:90px; font-size:2rem; font-family: var(--font-serif);" placeholder="请输入替代词...">
+                            </div>
+                            <div class="cyber-textarea-wrapper">
+                                <textarea class="wb-textarea" placeholder="阐述替换该词的理由..."></textarea>
+                            </div>
+                        </div>
+                        <div class="mobile-accordion-header" onclick="switchMobileAccordion('tab-radical-surgery', this)">
+                            <span><span style="color:var(--ash);">[03]</span> 偏旁手术</span>
+                            <span class="acc-icon">+</span>
+                        </div>
+                        <div id="tab-radical-surgery" class="wb-panel">
+                            <div class="surgery-grid">
+                                <div id="radical-library-container" class="radical-library-container"></div>
+                                <div style="position: relative; height: 100%; display: flex; flex-direction: column; flex: 1;">
+                                    <div id="surgery-canvas-container" class="canvas-area">
+                                        <div class="canvas-toolbar">
+                                            <div class="tool-btn-group">
+                                                <button class="tool-btn active" id="tool-drag" onclick="setSurgeryTool('drag', event)">[ 拖放重组 ]</button>
+                                                <button class="tool-btn" id="tool-draw" onclick="setSurgeryTool('draw', event)">[ 手写刻痕 ]</button>
+                                            </div>
+                                            <div class="surgery-title">【 手术台：<span class="target-word-placeholder"></span> 】</div>
+                                            <div style="flex: 1;" class="tool-spacer"></div>
+                                        </div>
+                                        <canvas id="freehand-canvas"></canvas>
+                                    </div>
+                                    <div class="canvas-footer-area">
+                                        <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--ash); line-height: 1.6; flex: 1;">
+                                            * 【拖放重组】点击左侧偏旁，即可在画板内进行<span style="color:var(--terracotta);">等比缩放 / 拉伸 / 移动 / 删除</span>操作。<br>
+                                            * 【手写刻痕】模式下，可直接使用鼠标/触控笔，自由刻画出你认为该有的新字形。
+                                        </div>
+                                        <div class="canvas-footer-actions">
+                                            <input type="file" id="surgery-img-upload" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
+                                            <button class="btn-bottom-action btn-upload-canvas" onclick="triggerImageUpload(event)">[ 上传图片 ]</button>
+                                            <button class="btn-bottom-action btn-clear-canvas" onclick="clearSurgeryCanvas(event)">[ 清空画板 ]</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="wb-footer">
+                        <button class="btn-cast" onclick="mintPoster()"> 执行刻录指令</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 视图四：发帖表单 -->
+        <div id="lab-view-normal-post" class="lab-view">
+            <div class="fbi-form-container" onclick="event.stopPropagation()">
+                <div class="fbi-header">
+                    <h1>女娲的泥潭</h1>
+                    <div class="sub">NÜWA'S MIRE - SECURE ARCHIVE FORM</div>
+                </div>
+                <div class="fbi-input-group">
+                    <label class="fbi-label">归属板块</label>
+                    <select class="fbi-select">
+                        <option value="parchment">羊皮卷 (解构历史)</option>
+                        <option value="terracotta">赤陶刻痕 (日常倾诉)</option>
+                        <option value="bonfire">篝火阵 (互帮互助)</option>
+                    </select>
+                </div>
+                <div class="fbi-input-group">
+                    <label class="fbi-label">档案标题</label>
+                    <input type="text" class="fbi-input" placeholder="刻下核心主旨...">
+                </div>
+                <div class="fbi-input-group">
+                    <label class="fbi-label">视觉拓片</label>
+                    <input type="file" id="archive-img-upload" accept="image/*" style="display:none;" onchange="handleArchiveImageUpload(event)">
+                    <input type="text" id="archive-img-display" class="fbi-input" placeholder="[+] 点击上传图片附件 (选填)" readonly style="color:#666; cursor:pointer;" onclick="document.getElementById('archive-img-upload').click()">
+                </div>
+                <div style="margin-top: 1rem; flex: 1; display: flex; flex-direction: column;">
+                    <label class="fbi-label" style="display:block; margin-bottom: 5px;">正文刻痕 :</label>
+                    <textarea class="fbi-textarea" placeholder="输入档案详尽内容..."></textarea>
+                </div>
+                <button class="btn-fbi-submit" onclick="submitNormalPost()">刻录并封卷 ➔</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         📦 脚本加载顺序（关键！）
+         ========================================== -->
+    <!-- 1. world.js (含p5动画、路由、编年史逻辑) -->
+    <script src="world.js"></script>
+
+    <!-- 2. Three.js importmap (必须内联，不能外链) -->
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+    </script>
+
+    <!-- 3. three-scene.js (ES module) -->
+    <script type="module" src="three-scene.js"></script>
+
+    <!-- 4. ui.js (拓片馆+造字实验室+路由连接) -->
+    <script src="ui.js"></script>
+
+</body>
+</html>
