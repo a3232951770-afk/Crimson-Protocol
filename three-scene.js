@@ -111,26 +111,31 @@ function hideStar(id) { const sizes = starPoints.geometry.attributes.size.array;
 function showAllStars() { const sizes = starPoints.geometry.attributes.size.array; starsData.forEach((s, i) => { sizes[i] = s.type === 'mother' ? 50 : (s.type === 'amber' ? 15 : 10); }); starPoints.geometry.attributes.size.needsUpdate = true; }
 
 function openCard(star) {
+    if (window._blockThreeJsClick) return;
     const card = document.getElementById('detail-card');
     const titleEl = document.getElementById('card-title');
     const typeEl = document.getElementById('card-type');
     const desc = document.getElementById('card-desc');
     titleEl.innerText = star.text; desc.classList.remove('revealed');
-    const charData = window.CHARACTER_DATA_CACHE?.[star.text];
+    const cd = window.CHARACTER_DATA_CACHE?.[star.text];
+    const isEn = window._lang === 'en';
+    const en = window.CHAR_EN?.[star.text];
     if(star.type === 'mother') {
         titleEl.style.color = 'var(--neon-red)';
-        typeEl.innerText = '母神星 · 根级协议';
-        desc.innerText = "女，妇人也。象形。父权字典中常作为附属、柔弱或贬义词汇的词根。正在进行根级协议覆写。";
-    } else if (charData) {
-        const catLabels = { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
-        const catColors = { stigma:'#ff6b6b', institution:'var(--terracotta)', matrilineal:'var(--amber)', reclaim:'#5a9e6f', neutral:'var(--bone)' };
-        titleEl.style.color = catColors[charData.category] || 'var(--terracotta)';
-        typeEl.innerText = `${catLabels[charData.category]||''} · 污染等级 ${charData.pollutionLevel}/5`;
-        desc.innerText = `${charData.shuowen||''}\n${charData.modern||''}`;
+        typeEl.innerText = isEn ? 'Mother Star · Root Protocol' : '母神星 · 根级协议';
+        desc.innerText = isEn ? "女 (woman). Pictographic. Used as the root radical for derogatory and subordinate terms in patriarchal dictionaries. Root-level protocol overwrite in progress." : "女，妇人也。象形。父权字典中常作为附属、柔弱或贬义词汇的词根。正在进行根级协议覆写。";
+    } else if (cd) {
+        const CL = isEn ? {stigma:'Derogatory',institution:'Institutional',matrilineal:'Matrilineal',reclaim:'Reclaimed',neutral:'Neutral'} : {stigma:'贬义字',institution:'制度字',matrilineal:'母系遗存',reclaim:'褒义字',neutral:'中性字'};
+        const CC = {stigma:'#ff6b6b',institution:'var(--terracotta)',matrilineal:'var(--amber)',reclaim:'#5a9e6f',neutral:'var(--bone)'};
+        titleEl.style.color = CC[cd.category]||'var(--terracotta)';
+        typeEl.innerText = `${CL[cd.category]||''} · ${isEn?'Pollution':'污染等级'} ${cd.pollutionLevel}/5`;
+        const sw = (isEn && en) ? en.s : (cd.shuowen||'');
+        const md = (isEn && en) ? en.m : (cd.modern||'');
+        desc.innerText = `${sw}\n${md}`;
     } else {
-        titleEl.style.color = star.type === 'amber' ? 'var(--amber)' : 'var(--terracotta)';
-        typeEl.innerText = '旧世字典释义';
-        desc.innerText = `${star.text}，从女。语言星图中的锚点。`;
+        titleEl.style.color = star.type==='amber'?'var(--amber)':'var(--terracotta)';
+        typeEl.innerText = isEn ? 'Legacy Definition' : '旧世字典释义';
+        desc.innerText = isEn ? `${star.text}, from 女. A language anchor in the star map.` : `${star.text}，从女。语言星图中的锚点。`;
     }
     card.classList.add('active'); clearExplosion(); controls.autoRotate = false;
 }

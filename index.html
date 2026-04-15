@@ -23,11 +23,13 @@
             <a onclick="switchPage('page-mire', this)">女娲的泥潭</a>
             <a onclick="switchPage('page-rubbing-pavilion', this)">拓片馆</a>
         </div>
-        <!-- 频段接收按钮（进入母星后淡入）-->
-        <button id="btn-signal-nav" class="btn-signal-recv unread" onclick="openDrawer()"
+        <div class="nav-right-controls">
+            <button id="btn-lang" onclick="window.toggleLang?.()" style="opacity:0; pointer-events:none; transition:opacity 2s; background:none; border:1px solid #444; color:var(--ash); font-family:var(--font-mono); font-size:0.7rem; padding:3px 8px; cursor:pointer;">EN</button>
+            <button id="btn-signal-nav" class="btn-signal-recv unread" onclick="openDrawer()"
                 style="opacity:0; pointer-events:none; transition: opacity 2s ease; font-size:0.9rem; padding: 8px 16px; letter-spacing:2px;">
-            <span class="btn-signal-text"><span style="font-size:1rem;">📡</span> 频段(3)</span>
-        </button>
+                <span class="btn-signal-text"><span style="font-size:1rem;">📡</span> 频段(3)</span>
+            </button>
+        </div>
     </nav>
     <button id="global-chisel-btn" onclick="openLabModal()">[+] 凿字 / 发帖</button>
 
@@ -59,7 +61,7 @@
             <div id="glitch-text-container"></div>
             <div id="ui-layer">
                 > <span class="highlight">赤字协议</span> 节点网络已同步。<br>
-                > 当前星域包含 400 个污染/净化锚点。<br>
+                > 当前星域包含 <span id="star-total-count">31</span> 个污染/净化锚点。<br>
                 > 拖拽以环顾，<span class="highlight">悬浮以探知语言星云</span>，点击以破译。
             </div>
 

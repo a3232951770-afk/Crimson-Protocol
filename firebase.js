@@ -263,13 +263,13 @@ export async function createPost(data){
   });
 }
 export function listenToPosts(type,cb){
-  // 简化查询避免需要复合索引（只用单字段where，客户端排序过滤）
+  // 两个equality where不需要复合索引，只有加orderBy才需要
+  // 必须包含reported==false，否则安全规则会拒绝读取
   const q = query(collection(db,'community_posts'),
-    where('type','==',type),limit(100));
+    where('type','==',type), where('reported','==',false), limit(100));
   return onSnapshot(q, snap => {
     let posts = snap.docs.map(d=>({id:d.id,...d.data()}));
-    // 客户端过滤已举报 + 按时间排序
-    posts = posts.filter(p => !p.reported);
+    // 客户端按时间排序
     posts.sort((a,b) => {
       const ta = a.createdAt?.seconds || 0;
       const tb = b.createdAt?.seconds || 0;

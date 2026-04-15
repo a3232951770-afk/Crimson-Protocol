@@ -1197,3 +1197,12 @@ body, html {
     #star-char-expand { max-width: 92vw; }
     .star-char-item { font-size: 0.95rem; padding: 3px 8px; }
 }
+
+/* ==========================================
+   🌐 i18n + nav-right-controls
+   ========================================== */
+.nav-right-controls {
+    display: flex; align-items: center; gap: 10px;
+}
+#btn-lang { letter-spacing: 1px; }
+#btn-lang:hover { border-color: var(--amber); color: var(--amber); }

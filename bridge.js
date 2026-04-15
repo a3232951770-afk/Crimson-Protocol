@@ -181,6 +181,10 @@ function injectStarFilter() {
 
   // 暴露字典数据给 three-scene.js
   window.CHARACTER_DATA_CACHE = CHARACTER_DATA;
+  
+  // 更新首页星域总数显示
+  const totalCountEl = document.getElementById('star-total-count');
+  if (totalCountEl) totalCountEl.textContent = Object.keys(CHARACTER_DATA).length;
 
   const cats = Object.entries(CATEGORY_CONFIG);
   const filterDiv = document.createElement('div');
@@ -230,10 +234,16 @@ function injectStarFilter() {
     expandEl.classList.add('active');
   };
 
-  // 点击字 → 显示详情卡
+  // 点击字 → 显示详情卡（设置屏蔽标志阻止Three.js覆盖）
   window.flyToCharCard = (char) => {
     const data = CHARACTER_DATA[char];
     if (!data) return;
+    const isEn = window._lang === 'en';
+    const en = window.CHAR_EN?.[char];
+    
+    window._blockThreeJsClick = true;
+    setTimeout(() => { window._blockThreeJsClick = false; }, 600);
+    
     document.getElementById('star-char-expand')?.classList.remove('active');
 
     const card = document.getElementById('detail-card');
@@ -241,11 +251,18 @@ function injectStarFilter() {
     const titleEl = document.getElementById('card-title');
     const typeEl = document.getElementById('card-type');
     const descEl = document.getElementById('card-desc');
-    const catLabels = { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
+    const catLabels = isEn
+      ? { stigma:'Derogatory', institution:'Institutional', matrilineal:'Matrilineal', reclaim:'Reclaimed', neutral:'Neutral' }
+      : { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
     const catColors = { stigma:'#ff6b6b', institution:'var(--terracotta)', matrilineal:'var(--amber)', reclaim:'#5a9e6f', neutral:'var(--bone)' };
     if (titleEl) { titleEl.innerText = char; titleEl.style.color = catColors[data.category] || 'var(--terracotta)'; }
-    if (typeEl) typeEl.innerText = `${catLabels[data.category]||''} · 污染等级 ${data.pollutionLevel}/5`;
-    if (descEl) { descEl.classList.remove('revealed'); descEl.innerText = `${data.shuowen||''}\n${data.modern||''}`; }
+    if (typeEl) typeEl.innerText = `${catLabels[data.category]||''} · ${isEn?'Pollution':'污染等级'} ${data.pollutionLevel}/5`;
+    if (descEl) {
+      descEl.classList.remove('revealed');
+      const sw = (isEn && en) ? en.s : (data.shuowen||'');
+      const md = (isEn && en) ? en.m : (data.modern||'');
+      descEl.innerText = `${sw}\n${md}`;
+    }
     card.classList.add('active');
   };
 }
@@ -556,18 +573,44 @@ function interceptPostActions() {
 
 async function handleForge() {
   const word = window.currentWord || '';
-  // 从当前活跃的wb-panel里找textarea
   const activePanel = document.querySelector('.wb-panel.active');
-  let newDef = '', reason = '';
+  let newDef = '', reason = '', canvasImage = '';
+  
   if (activePanel) {
-    const textareas = activePanel.querySelectorAll('textarea.wb-textarea, input.wb-textarea');
-    if (textareas.length >= 1) newDef = textareas[0]?.value?.trim() || '';
-    if (textareas.length >= 2) reason = textareas[1]?.value?.trim() || '';
+    const panelId = activePanel.id;
+    
+    if (panelId === 'tab-radical-surgery') {
+      // 偏旁手术：截取画板截图
+      try {
+        const surgeryContainer = document.getElementById('surgery-canvas-container');
+        if (surgeryContainer) {
+          // 用html2canvas思路：直接截取freehand canvas + 拼装的偏旁
+          const freeCanvas = document.getElementById('freehand-canvas');
+          if (freeCanvas) canvasImage = freeCanvas.toDataURL('image/png');
+        }
+      } catch(e) { console.warn('画板截图失败:', e); }
+      newDef = '偏旁手术重构提案（详见画板截图）';
+    } else if (panelId === 'tab-replace-word') {
+      // 字词替换
+      const inputs = activePanel.querySelectorAll('textarea.wb-textarea, input.wb-textarea');
+      if (inputs.length >= 1) newDef = inputs[0]?.value?.trim() || '';
+      if (inputs.length >= 2) reason = inputs[1]?.value?.trim() || '';
+      if (newDef) newDef = `替代词提案：${newDef}`;
+    } else {
+      // 赋予新义
+      const textareas = activePanel.querySelectorAll('textarea.wb-textarea, input.wb-textarea');
+      if (textareas.length >= 1) newDef = textareas[0]?.value?.trim() || '';
+      if (textareas.length >= 2) reason = textareas[1]?.value?.trim() || '';
+    }
   }
+  
   if (!word && !newDef) { window.showSysToast?.('>> ⚠️ 请输入要重塑的字并填写新释义。'); return; }
   if (!newDef) newDef = '(偏旁手术/字词替换 — 详见画板)';
+  
   try {
-    await createPost({ type:'glyph', targetChar:word, title:`重塑「${word}」的释义提案`, content:newDef, reasoning:reason });
+    const postData = { type:'glyph', targetChar:word, title:`重塑「${word}」的释义提案`, content:newDef, reasoning:reason };
+    if (canvasImage) postData.canvasImage = canvasImage;
+    await createPost(postData);
     window.showSysToast?.('>> ✅ 刻录完成！正在传送至【女娲的泥潭·凿字库】...');
     window.closeLabModal?.();
     setTimeout(() => {
@@ -677,6 +720,52 @@ function injectDictionaryData() {
       if (nv) nv.style.display = 'flex';
       if (dv) dv.style.display = 'none';
       if (aw) { aw.classList.remove('bg-detail'); aw.classList.add('bg-network'); }
+
+      // 重建右侧星云网络的轨道节点
+      const orbitsContainer = document.getElementById('network-orbit-nodes');
+      if (orbitsContainer) {
+        orbitsContainer.innerHTML = '';
+        // 停止旧动画
+        if (window._dictNetworkAnimId) cancelAnimationFrame(window._dictNetworkAnimId);
+        
+        const orbitData = [];
+        if (chars.length > 0) {
+          const angleStep = (Math.PI * 2) / chars.length;
+          chars.forEach((data, i) => {
+            const radius = 120 + Math.random() * 80;
+            const baseAngle = i * angleStep + Math.random() * 0.3;
+            const speed = 0.001 + Math.random() * 0.001;
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'network-word-node';
+            nodeDiv.innerHTML = `<div class="network-word-char">${data.char}</div><div class="lucky-star"></div>`;
+            nodeDiv.onclick = () => bridgeOpenWord(data.char);
+            orbitsContainer.appendChild(nodeDiv);
+            orbitData.push({ element: nodeDiv, char: data.char, angle: baseAngle, radius, speed });
+          });
+        }
+        
+        // 启动轨道动画
+        const netCanvas = document.getElementById('network-canvas');
+        if (netCanvas && orbitData.length > 0) {
+          const wrapper = nv;
+          const netW = wrapper.clientWidth || 600;
+          const netH = wrapper.clientHeight || 400;
+          const cx = netW / 2, cy = netH / 2;
+          
+          function animateDictNet() {
+            orbitData.forEach(node => {
+              node.angle += node.speed;
+              const floatY = Math.sin(Date.now()/1000 + node.angle) * 8;
+              const x = cx + Math.cos(node.angle) * (node.radius + floatY);
+              const y = cy + Math.sin(node.angle) * (node.radius + floatY * 0.5);
+              node.element.style.left = x + 'px';
+              node.element.style.top = y + 'px';
+            });
+            window._dictNetworkAnimId = requestAnimationFrame(animateDictNet);
+          }
+          animateDictNet();
+        }
+      }
     }
 
     function renderDictSidebar(chars) {
@@ -697,8 +786,9 @@ function injectDictionaryData() {
     function bridgeOpenWord(char) {
       const data = CHARACTER_DATA[char];
       if (!data) return;
+      const isEn = window._lang === 'en';
+      const en = window.CHAR_EN?.[char];
 
-      // 隐藏network, 显示detail
       const nv = document.getElementById('network-view');
       const dv = document.getElementById('detail-view');
       const aw = document.getElementById('archive-wrapper');
@@ -706,44 +796,45 @@ function injectDictionaryData() {
       if (dv) dv.style.display = 'flex';
       if (aw) { aw.classList.remove('bg-network'); aw.classList.add('bg-detail'); }
 
-      // 高亮侧边栏
       sidebarContainer.querySelectorAll('.term-item').forEach(li => {
         li.classList.toggle('active', li.querySelector('.char')?.textContent === char);
       });
 
-      // 填充详情
       const uiChar = document.getElementById('ui-char');
       const uiMeta = document.getElementById('ui-meta');
       const uiOldDef = document.getElementById('ui-old-def');
-      const catLabels = { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
+      const catLabels = isEn 
+        ? { stigma:'Derogatory', institution:'Institutional', matrilineal:'Matrilineal', reclaim:'Reclaimed', neutral:'Neutral' }
+        : { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
 
       if (uiChar) uiChar.innerText = char;
-      if (uiMeta) uiMeta.innerHTML = `ARCHIVE · ${catLabels[data.category]||''} · 污染等级 ${data.pollutionLevel}/5`;
+      if (uiMeta) uiMeta.innerHTML = `ARCHIVE · ${catLabels[data.category]||''} · ${isEn?'Pollution':'污染等级'} ${data.pollutionLevel}/5`;
       if (uiOldDef) {
-        uiOldDef.innerHTML = `<span class="redacted">${data.shuowen}</span><br><br><span class="redacted">${data.modern}</span>`;
+        const sw = (isEn && en) ? en.s : data.shuowen;
+        const md = (isEn && en) ? en.m : data.modern;
+        uiOldDef.innerHTML = `<span class="redacted">${sw}</span><br><br><span class="redacted">${md}</span>`;
       }
 
-      // 填充提案区（用analysis作为系统提案）
       const proposalsList = document.getElementById('ui-proposals-list');
       if (proposalsList) {
+        const analysisText = (isEn && en) ? en.a : (data.analysis || '');
         proposalsList.innerHTML = `
           <div class="proposal-item">
             <div class="proposal-meta">
-              <span>> 提议者：<span class="proposal-author">@系统解析</span></span>
-              <span>[ 深度分析 ]</span>
+              <span>> ${isEn?'Proposer':'提议者'}：<span class="proposal-author">@系统解析</span></span>
+              <span>[ ${isEn?'Deep Analysis':'深度分析'} ]</span>
             </div>
-            <div class="proposal-text">${data.analysis || ''}</div>
+            <div class="proposal-text">${analysisText}</div>
           </div>`;
       }
 
-      // 重置刮刮乐按钮
       const btn = document.getElementById('btn-decipher');
       if (btn) {
-        btn.innerText = '[ ⚠️ 侦察释义 ]';
+        btn.innerText = isEn ? '[ ⚠️ Decode ]' : '[ ⚠️ 侦察释义 ]';
         btn.classList.remove('mutated');
         btn.onclick = () => {
           document.querySelectorAll('#ui-old-def .redacted').forEach(el => el.classList.add('revealed'));
-          btn.innerText = '驳回旧叙事，发起新提案 ➔';
+          btn.innerText = isEn ? 'Reject & propose new definition ➔' : '驳回旧叙事，发起新提案 ➔';
           btn.classList.add('mutated');
           btn.onclick = () => window.openLabWithWord?.(char);
           document.getElementById('new-def-area')?.classList.add('active');
@@ -751,7 +842,6 @@ function injectDictionaryData() {
       }
       document.getElementById('new-def-area')?.classList.remove('active');
 
-      // 移动端收起侧边栏
       if (window.innerWidth <= 900) {
         document.getElementById('dict-sidebar')?.classList.add('collapsed');
       }
@@ -818,8 +908,193 @@ function esc(s){
 function fmtTime(d){
   if(!d) return '';
   const diff = Math.floor((Date.now()-d)/1000);
-  if(diff<60) return '刚刚';
-  if(diff<3600) return `${Math.floor(diff/60)}分钟前`;
-  if(diff<86400) return `${Math.floor(diff/3600)}小时前`;
-  return `${Math.floor(diff/86400)}天前`;
+  if(diff<60) return window._lang==='en'?'just now':'刚刚';
+  if(diff<3600) return window._lang==='en'?`${Math.floor(diff/60)}m ago`:`${Math.floor(diff/60)}分钟前`;
+  if(diff<86400) return window._lang==='en'?`${Math.floor(diff/3600)}h ago`:`${Math.floor(diff/3600)}小时前`;
+  return window._lang==='en'?`${Math.floor(diff/86400)}d ago`:`${Math.floor(diff/86400)}天前`;
 }
+
+// ==========================================
+// 🌐 中英翻译系统 (i18n)
+// ==========================================
+window._lang = 'zh';
+
+const UI_EN = {
+  // 导航
+  '第一母星':'Motherstar', '编年史':'Chronicles', '女娲的泥潭':"Nüwa's Mire", '拓片馆':'Archive',
+  '[+] 凿字 / 发帖':'[+] Create',
+  // 编年史
+  '字典':'Lexicon', '史记':'Timeline', '检索碑文...':'Search inscriptions...',
+  '华夏纪元':'Huaxia Era', '寰宇纪元':'Universal Era', '灵境空间':'Liminal Space',
+  '[ ⚠️ 侦察释义 ]':'[ ⚠️ Decode ]',
+  '驳回旧叙事，发起新提案 ➔':'Reject & propose new definition ➔',
+  '[ ↶ 返回星云节点 ]':'[ ↶ Back to network ]',
+  '旧世释义卷宗：':'Legacy definition archive:',
+  // 泥潭
+  '凿字库':'Glyphs', '羊皮卷':'Parchments', '赤陶刻痕':'Inscriptions', '篝火阵':'Bonfire',
+  // 造字实验室
+  '凿字实验室':'Genesis Lab', '篆刻泥板档案':'Archive Post',
+  '>> 检索待解构的旧字_':'>> Search character to deconstruct_',
+  '拒绝接受！进入重塑台 ➔':'Reject! Enter workbench ➔',
+  '🔒 锁定旧字！进入重塑台 ➔':'🔒 Lock character! Enter workbench ➔',
+  '执行刻录指令':' Inscribe',
+  '赋予新义':'New Definition', '字词替换':'Word Replace', '偏旁手术':'Radical Surgery',
+  '[ 拖放重组 ]':'[ Drag & Drop ]', '[ 手写刻痕 ]':'[ Freehand ]',
+  '[ 上传图片 ]':'[ Upload Image ]', '[ 清空画板 ]':'[ Clear Canvas ]',
+  '刻录并封卷 ➔':'Inscribe & Seal ➔',
+  '归属板块':'Category', '档案标题':'Title', '视觉拓片':'Visual Rubbing', '正文刻痕 :':'Content:',
+  '羊皮卷 (解构历史)':'Parchment (Deconstruct History)',
+  '赤陶刻痕 (日常倾诉)':'Inscription (Daily Thoughts)',
+  '篝火阵 (互帮互助)':'Bonfire (Mutual Aid)',
+  // 分类
+  '全部星域':'All Stars', '「贬义」字':'Derogatory', '制度字':'Institutional',
+  '母系遗存':'Matrilineal', '「褒义」字':'Reclaimed', '中性字':'Neutral',
+  // 认证
+  '[ 赤字协议 ]':'[ CRIMSON PROTOCOL ]', '身份接入':'Identity Access', '创建节点':'Create Node',
+  '> 检测到未授权节点。':'> Unauthorized node detected.',
+  '> 正在初始化新考古学家档案...':'> Initializing new archaeologist profile...',
+  '邮箱地址':'Email', '密码':'Password', '密码（至少6位）':'Password (min 6 chars)',
+  '确认密码':'Confirm Password', '[ 接入协议 ]':'[ Connect ]', '[ 创建档案并接入 ]':'[ Create & Connect ]',
+  '没有账号？':'No account?', '注册新节点 →':'Register →',
+  '已有账号？':'Have account?', '← 返回登录':'← Back to login',
+  // 星域
+  '> 当前星域显示':'> Currently showing', '个语言锚点':'language anchors',
+  // 拓片馆
+  '觉醒日':'Awakening Date', '共鸣频段':'Resonance Freq',
+  '泥潭足迹':'Mire Footprints', '创世字符':'Genesis Glyphs', '凿壁者勋章':'Chiseler Medal',
+  // 通用
+  '[ ESC 终止协议 ]':'[ ESC Exit ]', '[ ESC 关闭 ]':'[ ESC Close ]',
+  '[ 确 认 收 录 ]':'[ Confirm ]', '[ 提交回响 ]':'[ Submit Response ]',
+  '频段':'Signal',
+  // 开场动画
+  '正在执行赤字净化协议...':'Executing Crimson Purification Protocol...',
+  '[ 点击屏幕以激活协议 ]':'[ Click to activate protocol ]',
+  '[ 跳过 / SKIP ]':'[ SKIP ]',
+  '>> 警告：词源已受父权污染。请在屏幕划出漩涡，洗刷污名，夺回【女】之本原 <<':'>> WARNING: Etymology contaminated. Swirl to reclaim the origin of 【女】 <<',
+};
+
+// 字典字段英文翻译（关键字段）
+const CHAR_EN = {
+  '妒':{s:'Jealousy of wife toward husband. From 女 (woman), 户 (door) phonetic.',m:'Jealousy, envy — negative emotion attributed exclusively to women.',a:'Shuowen opens by binding jealousy as an innate female trait. The same competitive emotion in male characters is called "ambition."'},
+  '嫉':{s:'To harm the worthy. From 女 (woman), 疾 (illness) phonetic.',m:'Envy and resentment toward those who surpass oneself.',a:'"To harm the worthy" — attributed to women. 疾 means illness: a woman\'s talent is defined as a disease.'},
+  '奸':{s:'To violate. From three 女 (women).',m:'①Sexual assault ②Treacherous, cunning.',a:'Three women stacked = immorality. The character construction itself is violence — equating female existence with transgression.'},
+  '婪':{s:'Greed. From 女 (woman), 林 (forest) phonetic.',m:'Insatiable greed.',a:'Greed, constructed from "woman." When women express desire for resources, it\'s named 婪.'},
+  '妄':{s:'Disorder. From 女 (woman), 亡 (lost) phonetic.',m:'Absurd, reckless, delusional.',a:'"A woman lost" = delusion. Women\'s imagination and desires are pathologized as 妄想 (delusion).'},
+  '嫌':{s:'Dissatisfaction. From 女 (woman), 兼 phonetic.',m:'Suspicion, dislike, disdain.',a:'Dissatisfaction with the status quo, encoded into the female form. Once expressed, it gets its own derogatory container.'},
+  '妖':{s:'Skillful; also: a woman\'s smile. From 女, 夭 phonetic.',m:'Demon, seductress; excessively alluring woman.',a:'Original meaning was "clever" and "beautiful smile" — a compliment. Patriarchal evolution turned it into demonization of female charm.'},
+  '娼':{s:'Performer. From 女, 昌 phonetic.',m:'Prostitute (severe stigma).',a:'Originally meant "performing artist" without moral judgment. The forced degradation from artist to sex worker is a linguistic record of patriarchal commodification.'},
+  '妓':{s:'Female musician. From 女, 支 phonetic.',m:'Prostitute (severe stigma).',a:'Originally "female musician/performer." A woman with professional skills was systematically rewritten as a sexual service provider.'},
+  '嫖':{s:'Light, graceful. From 女, 票 phonetic.',m:'To visit prostitutes (male behavior).',a:'Originally meant "graceful." Now describes male behavior of visiting prostitutes — using the female radical to make women bear the stigma of men\'s actions.'},
+  '奴':{s:'Ancient criminal. From 女, from 又 (hand).',m:'Slave, person stripped of all rights.',a:'The character form is "a hand seizing a woman." The female body is embedded in the foundational concept of enslavement.'},
+  '妾':{s:'Guilty woman who serves. From 辛 (punishment tool), 女.',m:'Concubine.',a:'Shuowen: "a guilty woman who serves her lord." The character\'s construction defines a woman entering marriage as punishment and atonement.'},
+  '奻':{s:'Litigation, quarreling. From two 女.',m:'To quarrel (rarely used today).',a:'Two women side by side = quarreling. One of the most naked character-construction biases in Chinese history.'},
+  '姘':{s:'Private, illicit. From 女, 并 phonetic.',m:'Extramarital cohabitation.',a:'Emotional relationships outside marriage are defined as "private," locked into the female form.'},
+  '婚':{s:'Wife\'s family. Marriage at dusk because women are yin.',m:'Marriage.',a:'Scholars argue the real reason for dusk marriages was bride-kidnapping. The yin-yang explanation is later cultural packaging.'},
+  '妻':{s:'Woman equal to husband. From 女, 屮, 又 (hand).',m:'Wife.',a:'"Equal" only relative to concubines, not to the husband. The hand radical means "to hold/manage" — a wife\'s duty is service.'},
+  '妇':{s:'To serve. From 女 holding a broom.',m:'Married woman.',a:'The character is literally a woman holding a broom. Meaning: submission and service.'},
+  '嫁':{s:'Woman goes to another. From 女, 家 (home).',m:'To marry (said of women).',a:'Woman + home = marriage. But it\'s his home, not hers. The character is a property transfer contract.'},
+  '姓':{s:'What one is born from. From 女, 生 (birth).',m:'Surname, bloodline marker.',a:'Woman + birth = surname. The oldest Chinese surnames all contain 女: 姬姜姚妫姒嬴. This is fossil evidence of matrilineal society.'},
+  '姬':{s:'Beautiful name for Zhou dynasty women. From 女.',m:'Ancient term for beauty; also performers.',a:'The Zhou royal surname — one of China\'s most important matrilineal surnames, representing women as the core of the clan.'},
+  '姜':{s:'Shennong lived by Jiang river, hence the surname.',m:'Ancient surname; also ginger plant.',a:'Surname of Emperor Yan/Shennong, one of the oldest matrilineal surnames. From 女: proof that bloodlines were traced through mothers.'},
+  '好':{s:'Beautiful. From 女 (woman), 子 (child).',m:'Good, beautiful, excellent.',a:'Woman + child = good. The character used billions of times daily is, at its foundation, a praise of mother and child together.'},
+  '妙':{s:'Young. From 女, 少 (young/few).',m:'Wonderful, exquisite, marvelous.',a:'Young woman = marvelous. The character preserves ancient reverence for the grace and creativity of young women.'},
+  '姐':{s:'In Shu dialect, mother is called 姐. From 女, 且.',m:'Older sister.',a:'Shuowen records: in Sichuan, 姐 means mother. The character carries the original meaning of female elder authority.'},
+  '妫':{s:'Emperor Shun\'s surname, from Gui river.',m:'Ancient surname (rarely used today).',a:'Shun\'s surname, from 女. Like 姬 and 姜, a living fossil of "surnames come from mothers."'},
+  '媛':{s:'Beautiful woman. From 女, 爰 phonetic.',m:'Elegant woman; now weaponized online as mockery.',a:'The most elegant term for admirable women. In 2020s internet, 媛 became a slur — a new form of image policing.'},
+  '婵':{s:'Strong woman. From 女, 单 phonetic.',m:'Now means graceful/elegant; original meaning lost.',a:'Shuowen: "婵娟 = female warrior!" The strength meaning was completely buried; in later poetry it only means "graceful."'},
+  '嫣':{s:'Beautiful appearance. From 女, 焉 phonetic.',m:'Beautiful smile (嫣然一笑).',a:'One of the rare characters that purely celebrates female beauty without attached stigma.'},
+  '妥':{s:'Stable. From 女, 爪 (claw/hand).',m:'Proper, settled, appropriate.',a:'Hand pressing down on woman = stability. Every use of 妥 unconsciously repeats a control gesture encoded in the character.'},
+  '委':{s:'To follow along. From 女, 禾 (grain).',m:'To delegate, to wilt, to submit.',a:'Submissive following, borne by 女. Words like 委曲求全 (endure humiliation) build weakness on the female radical.'},
+  '媒':{s:'To arrange between two families. From 女, 某.',m:'Matchmaker; medium/media.',a:'The matchmaker role, specialized as female labor. 媒 acknowledges women\'s social centrality but limits it to serving the marriage institution.'},
+  '媚':{s:'To flatter, to please. From 女, 眉 (eyebrow).',m:'To charm, to ingratiate.',a:'Women\'s emotional expression and attractiveness reduced to a tool for pleasing others. We redefine: charm is the courage of self-expression.'},
+  '婢':{s:'Lowly woman. From 女, 卑 (low).',m:'Female servant.',a:'Low + woman = servant. There is no "male 婢." The position of "low" was assigned to women from the start.'},
+  '媳':{s:'Son\'s wife. From 女, 息 (offspring).',m:'Daughter-in-law.',a:'Offspring + woman = daughter-in-law. A woman enters the husband\'s family valued only for reproduction. Not a person, a womb.'},
+  '娶':{s:'To take a wife. From 女, 取 (to take).',m:'To marry (said of men).',a:'"Take" + woman = marry. The character says it all: marriage is taking possession of a woman.'},
+  '姻':{s:'Husband\'s family. From 女, 因 phonetic.',m:'Marriage relation.',a:'Woman is the "因" (cause/condition) of marriage. The whole institution uses women as currency and medium, not as subjects.'},
+  '姑':{s:'Husband\'s mother; father\'s sister. From 女, 古.',m:'Aunt; also mother-in-law.',a:'"Ancient woman" — preserves respect for female elder authority. 姑姑, 仙姑 are linguistic remnants of matriarchal power.'},
+  '妈':{s:'Mother. From 女, 马 phonetic.',m:'Mother.',a:'The sound "mama" is nearly universal across all languages. This character is humanity\'s most primal sound memory — the instinctive call to the one who gives life.'},
+  '娘':{s:'Mother; young woman. From 女, 良 (good).',m:'Mother; miss/young lady.',a:'Good + woman = mother/lady. 娘娘, 老娘, 姑娘 — these titles preserve memory of women\'s honored status.'},
+  '妍':{s:'Skillful, beautiful. From 女, 开 (open).',m:'Beautiful, gorgeous.',a:'Open + woman = beauty. Not passive prettiness but active blooming. 妍 is a force, not decoration.'},
+  '娇':{s:'Graceful. From 女, 乔 (tall).',m:'Delicate, charming.',a:'Tall + woman = charming. 乔 originally means tall/lofty. 娇 is tall, resilient vitality — later diminished to mean "delicate."'},
+  '妩':{s:'Charming. From 女, 无 (nothing/void).',m:'Enchanting (妩媚).',a:'Nothing/void + woman = charm. Attractiveness arising from pure emptiness, dependent on no external standard.'},
+  '妹':{s:'Younger sister. From 女, 未 (not yet).',m:'Younger sister.',a:'Not-yet + woman = younger sister. 未 depicts a flourishing tree. Younger sister is life force full of future possibility.'},
+};
+
+window.toggleLang = function() {
+  window._lang = window._lang === 'zh' ? 'en' : 'zh';
+  const btn = document.getElementById('btn-lang');
+  if (btn) btn.textContent = window._lang === 'zh' ? 'EN' : '中文';
+  applyLang();
+};
+
+function applyLang() {
+  const isEn = window._lang === 'en';
+  
+  // 1. 遍历所有文本节点，替换UI标签
+  const walker = (root) => {
+    if (!root) return;
+    // 对nav links
+    root.querySelectorAll('.nav-links a, .mire-tab, .chron-tab, .switch-option, .btn-close-lab, .modal-close, .btn-cast, .star-filter-btn, .fbi-label, .fbi-select option, .wb-tab, .mobile-accordion-header span:first-child, .btn-reject-huge, .auth-title, .auth-submit-btn, .auth-switch, h2, .sys-prompt, .folder-body p, .btn-confirm-medal, .comment-submit, #global-chisel-btn, #interact-prompt, #protocol-text, .pulse-text, .canvas-toolbar .surgery-title, .tool-btn, .canvas-footer-actions .btn-bottom-action').forEach(el => {
+      const original = el.getAttribute('data-original');
+      const text = original || el.textContent.trim();
+      if (!original && text) el.setAttribute('data-original', text);
+      const storedOriginal = el.getAttribute('data-original');
+      if (isEn && UI_EN[storedOriginal]) {
+        el.textContent = UI_EN[storedOriginal];
+      } else if (!isEn && storedOriginal) {
+        el.textContent = storedOriginal;
+      }
+    });
+    
+    // 搜索框placeholders
+    root.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
+      const origPh = el.getAttribute('data-original-ph');
+      const ph = origPh || el.placeholder;
+      if (!origPh && ph) el.setAttribute('data-original-ph', ph);
+      const stored = el.getAttribute('data-original-ph');
+      if (isEn && UI_EN[stored]) el.placeholder = UI_EN[stored];
+      else if (!isEn && stored) el.placeholder = stored;
+    });
+  };
+  
+  walker(document.body);
+  
+  // 2. 更新当前字典详情页（如果正在显示）
+  updateDictLang();
+}
+
+function updateDictLang() {
+  const isEn = window._lang === 'en';
+  const uiChar = document.getElementById('ui-char');
+  if (!uiChar) return;
+  const char = uiChar.textContent.trim();
+  const en = CHAR_EN[char];
+  const data = CHARACTER_DATA[char];
+  if (!data) return;
+  
+  const uiOldDef = document.getElementById('ui-old-def');
+  if (uiOldDef) {
+    if (isEn && en) {
+      uiOldDef.innerHTML = `<span class="redacted">${en.s}</span><br><br><span class="redacted">${en.m}</span>`;
+    } else {
+      uiOldDef.innerHTML = `<span class="redacted">${data.shuowen}</span><br><br><span class="redacted">${data.modern}</span>`;
+    }
+  }
+  const proposalsList = document.getElementById('ui-proposals-list');
+  if (proposalsList) {
+    const analysisText = (isEn && en) ? en.a : (data.analysis || '');
+    const labelProposer = isEn ? '> Proposer:' : '> 提议者：';
+    const labelAnalysis = isEn ? '[ Deep Analysis ]' : '[ 深度分析 ]';
+    proposalsList.innerHTML = `
+      <div class="proposal-item">
+        <div class="proposal-meta">
+          <span>${labelProposer} <span class="proposal-author">@系统解析</span></span>
+          <span>${labelAnalysis}</span>
+        </div>
+        <div class="proposal-text">${analysisText}</div>
+      </div>`;
+  }
+}
+
+// 暴露给全局
+window.CHAR_EN = CHAR_EN;

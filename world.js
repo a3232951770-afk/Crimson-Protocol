@@ -232,6 +232,8 @@
             // 同步淡入频段接收按钮
             const btnSignalNav = document.getElementById('btn-signal-nav');
             if (btnSignalNav) { btnSignalNav.style.opacity = '1'; btnSignalNav.style.pointerEvents = 'auto'; }
+            const btnLang = document.getElementById('btn-lang');
+            if (btnLang) { btnLang.style.opacity = '1'; btnLang.style.pointerEvents = 'auto'; }
 
             switchPage('page-mother-star', document.querySelector('.nav-links a.active'));
         };
