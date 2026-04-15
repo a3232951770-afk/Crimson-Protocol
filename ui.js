@@ -358,7 +358,7 @@ function toggleRadicalAccordion(index, headerEl) {
     }
 }
 
-let currentWord = "";
+var currentWord = "";
 
 // 路线2/3/4：打开造字实验室
 function openLabModal() {
@@ -720,6 +720,9 @@ function submitNormalPost() {
 // ==========================================
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
+        // 认证弹窗
+        const authModal = document.getElementById('auth-modal');
+        if (authModal && authModal.classList.contains('active')) { authModal.classList.remove('active'); return; }
         // 造字实验室（最高优先级）
         const labOverlay = document.getElementById('lab-modal-overlay');
         if (labOverlay && labOverlay.classList.contains('active')) { closeLabModal(); return; }

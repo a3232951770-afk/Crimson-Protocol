@@ -11,10 +11,10 @@
 </head>
 <body>
 
-    <!--  全局系统提示 -->
+    <!-- 🍞 全局系统提示 -->
     <div id="sys-toast"></div>
 
-    <!--  全局 UI 框架 -->
+    <!-- 🌐 全局 UI 框架 -->
     <nav id="global-nav">
         <div class="nav-logo">[ 赤字协议 ]<br><span style="font-size: 0.7rem; letter-spacing: 5px; color:#666;">THE CRIMSON PROTOCOL</span></div>
         <div class="nav-links">
@@ -33,7 +33,7 @@
 
 
     <!-- ==========================================
-          启示录前导 (独立盖层)
+         🌧️ 启示录前导 (独立盖层)
          ========================================== -->
     <div id="p5-container">
         <div id="start-screen" onclick="startExperience()">
@@ -169,76 +169,19 @@
             </nav>
 
             <main id="tab-glyphs" class="tab-content active waterfall-container">
-                <div class="post-card card-glyph" data-type="glyph" onclick="openPostModal(this)">
-                    <div class="glyph-display amber">嫉妒</div>
-                    <div class="glyph-def">被制度化的雌竞</div>
-                    <div class="glyph-sub">并非女性天性，而是资源被极度掠夺后，系统强制分配给下位者的生存模式。</div>
-                    <div class="card-meta"><span class="card-author">@真理黑客_01</span><span class="card-stats">5小时前</span></div>
-                    <div class="card-actions">
-                        <div class="action-group">
-                            <button class="action-btn vote" onclick="toggleCardAction(event, this, 'vote')">▵ 投票 <span>18.5k</span></button>
-                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ 共鸣 <span>2.1k</span></button>
-                        </div>
-                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>640</span></button>
-                    </div>
-                </div>
-                <div class="post-card card-glyph" data-type="glyph" onclick="openPostModal(this)">
-                    <div class="glyph-display">婊</div>
-                    <div class="glyph-def">表露欲望的主体</div>
-                    <div class="glyph-sub">拒绝被放置于道德神坛或耻辱柱上的主体。</div>
-                    <div class="card-meta"><span class="card-author">@提灯人_092</span><span class="card-stats">12小时前</span></div>
-                    <div class="card-actions">
-                        <div class="action-group">
-                            <button class="action-btn vote" onclick="toggleCardAction(event, this, 'vote')">▵ 投票 <span>14.2k</span></button>
-                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ 共鸣 <span>1.2k</span></button>
-                        </div>
-                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>304</span></button>
-                    </div>
-                </div>
+                <div class="empty-state">[ 暂无凿字提案 · 成为第一个造字者 ]</div>
             </main>
 
             <main id="tab-parchments" class="tab-content waterfall-container">
-                <div class="post-card card-parchment" data-type="parchment" onclick="openPostModal(this)">
-                    <div class="img-placeholder"></div>
-                    <div class="card-meta"><span class="card-author">@密码学家_007</span><span class="card-stats">刚刚</span></div>
-                    <h3>《女书》的密码学本质与母系精神网络</h3>
-                    <div class="card-content">在剥夺女性受教育权的时代，诞生于江永县的菱形文字，绝非简单的闺阁消遣，而是一套极其严密的抗审查密码系统。</div>
-                    <div class="read-more-hint">[ 展开阅读全文... ]</div>
-                    <div class="card-actions">
-                        <div class="action-group">
-                            <button class="action-btn vote" onclick="toggleCardAction(event, this, 'vote')">▵ 收录 <span>130k</span></button>
-                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ 共鸣 <span>32k</span></button>
-                        </div>
-                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>5.2k</span></button>
-                    </div>
-                </div>
+                <div class="empty-state">[ 暂无羊皮卷 · 等待第一篇考据 ]</div>
             </main>
 
             <main id="tab-terracotta" class="tab-content waterfall-container">
-                <div class="post-card card-terracotta" data-type="terracotta" onclick="openPostModal(this)">
-                    <div class="card-meta"><span class="card-author">@匿名刻痕_A1</span></div>
-                    <div class="card-content">今天在会议上又被男同事打断了三次。第四次的时候，我盯着他的眼睛，没有提高音量，只是冷冷地说："我还没说完。"</div>
-                    <div class="card-actions">
-                        <div class="action-group">
-                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ <span>4.2k</span></button>
-                        </div>
-                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>210</span></button>
-                    </div>
-                </div>
+                <div class="empty-state">[ 暂无刻痕 · 留下你的印记 ]</div>
             </main>
 
             <main id="tab-bonfire" class="tab-content waterfall-container">
-                <div class="post-card card-bonfire" data-type="bonfire" onclick="openPostModal(this)">
-                    <div class="card-meta"><span class="card-author">@星火坐标_北京</span><span class="card-stats">12分钟前</span></div>
-                    <h3>遇到职场性骚扰，已取证，求法律支援</h3>
-                    <div class="card-content">我已经录音并保留了聊天记录截图。HR 试图和稀泥让我息事宁人。我不接受调解，必须让他付出代价。急需指导下一步程序。</div>
-                    <div class="card-actions">
-                        <div class="action-group">
-                            <button class="action-btn like" onclick="toggleCardAction(event, this, 'like')">❤ 关注 <span>890</span></button>
-                        </div>
-                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 支援 <span>142</span></button>
-                    </div>
-                </div>
+                <div class="empty-state">[ 暂无篝火 · 点燃第一堆火 ]</div>
             </main>
         </div>
     </div>
@@ -314,32 +257,7 @@
             <!-- 底部：泥潭足迹 -->
             <div class="section-title">泥潭足迹</div>
             <div class="waterfall-container" id="footprints-container">
-                <div class="post-card card-glyph" data-type="glyph" onclick="openFootprint(this)">
-                    <div class="glyph-display">婊</div>
-                    <div class="glyph-def">表露欲望的主体</div>
-                    <div class="glyph-sub">拒绝被放置于道德神坛或耻辱柱上的主体。</div>
-                    <div class="card-meta"><span class="card-author">@女娲的泥点_031</span><span class="card-stats">12小时前</span></div>
-                    <div class="card-actions">
-                        <div class="action-group">
-                            <button class="action-btn vote" onclick="event.stopPropagation();">▵ 投票 <span>14.2k</span></button>
-                            <button class="action-btn like" onclick="event.stopPropagation();">❤ 共鸣 <span>1.2k</span></button>
-                        </div>
-                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>304</span></button>
-                    </div>
-                </div>
-                <div class="post-card card-parchment" data-type="parchment" onclick="openFootprint(this)">
-                    <div class="img-placeholder"></div>
-                    <div class="card-meta"><span class="card-author">@女娲的泥点_031</span><span class="card-stats">刚刚</span></div>
-                    <h3>《女书》的密码学本质与母系精神网络</h3>
-                    <div class="card-content">在剥夺女性受教育权的时代，诞生于江永县的菱形文字，绝非简单的闺阁消遣，而是一套极其严密的抗审查密码系统。</div>
-                    <div class="card-actions">
-                        <div class="action-group">
-                            <button class="action-btn vote" onclick="event.stopPropagation();">▵ 收录 <span>130k</span></button>
-                            <button class="action-btn like" onclick="event.stopPropagation();">❤ 共鸣 <span>32k</span></button>
-                        </div>
-                        <button class="action-btn comment" onclick="event.stopPropagation();">💬 <span>5.2k</span></button>
-                    </div>
-                </div>
+                <div class="empty-state">[ 暂无足迹 · 开始发帖留下印记 ]</div>
             </div>
         </div>
     </div>
@@ -360,8 +278,7 @@
                     <h4>// 意识回响区 (COMMENTS)</h4>
                     <textarea class="comment-input" placeholder="注入你的意识，支持 Markdown 语法..."></textarea>
                     <div style="overflow:hidden;"><button class="comment-submit" onclick="showSysToast('>> 正在写入分布式区块...')">[ 提交回响 ]</button></div>
-                    <div class="comment-list">
-                        <div class="comment-item"><div class="comment-meta"><span>@游荡的信号_X</span> <span>刚刚</span></div><div class="comment-text">完全赞同。语言的底层协议已经被污染太久了，是时候夺回解释权了。支持提案！</div></div>
+                    <div class="comment-list" id="modal-comment-list">
                     </div>
                 </div>
             </div>
@@ -377,29 +294,11 @@
             <div class="drawer-close" onclick="closeDrawer()">✕</div>
         </div>
         <div id="view-announcements" class="drawer-view drawer-view-announcements active">
-            <div class="announcement-card alert">
-                <div class="annc-time alert">SYS.TIME<br>04:22</div>
-                <div class="annc-content alert">[ 庆贺 ]：你在造字实验室提交的提案【妒】，共鸣值突破阈值，已升入母星轨道化为星辰！</div>
-            </div>
-            <div class="announcement-card">
-                <div class="annc-time">SYS.TIME<br>昨天</div>
-                <div class="annc-content">你的羊皮卷考据已被 <span class="hl">@女书守护者_007</span> 引用为理论基础。</div>
-            </div>
-            <div class="announcement-card">
-                <div class="annc-time">SYS.TIME<br>3天前</div>
-                <div class="annc-content"><span class="hl">@赫斯提亚的火种</span> 等 42 人在你的篝火阵帖文中注入了共鸣。</div>
-            </div>
+            <div class="empty-state" style="padding:2rem;font-size:0.75rem;">[ 暂无系统公告 ]</div>
         </div>
         <div id="view-dms" class="drawer-view drawer-view-dms">
             <div id="dms-list" class="dms-list-container active">
-                <div class="dm-contact-item" onclick="openChat('@盖娅的遗存_01')">
-                    <div class="dm-contact-name unread">@盖娅的遗存_01</div>
-                    <div class="dm-contact-preview">> 等待你的信号源更新。OVER_</div>
-                </div>
-                <div class="dm-contact-item" onclick="openChat('@女书守护者_007')">
-                    <div class="dm-contact-name">@女书守护者_007</div>
-                    <div class="dm-contact-preview">> 上次那篇关于女书密码学的资料我整理好了...</div>
-                </div>
+                <div class="empty-state" style="padding:2rem;font-size:0.75rem;">[ 暂无私信 ]</div>
             </div>
             <div id="dms-chat" class="dms-chat-container">
                 <div class="chat-header">
@@ -479,7 +378,7 @@
                 <div class="folder-wrapper folder-lab" onclick="goToTerminal(event)">
                     <div class="folder-tab-top">01 / GENESIS</div>
                     <div class="folder-body">
-                        <h2>进入凿字实验室</h2>
+                        <h2>凿字实验室</h2>
                         <p>解构旧字基因，重写定义。<br>将改造新词刻入母星轨道。</p>
                     </div>
                 </div>
@@ -640,6 +539,52 @@
 
     <!-- 4. ui.js (拓片馆+造字实验室+路由连接) -->
     <script src="ui.js"></script>
+
+    <!-- 5. Firebase数据层 + 登录 + 桥接注入（ES module） -->
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="bridge.js"></script>
+
+    <!-- ==========================================
+         🔐 登录弹窗（密码登录）
+         ========================================== -->
+    <div id="auth-modal" class="modal-overlay" onclick="closeAuthModal(event)">
+        <div class="modal-container auth-box" onclick="event.stopPropagation()" style="max-width:420px;">
+            <button class="modal-close" onclick="closeAuthModal(event)">[ ESC 关闭 ]</button>
+            <div id="auth-panel-login" class="auth-panel active">
+                <div class="auth-title">[ 赤字协议 ] <span>身份接入</span></div>
+                <div class="auth-terminal-lines">
+                    <div>> 检测到未授权节点。</div>
+                    <div id="auth-err-login" class="auth-err" style="display:none;"></div>
+                </div>
+                <div class="auth-fields">
+                    <input id="login-email" type="email" class="auth-input" placeholder="邮箱地址" autocomplete="email"/>
+                    <input id="login-pass"  type="password" class="auth-input" placeholder="密码" autocomplete="current-password"/>
+                </div>
+                <button class="auth-submit-btn" onclick="window.CrimsonAuth.login()">[ 接入协议 ]</button>
+                <div class="auth-switch">没有账号？<span onclick="window.CrimsonAuth.showPanel('register')">注册新节点 →</span></div>
+            </div>
+            <div id="auth-panel-register" class="auth-panel">
+                <div class="auth-title">[ 赤字协议 ] <span>创建节点</span></div>
+                <div class="auth-terminal-lines">
+                    <div>> 正在初始化新考古学家档案...</div>
+                    <div id="auth-err-reg" class="auth-err" style="display:none;"></div>
+                </div>
+                <div class="auth-fields">
+                    <input id="reg-email"    type="email"    class="auth-input" placeholder="邮箱地址" autocomplete="email"/>
+                    <input id="reg-pass"     type="password" class="auth-input" placeholder="密码（至少6位）" autocomplete="new-password"/>
+                    <input id="reg-pass2"    type="password" class="auth-input" placeholder="确认密码" autocomplete="new-password"/>
+                    <input id="reg-codename" type="text"     class="auth-input" placeholder="你的代号（可选，如 @星火_042）" autocomplete="off"/>
+                </div>
+                <button class="auth-submit-btn" onclick="window.CrimsonAuth.register()">[ 创建档案并接入 ]</button>
+                <div class="auth-switch">已有账号？<span onclick="window.CrimsonAuth.showPanel('login')">← 返回登录</span></div>
+            </div>
+            <div id="auth-panel-loading" class="auth-panel" style="text-align:center;padding:3rem 1rem;">
+                <div class="auth-terminal-lines" style="justify-content:center;">
+                    <div class="auth-blink">> 正在建立量子隧道连接...</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

@@ -26,13 +26,14 @@ function createSoftParticleTexture() {
 const particleTexture = createSoftParticleTexture();
 const TOTAL_STARS = 400; const starsData = []; const starGroup = new THREE.Group(); scene.add(starGroup);
 const motherPos = new THREE.Vector3(0, 0, 0); starsData.push({ id: 0, type: 'mother', nebulaType: 0, pos: motherPos, color: 0xd91a3c, text: '女', active: true });
-const badWords = ['嫌', '婊', '妒', '婪', '奴', '妓', '妖', '奸', '妄', '姘']; const goodWords = ['好', '妙', '妈', '姐', '妹', '娘', '姑', '娇', '妍', '妩'];
+const allDictWords = ['妒','嫉','奸','婪','妄','嫌','妖','娼','妓','嫖','奴','妾','奻','姘','媚','婢','婚','妻','妇','嫁','姓','姬','姜','妫','好','妙','媛','婵','嫣','姐','妥','委','媒','媳','娶','姻','姑','妈','娘','妍','娇','妩','妹'];
 
 for (let i = 1; i < TOTAL_STARS; i++) {
     const isAmber = Math.random() < 0.25; const type = isAmber ? 'amber' : 'ash'; const color = isAmber ? 0xffaa00 : 0x88bbff; const nebulaType = Math.random() > 0.5 ? 1 : 2;
     const u = Math.random(); const v = Math.random(); const theta = u * 2.0 * Math.PI; const phi = Math.acos(2.0 * v - 1.0); const radius = 80 + Math.pow(Math.random(), 1.5) * 270;
     const x = radius * Math.sin(phi) * Math.cos(theta); const y = radius * Math.sin(phi) * Math.sin(theta) * 0.6; const z = radius * Math.cos(phi);
-    starsData.push({ id: i, type: type, nebulaType: nebulaType, pos: new THREE.Vector3(x, y, z), color: color, text: isAmber ? goodWords[Math.floor(Math.random()*goodWords.length)] : badWords[Math.floor(Math.random()*badWords.length)], baseY: y, randomOffset: Math.random() * Math.PI * 2 });
+    const text = allDictWords[(i - 1) % allDictWords.length];
+    starsData.push({ id: i, type: type, nebulaType: nebulaType, pos: new THREE.Vector3(x, y, z), color: color, text: text, baseY: y, randomOffset: Math.random() * Math.PI * 2 });
 }
 
 const geometry = new THREE.BufferGeometry(); const positions = new Float32Array(TOTAL_STARS * 3); const colors = new Float32Array(TOTAL_STARS * 3); const sizes = new Float32Array(TOTAL_STARS);
@@ -110,9 +111,27 @@ function hideStar(id) { const sizes = starPoints.geometry.attributes.size.array;
 function showAllStars() { const sizes = starPoints.geometry.attributes.size.array; starsData.forEach((s, i) => { sizes[i] = s.type === 'mother' ? 50 : (s.type === 'amber' ? 15 : 10); }); starPoints.geometry.attributes.size.needsUpdate = true; }
 
 function openCard(star) {
-    const card = document.getElementById('detail-card'); document.getElementById('card-title').innerText = star.text; document.getElementById('card-title').style.color = star.type === 'mother' ? 'var(--blood-red)' : 'var(--terracotta)';
-    const desc = document.getElementById('card-desc'); desc.classList.remove('revealed');
-    if(star.type === 'mother') { desc.innerText = "女，妇人也。象形。父权字典中常作为附属、柔弱或贬义词汇的词根。正在进行根级协议覆写。"; } else if (star.type === 'amber') { desc.innerText = `${star.text}。曾被扭曲的词意，已被先辈考古学家重新点亮。闪耀着觉醒的琥珀微光。`; } else { desc.innerText = `${star.text}，怨也。从女。本义为厌恶、猜忌。历史文献中带有强烈的性别规训色彩。`; }
+    const card = document.getElementById('detail-card');
+    const titleEl = document.getElementById('card-title');
+    const typeEl = document.getElementById('card-type');
+    const desc = document.getElementById('card-desc');
+    titleEl.innerText = star.text; desc.classList.remove('revealed');
+    const charData = window.CHARACTER_DATA_CACHE?.[star.text];
+    if(star.type === 'mother') {
+        titleEl.style.color = 'var(--neon-red)';
+        typeEl.innerText = '母神星 · 根级协议';
+        desc.innerText = "女，妇人也。象形。父权字典中常作为附属、柔弱或贬义词汇的词根。正在进行根级协议覆写。";
+    } else if (charData) {
+        const catLabels = { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
+        const catColors = { stigma:'#ff6b6b', institution:'var(--terracotta)', matrilineal:'var(--amber)', reclaim:'#5a9e6f', neutral:'var(--bone)' };
+        titleEl.style.color = catColors[charData.category] || 'var(--terracotta)';
+        typeEl.innerText = `${catLabels[charData.category]||''} · 污染等级 ${charData.pollutionLevel}/5`;
+        desc.innerText = `${charData.shuowen||''}\n${charData.modern||''}`;
+    } else {
+        titleEl.style.color = star.type === 'amber' ? 'var(--amber)' : 'var(--terracotta)';
+        typeEl.innerText = '旧世字典释义';
+        desc.innerText = `${star.text}，从女。语言星图中的锚点。`;
+    }
     card.classList.add('active'); clearExplosion(); controls.autoRotate = false;
 }
 
