@@ -550,10 +550,17 @@ function handleArchiveImageUpload(e) {
         displayInput.value = "[+] 已加载视觉拓片: " + file.name;
         displayInput.style.color = "var(--bone)";
         displayInput.style.borderColor = "var(--terracotta)";
+        // 转base64存到全局
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            window._pendingPostImage = ev.target.result;
+        };
+        reader.readAsDataURL(file);
     } else {
         displayInput.value = "";
         displayInput.style.color = "#666";
         displayInput.style.borderColor = "#333";
+        window._pendingPostImage = null;
     }
 }
 
@@ -584,7 +591,7 @@ function initDrawCanvas() {
     drawCanvas.addEventListener('mousedown', (e) => {
         if(currentSurgeryTool !== 'draw') return;
         isDrawing = true; dCtx.beginPath(); dCtx.moveTo(e.offsetX, e.offsetY);
-        dCtx.strokeStyle = '#1a1a1a'; dCtx.lineWidth = 14; dCtx.lineCap = 'round'; dCtx.lineJoin = 'round';
+        dCtx.strokeStyle = '#cc4e3c'; dCtx.lineWidth = 14; dCtx.lineCap = 'round'; dCtx.lineJoin = 'round';
     });
     drawCanvas.addEventListener('mousemove', (e) => {
         if(!isDrawing || currentSurgeryTool !== 'draw') return;
@@ -720,6 +727,9 @@ function submitNormalPost() {
 // ==========================================
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
+        // 图片灯箱
+        const lightbox = document.getElementById('image-lightbox');
+        if (lightbox && lightbox.classList.contains('active')) { lightbox.classList.remove('active'); return; }
         // 认证弹窗
         const authModal = document.getElementById('auth-modal');
         if (authModal && authModal.classList.contains('active')) { authModal.classList.remove('active'); return; }

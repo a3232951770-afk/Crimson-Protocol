@@ -24,7 +24,6 @@
             <a onclick="switchPage('page-rubbing-pavilion', this)">拓片馆</a>
         </div>
         <div class="nav-right-controls">
-            <button id="btn-lang" onclick="window.toggleLang?.()" style="opacity:0; pointer-events:none; transition:opacity 2s; background:none; border:1px solid #444; color:var(--ash); font-family:var(--font-mono); font-size:0.7rem; padding:3px 8px; cursor:pointer;">EN</button>
             <button id="btn-signal-nav" class="btn-signal-recv unread" onclick="openDrawer()"
                 style="opacity:0; pointer-events:none; transition: opacity 2s ease; font-size:0.9rem; padding: 8px 16px; letter-spacing:2px;">
                 <span class="btn-signal-text"><span style="font-size:1rem;">📡</span> 频段(3)</span>
@@ -32,6 +31,9 @@
         </div>
     </nav>
     <button id="global-chisel-btn" onclick="openLabModal()">[+] 凿字 / 发帖</button>
+
+    <!-- 全局语言切换（始终可见，右上角） -->
+    <button id="btn-lang-global" onclick="window.toggleLang?.()" title="中文 / English">EN</button>
 
 
     <!-- ==========================================
@@ -241,7 +243,7 @@
                             <div class="medal-info">
                                 <h4>创世字符</h4>
                                 <p>成功解构并升入母星轨道的字</p>
-                                <div class="count">03</div>
+                                <div class="count" id="genesis-count">0</div>
                             </div>
                         </div>
                         <div class="medal-card" onclick="openMedal('chiseler')">
@@ -249,17 +251,23 @@
                             <div class="medal-info">
                                 <h4>凿壁者勋章</h4>
                                 <p>被《编年史》正式收录的考据文献</p>
-                                <div class="count">12</div>
+                                <div class="count" id="chiseler-count">0</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 底部：泥潭足迹 -->
-            <div class="section-title">泥潭足迹</div>
-            <div class="waterfall-container" id="footprints-container">
-                <div class="empty-state">[ 暂无足迹 · 开始发帖留下印记 ]</div>
+            <!-- 底部：泥潭足迹 + 共振回响 -->
+            <div class="profile-tabs-bar">
+                <div class="profile-tab active" onclick="switchProfileTab('footprints',this)">泥潭足迹</div>
+                <div class="profile-tab" onclick="switchProfileTab('resonated',this)">共振回响</div>
+            </div>
+            <div class="waterfall-container profile-tab-content active" id="footprints-container">
+                <div class="empty-state" id="footprints-empty">[ 暂无足迹 · 开始发帖留下印记 ]</div>
+            </div>
+            <div class="waterfall-container profile-tab-content" id="resonated-container" style="display:none;">
+                <div class="empty-state" id="resonated-empty">[ 暂无共振 · 去泥潭为姐妹们的提案投票吧 ]</div>
             </div>
         </div>
     </div>
@@ -500,10 +508,18 @@
                 </div>
                 <div class="fbi-input-group">
                     <label class="fbi-label">归属板块</label>
-                    <select class="fbi-select">
+                    <select class="fbi-select" id="post-type-select" onchange="toggleDimensionSelect()">
                         <option value="parchment">羊皮卷 (解构历史)</option>
                         <option value="terracotta">赤陶刻痕 (日常倾诉)</option>
                         <option value="bonfire">篝火阵 (互帮互助)</option>
+                    </select>
+                </div>
+                <div class="fbi-input-group" id="dimension-select-group">
+                    <label class="fbi-label">史记维度 (投票超200后将收录至对应史记)</label>
+                    <select class="fbi-select" id="post-dimension-select">
+                        <option value="huaxia">华夏纪元</option>
+                        <option value="huanyu">寰宇纪元</option>
+                        <option value="lingjing">灵境空间</option>
                     </select>
                 </div>
                 <div class="fbi-input-group">
@@ -524,6 +540,20 @@
         </div>
     </div>
 
+
+    <!-- 图片灯箱 -->
+    <div id="image-lightbox" onclick="this.classList.remove('active')"></div>
+
+    <script>
+    // 维度选择器：只在羊皮卷时显示
+    function toggleDimensionSelect() {
+      const typeSelect = document.getElementById('post-type-select');
+      const dimGroup = document.getElementById('dimension-select-group');
+      if (dimGroup) dimGroup.style.display = typeSelect?.value === 'parchment' ? 'block' : 'none';
+    }
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => setTimeout(toggleDimensionSelect, 100));
+    </script>
 
     <!-- ==========================================
          📦 脚本加载顺序（关键！）

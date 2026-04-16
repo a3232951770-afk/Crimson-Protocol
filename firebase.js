@@ -307,6 +307,49 @@ export async function deletePost(postId){
   await deleteDoc(doc(db,'community_posts',postId));
 }
 
+// 获取用户的所有帖子
+export async function getUserPosts(uid){
+  try {
+    const q = query(collection(db,'community_posts'),
+      where('authorId','==',uid), where('reported','==',false), limit(100));
+    const snap = await getDocs(q);
+    const posts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    posts.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    return posts;
+  } catch(e) { console.warn('获取用户帖子失败:', e); return []; }
+}
+
+// 获取单个帖子
+export async function getPostById(postId){
+  try {
+    const snap = await getDoc(doc(db,'community_posts',postId));
+    if (snap.exists()) return { id: snap.id, ...snap.data() };
+  } catch(e) {}
+  return null;
+}
+
+// 获取某个字的所有已升阶提案（投票>=200）
+export async function getPromotedProposals(targetChar){
+  try {
+    const q = query(collection(db,'community_posts'),
+      where('type','==','glyph'), where('targetChar','==',targetChar), where('reported','==',false), limit(50));
+    const snap = await getDocs(q);
+    const posts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    return posts.filter(p => (p.votes||0) >= 200).sort((a,b)=>(b.votes||0)-(a.votes||0));
+  } catch(e) { return []; }
+}
+
+// 获取某个字的所有提案（不限票数，用于详情卡轮播）
+export async function getCharProposals(targetChar){
+  try {
+    const q = query(collection(db,'community_posts'),
+      where('type','==','glyph'), where('targetChar','==',targetChar), where('reported','==',false), limit(50));
+    const snap = await getDocs(q);
+    const posts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    return posts.sort((a,b)=>(b.votes||0)-(a.votes||0));
+  } catch(e) { return []; }
+}
+
 function generateCodename(){
   const p=['青铜时代的','玄武岩层的','黎明前的','赤陶中的','星云边缘的','古老根系的'];
   const s=['记录者','破译者','凿壁人','点灯者','考古学家','觉醒者'];

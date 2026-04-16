@@ -155,7 +155,7 @@
                 if (phase === 4) { p.background(11, 11, 10, 1); }
                 else { p.background(11, 11, 10, 0.4); particles.forEach(pt => { pt.update(); pt.draw(); });
                     if (phase === 3.5) { p.fill(255, 42, 42, 0.8); p.textFont('monospace'); p.textSize(16); p.drawingContext.shadowBlur = 0; const chars = '0123456789ABCDEF!@#$%%^&*()_+-=~`[];,./<>?污释义染警告系统崩'; for (let i = 0; i < 40; i++) p.text(chars[Math.floor(p.random(chars.length))], p.random(p.width * 0.2), p.random(p.height)); for (let i = 0; i < 40; i++) p.text(chars[Math.floor(p.random(chars.length))], p.width * 0.8 + p.random(p.width * 0.2), p.random(p.height)); p.textFont('"Noto Sans SC", sans-serif'); p.textStyle(p.BOLD); }
-                    if (phase === 1 && mouse.x > -1000) { if (lastMousePos.x > -1000) { let d = p.dist(mouse.x, mouse.y, lastMousePos.x, lastMousePos.y); totalMouseDist += d; } lastMousePos.x = mouse.x; lastMousePos.y = mouse.y; if (totalMouseDist > 800) { startGathering(); } } else { lastMousePos.x = -1000; }
+                    if (phase === 1 && mouse.x > -1000) { if (lastMousePos.x > -1000) { let d = p.dist(mouse.x, mouse.y, lastMousePos.x, lastMousePos.y); totalMouseDist += d; } lastMousePos.x = mouse.x; lastMousePos.y = mouse.y; if (totalMouseDist > 1400) { startGathering(); } } else { lastMousePos.x = -1000; }
                 }
             };
 
@@ -172,10 +172,10 @@
                 const startScreen = document.getElementById('start-screen'); startScreen.style.opacity = 0; setTimeout(() => startScreen.remove(), 1000);
                 const skipBtn = document.getElementById('skip-btn'); skipBtn.style.opacity = 1; skipBtn.style.pointerEvents = 'auto';
                 initAudio(); targetPoints = generateTargetPoints();
-                for (let i = 0; i < 1000; i++) { particles.push(new Particle(true, targetPoints[i % targetPoints.length])); }
-                for (let i = 0; i < 2000; i++) particles.push(new Particle(false));
+                for (let i = 0; i < 800; i++) { particles.push(new Particle(true, targetPoints[i % targetPoints.length])); }
+                for (let i = 0; i < 1000; i++) particles.push(new Particle(false));
                 p.loop();
-                stageTimers.push(setTimeout(() => { if (phase === 0) { phase = 1; triggerGlitchAudio(); document.getElementById('interact-prompt').style.opacity = 1; autoTriggerTimer = setTimeout(() => { if (phase === 1) startGathering(); }, 12000); } }, 7000));
+                stageTimers.push(setTimeout(() => { if (phase === 0) { phase = 1; triggerGlitchAudio(); document.getElementById('interact-prompt').style.opacity = 1; autoTriggerTimer = setTimeout(() => { if (phase === 1) startGathering(); }, 20000); } }, 7000));
             };
 
             function startGathering() {
@@ -183,7 +183,7 @@
                 const promptUI = document.getElementById('interact-prompt'); if (promptUI) { promptUI.style.opacity = 0; setTimeout(() => { promptUI.style.display = 'none'; }, 300); }
                 particles.forEach(pt => { if (pt.isRed) { pt.isGrounded = false; pt.y -= 5; pt.vy = p.random(-30, -50); pt.vx = p.random(-15, 15); pt.readyToGather = true; } });
                 stageTimers.push(setTimeout(() => { phase = 2; stopGlitchAudio(); particles.forEach(pt => { if (pt.isRed) { pt.vx = (Math.random() - 0.5) * 60; pt.vy = (Math.random() - 0.5) * 60; } }); }, 5000));
-                stageTimers.push(setTimeout(() => { phase = 3; speakSystemVoice(); const textUI = document.getElementById('protocol-text'); textUI.style.opacity = 1; textUI.classList.add('glitch'); }, 7000));
+                stageTimers.push(setTimeout(() => { phase = 3; speakSystemVoice(); const textUI = document.getElementById('protocol-text'); textUI.style.opacity = 1; textUI.classList.add('glitch'); }, 8500));
                 stageTimers.push(setTimeout(() => { phase = 3.5; const textUI = document.getElementById('protocol-text'); textUI.classList.remove('glitch'); textUI.classList.add('mega-glitch'); }, 10000));
                 stageTimers.push(setTimeout(() => {
                     const textUI = document.getElementById('protocol-text'); if (textUI) { textUI.style.opacity = 0; textUI.classList.remove('mega-glitch'); setTimeout(() => { textUI.style.display = 'none'; }, 500); }
@@ -198,7 +198,9 @@
                 const terminal = document.getElementById('home-terminal'); const content = document.getElementById('typewriter-content'); const cursor = document.getElementById('cursor');
                 if (terminal && content && cursor) {
                     terminal.style.opacity = 1; cursor.style.display = 'inline-block';
-                    const lines = ["> 警告：检测到释义污染。", "> 欢迎你，语言考古学家。", "> 请点击星辰，执行净化。"];
+                    const lines = window._lang === 'en' 
+                        ? ["> WARNING: Definition contamination detected.", "> Welcome, language archaeologist.", "> Click the stars to begin purification."]
+                        : ["> 警告：检测到释义污染。", "> 欢迎你，语言考古学家。", "> 请点击星辰，执行净化。"];
                     let lineIndex = 0; let charIndex = 0;
                     function typeWriter() {
                         if (lineIndex < lines.length) {
@@ -232,8 +234,6 @@
             // 同步淡入频段接收按钮
             const btnSignalNav = document.getElementById('btn-signal-nav');
             if (btnSignalNav) { btnSignalNav.style.opacity = '1'; btnSignalNav.style.pointerEvents = 'auto'; }
-            const btnLang = document.getElementById('btn-lang');
-            if (btnLang) { btnLang.style.opacity = '1'; btnLang.style.pointerEvents = 'auto'; }
 
             switchPage('page-mother-star', document.querySelector('.nav-links a.active'));
         };

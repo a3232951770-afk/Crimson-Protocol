@@ -19,7 +19,8 @@ import {
   getTimelinePosts,
   createPost, listenToPosts,
   addComment, listenToComments,
-  votePost, reportPost, deletePost
+  votePost, reportPost, deletePost,
+  getUserPosts, getPostById, getPromotedProposals, getCharProposals
 } from './firebase.js';
 
 // ==========================================
@@ -36,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
   injectReportButtons();  // 8. 举报按钮
   fixBonfireLabel();    // 9. 篝火阵标签
   injectDictionaryData(); // 10. 30个字注入字典侧边栏
+  setupProfileSync();   // 11. 拓片馆数据同步
 
   syncInitialData();
 });
@@ -427,54 +429,127 @@ function renderPosts(cont, posts, type) {
   let fbSec = cont.querySelector('.fb-posts');
   if (!fbSec) { fbSec = document.createElement('div'); fbSec.className='fb-posts'; cont.appendChild(fbSec); }
 
-  // 空占位符显示控制
   const empty = cont.querySelector('.empty-state');
   if (empty) empty.style.display = posts.length ? 'none' : 'block';
 
   const typeClass = { glyph:'card-glyph', parchment:'card-parchment', terracotta:'card-terracotta', bonfire:'card-bonfire' }[type]||'';
   const isAdmin = window._isAdmin;
 
+  // 存储帖子数据供详情弹窗使用
+  window._fbPostsCache = window._fbPostsCache || {};
+  posts.forEach(p => { window._fbPostsCache[p.id] = p; });
+
   fbSec.innerHTML = posts.map(p => {
-    const t = p.createdAt ? fmtTime(p.createdAt.toDate?.() || new Date(p.createdAt.seconds*1000)) : '刚刚';
+    const t = p.createdAt ? fmtTime(p.createdAt.toDate?.() || new Date(p.createdAt.seconds*1000)) : (window._lang==='en'?'just now':'刚刚');
+    const dimLabels = { huaxia:'华夏纪元', huanyu:'寰宇纪元', lingjing:'灵境空间' };
+    const dimTag = p.dimension ? `<span class="post-method-badge" style="color:#c8860a;border-color:rgba(200,134,10,0.3);">${dimLabels[p.dimension]||p.dimension}</span>` : '';
+    const imgHtml = p.postImage ? `<img src="${p.postImage}" style="width:100%;max-height:180px;object-fit:cover;border:1px solid rgba(204,78,60,0.2);margin:0.5rem 0;" onclick="event.stopPropagation();window.openLightbox?.('${p.postImage}')"/>` : '';
+    const canvasHtml = p.canvasImage ? `<div style="font-size:0.65rem;color:var(--ash);text-align:center;margin-top:4px;">[ 📷 含画板截图 ]</div>` : '';
     return `
-      <div class="post-card ${typeClass}" data-type="${type}" data-post-id="${p.id}">
+      <div class="post-card ${typeClass}" data-type="${type}" data-post-id="${p.id}" onclick="window.openFbPostDetail('${p.id}')">
         <div class="card-meta">
           <span class="card-author">${esc(p.authorName||'')}</span>
           <span class="card-stats">${t}</span>
         </div>
         ${p.targetChar?`<div class="post-target-char">${esc(p.targetChar)}</div>`:''}
+        ${dimTag}
         ${p.title?`<h3>${esc(p.title)}</h3>`:''}
-        <div class="card-content">${esc(p.content||'')}</div>
-        <div class="card-actions">
+        ${imgHtml}
+        <div class="card-content">${esc(p.content||'').substring(0,120)}${(p.content||'').length>120?'...':''}</div>
+        ${canvasHtml}
+        <div class="card-actions" onclick="event.stopPropagation()">
           <div class="action-group">
-            <button class="action-btn like" onclick="fbLike('${p.id}',this)">❤ 共鸣 <span>${p.votes||0}</span></button>
+            <button class="action-btn like ${_votedPosts.has(p.id)?'active':''}" onclick="fbLike('${p.id}',this)" ${_votedPosts.has(p.id)?'disabled style="opacity:0.5"':''}>❤ ${window._lang==='en'?'Resonate':'共鸣'} <span>${p.votes||0}</span></button>
           </div>
-          <button class="action-btn comment" onclick="openFbPost('${p.id}',this.closest('.post-card'))">💬 响应 <span>${p.comments||0}</span></button>
-          <button class="report-btn" onclick="fbReport('${p.id}')" title="举报">⚑</button>
-          ${isAdmin?`<button class="admin-delete-btn" onclick="fbDelete('${p.id}',this.closest('.post-card'))">🗑 删除</button>`:''}
+          <button class="action-btn comment" onclick="window.openFbPostDetail('${p.id}')">💬 ${window._lang==='en'?'Respond':'响应'} <span>${p.comments||0}</span></button>
+          <button class="report-btn" onclick="fbReport('${p.id}')" title="${window._lang==='en'?'Report':'举报'}">⚑</button>
+          ${isAdmin?`<button class="admin-delete-btn" onclick="fbDelete('${p.id}',this.closest('.post-card'))">🗑</button>`:''}
         </div>
       </div>`;
   }).join('');
 }
 
-// 点赞
+// 投票 — 每人每帖只能一次（客户端localStorage + 按钮禁用）
+const _votedPosts = new Set(JSON.parse(localStorage.getItem('crimson_voted') || '[]'));
+const _likedPosts = new Set(JSON.parse(localStorage.getItem('crimson_liked') || '[]'));
+
 window.fbLike = function(postId, btn) {
   window.CrimsonAuth.requireAuth(async () => {
-    try { await votePost(postId); const sp=btn.querySelector('span'); if(sp) sp.textContent=parseInt(sp.textContent||0)+1; btn.disabled=true; }
-    catch(e){}
+    const isVote = btn.classList.contains('vote');
+    const trackSet = isVote ? _votedPosts : _likedPosts;
+    const storageKey = isVote ? 'crimson_voted' : 'crimson_liked';
+    
+    if (trackSet.has(postId)) {
+      window.showSysToast?.(window._lang==='en' ? '>> You have already voted on this.' : '>> 你已经对此投过票了。');
+      return;
+    }
+    try {
+      await votePost(postId);
+      trackSet.add(postId);
+      localStorage.setItem(storageKey, JSON.stringify([...trackSet]));
+      const sp = btn.querySelector('span');
+      if (sp) {
+        const newCount = parseInt(sp.textContent||0) + 1;
+        sp.textContent = newCount;
+        // 200票阈值检测
+        if (newCount === 200) {
+          const p = window._fbPostsCache?.[postId];
+          if (p?.type === 'glyph') {
+            window.showSysToast?.(window._lang==='en' 
+              ? `>> 🌟 THRESHOLD REACHED! 「${p.targetChar||''}」 has been promoted to the Chronicles dictionary!`
+              : `>> 🌟 觉醒阈值突破！「${p.targetChar||''}」的提案已升入《编年史》字典！`);
+          } else if (p?.type === 'parchment') {
+            window.showSysToast?.(window._lang==='en'
+              ? `>> 📜 THRESHOLD REACHED! This parchment has been archived in the Chronicles timeline!`
+              : `>> 📜 觉醒阈值突破！该羊皮卷已被收录进《编年史·史记》！`);
+          }
+        }
+      }
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+    } catch(e) {
+      console.error('Vote error:', e);
+    }
   });
 };
 
-// 举报
+// 举报 — 不立即隐藏帖子，标记待管理员审核
 window.fbReport = function(postId) {
-  if (!confirm('确认举报该内容？')) return;
-  reportPost(postId).then(()=>window.showSysToast?.('>> 举报已提交，感谢维护社区安全。'));
+  const msg = window._lang === 'en' 
+    ? 'Report this content? An admin will review it.' 
+    : '确认举报该内容？管理员将进行审核。';
+  if (!confirm(msg)) return;
+  
+  // 不直接设置reported=true（那会立即隐藏帖子），而是记录举报
+  // 管理员可以在Firebase Console的community_posts里手动查看和删除
+  const reportData = { postId, reportedBy: _currentUser?.uid || 'anonymous', time: new Date().toISOString() };
+  const existingReports = JSON.parse(localStorage.getItem('crimson_reports') || '[]');
+  existingReports.push(reportData);
+  localStorage.setItem('crimson_reports', JSON.stringify(existingReports));
+  
+  const toast = window._lang === 'en' 
+    ? '>> Report submitted. An admin will review this content.' 
+    : '>> 举报已提交，管理员将进行审核。感谢维护社区安全。';
+  window.showSysToast?.(toast);
 };
 
 // 管理员删除
 window.fbDelete = function(postId, card) {
   if (!confirm('确认删除该帖子？此操作不可撤销。')) return;
   deletePost(postId).then(()=>{ card?.remove(); window.showSysToast?.('>> 已删除。'); });
+};
+
+// 用户删除自己的帖子
+window.deleteOwnPost = function(postId, card) {
+  const msg = window._lang === 'en' ? 'Delete this post? This cannot be undone.' : '确认删除该帖子？此操作不可撤销。';
+  if (!confirm(msg)) return;
+  deletePost(postId).then(() => {
+    card?.remove();
+    window.showSysToast?.(window._lang === 'en' ? '>> Post deleted.' : '>> 帖子已删除。');
+  }).catch(e => {
+    window.showSysToast?.('>> 删除失败：' + (e.message||''));
+  });
 };
 
 // ==========================================
@@ -503,13 +578,94 @@ function setupPostModal() {
   },1000);
 }
 
-window.openFbPost = function(postId, card) {
+window.openFbPostDetail = function(postId) {
+  const p = window._fbPostsCache?.[postId];
+  if (!p) return;
+  
   _currentPostId = postId;
-  // 复用现有的 openPostModal
-  if (card && window.openPostModal) window.openPostModal(card);
-  else { document.getElementById('post-modal')?.classList.add('active'); }
-  // 加载评论
+  const modal = document.getElementById('post-modal');
+  const contentArea = document.getElementById('modal-content-area');
+  const interactionArea = document.getElementById('modal-interaction-area');
+  if (!modal || !contentArea) return;
+  
+  const isEn = window._lang === 'en';
+  const methodLabels = {
+    'new-meaning': isEn ? 'NEW DEFINITION' : '赋予新义',
+    'replace': isEn ? 'WORD REPLACEMENT' : '字词替换',
+    'surgery': isEn ? 'RADICAL SURGERY' : '偏旁手术'
+  };
+  
+  let html = '';
+  
+  // 作者+时间
+  const t = p.createdAt ? fmtTime(p.createdAt.toDate?.() || new Date(p.createdAt.seconds*1000)) : '';
+  html += `<div class="card-meta" style="margin-bottom:1rem;"><span class="card-author">${esc(p.authorName||'')}</span><span class="card-stats">${t}</span></div>`;
+  
+  // 目标字（大字展示）
+  if (p.targetChar) {
+    html += `<div class="post-target-char">${esc(p.targetChar)}</div>`;
+  }
+  
+  // 操作类型标签
+  if (p.type === 'glyph') {
+    const method = p.content?.includes('偏旁手术') ? 'surgery' : 
+                   p.content?.includes('替代词') ? 'replace' : 'new-meaning';
+    const label = methodLabels[method] || (isEn ? 'PROPOSAL' : '提案');
+    html += `<div class="post-method-badge">${label}</div>`;
+  }
+  
+  // 标题
+  if (p.title) html += `<h3 style="color:var(--amber);margin:0.8rem 0 0.5rem;">${esc(p.title)}</h3>`;
+  
+  // 正文
+  if (p.content) html += `<div class="card-content" style="margin:1rem 0;line-height:1.8;color:var(--bone);font-size:0.95rem;">${esc(p.content)}</div>`;
+  
+  // 上传的图片
+  if (p.postImage) {
+    html += `<div style="margin:1rem 0;text-align:center;">
+      <img class="post-canvas-image" src="${p.postImage}" onclick="window.openLightbox(this.src)" alt="post image"/>
+    </div>`;
+  }
+  
+  // 论证
+  if (p.reasoning) html += `<div style="margin:1rem 0;padding:0.8rem;border-left:2px solid var(--terracotta);color:var(--ash);font-size:0.85rem;"><strong>${isEn?'Reasoning':'论证'}：</strong>${esc(p.reasoning)}</div>`;
+  
+  // 画板截图（偏旁手术）
+  if (p.canvasImage) {
+    html += `<div style="margin:1rem 0;text-align:center;">
+      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--ash);margin-bottom:0.5rem;">${isEn?'[ Radical Surgery Canvas ]':'[ 偏旁手术画板 ]'}</div>
+      <img class="post-canvas-image" src="${p.canvasImage}" onclick="window.openLightbox(this.src)" alt="canvas"/>
+    </div>`;
+  }
+  
+  contentArea.innerHTML = html;
+  
+  // 交互栏（投票+点赞 — 使用Firebase实时函数）
+  if (interactionArea) {
+    const voteLabel = p.type === 'glyph' ? (isEn?'▵ Vote':'▵ 投票') : (isEn?'▵ Archive':'▵ 收录');
+    interactionArea.innerHTML = `
+      <div class="action-group">
+        <button class="action-btn vote" onclick="fbLike('${postId}',this)">${voteLabel} <span>${p.votes||0}</span></button>
+        <button class="action-btn like" onclick="fbLike('${postId}',this)">❤ ${isEn?'Resonate':'共鸣'} <span>${p.votes||0}</span></button>
+      </div>
+      <button class="action-btn comment">💬 ${isEn?'Responses':'响应'} <span>${p.comments||0}</span></button>`;
+  }
+  
+  modal.classList.add('active');
   loadComments(postId);
+};
+
+// 老的openFbPost保持兼容
+window.openFbPost = function(postId, card) {
+  window.openFbPostDetail(postId);
+};
+
+// 图片灯箱
+window.openLightbox = function(src) {
+  const lb = document.getElementById('image-lightbox');
+  if (!lb) return;
+  lb.innerHTML = `<img src="${src}" alt="canvas detail"/>`;
+  lb.classList.add('active');
 };
 
 function loadComments(postId) {
@@ -580,24 +736,54 @@ async function handleForge() {
     const panelId = activePanel.id;
     
     if (panelId === 'tab-radical-surgery') {
-      // 偏旁手术：截取画板截图
+      // 偏旁手术：手动合成截图（把DOM偏旁画到canvas上）
       try {
-        const surgeryContainer = document.getElementById('surgery-canvas-container');
-        if (surgeryContainer) {
-          // 用html2canvas思路：直接截取freehand canvas + 拼装的偏旁
-          const freeCanvas = document.getElementById('freehand-canvas');
-          if (freeCanvas) canvasImage = freeCanvas.toDataURL('image/png');
+        const fc = document.getElementById('freehand-canvas');
+        const container = document.getElementById('surgery-canvas-container');
+        if (fc && container) {
+          // 创建合成canvas
+          const compCanvas = document.createElement('canvas');
+          const rect = container.getBoundingClientRect();
+          compCanvas.width = rect.width;
+          compCanvas.height = rect.height;
+          const ctx = compCanvas.getContext('2d');
+          
+          // 1. 填充背景（略浅于黑色，让字看得清）
+          ctx.fillStyle = '#0f0d0c';
+          ctx.fillRect(0, 0, compCanvas.width, compCanvas.height);
+          
+          // 2. 画freehand笔画
+          ctx.drawImage(fc, 0, 0, compCanvas.width, compCanvas.height);
+          
+          // 3. 画所有拖入的偏旁部首
+          const radicals = container.querySelectorAll('.dropped-radical');
+          radicals.forEach(rad => {
+            const text = rad.querySelector('.radical-text')?.textContent || rad.textContent?.trim();
+            if (!text) return;
+            const radRect = rad.getBoundingClientRect();
+            const x = radRect.left - rect.left + radRect.width / 2;
+            const y = radRect.top - rect.top + radRect.height / 2;
+            const scaleX = parseFloat(rad.dataset.scaleX) || 1;
+            const fontSize = Math.round(96 * scaleX);
+            ctx.save();
+            ctx.font = `900 ${fontSize}px "Noto Serif SC", serif`;
+            ctx.fillStyle = '#cc4e3c';  // 赤陶色，在深色背景上清晰可见
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x, y);
+            ctx.restore();
+          });
+          
+          canvasImage = compCanvas.toDataURL('image/png');
         }
       } catch(e) { console.warn('画板截图失败:', e); }
       newDef = '偏旁手术重构提案（详见画板截图）';
     } else if (panelId === 'tab-replace-word') {
-      // 字词替换
       const inputs = activePanel.querySelectorAll('textarea.wb-textarea, input.wb-textarea');
       if (inputs.length >= 1) newDef = inputs[0]?.value?.trim() || '';
       if (inputs.length >= 2) reason = inputs[1]?.value?.trim() || '';
       if (newDef) newDef = `替代词提案：${newDef}`;
     } else {
-      // 赋予新义
       const textareas = activePanel.querySelectorAll('textarea.wb-textarea, input.wb-textarea');
       if (textareas.length >= 1) newDef = textareas[0]?.value?.trim() || '';
       if (textareas.length >= 2) reason = textareas[1]?.value?.trim() || '';
@@ -609,9 +795,12 @@ async function handleForge() {
   
   try {
     const postData = { type:'glyph', targetChar:word, title:`重塑「${word}」的释义提案`, content:newDef, reasoning:reason };
-    if (canvasImage) postData.canvasImage = canvasImage;
+    if (canvasImage && canvasImage.length < 900000) postData.canvasImage = canvasImage; // Firestore 1MB field limit
     await createPost(postData);
     window.showSysToast?.('>> ✅ 刻录完成！正在传送至【女娲的泥潭·凿字库】...');
+    // 清空画板和表单
+    if (window.clearSurgeryCanvas) window.clearSurgeryCanvas();
+    document.querySelectorAll('.wb-textarea').forEach(t => t.value = '');
     window.closeLabModal?.();
     setTimeout(() => {
       window.switchPage?.('page-mire', document.querySelector('.nav-links a[onclick*="page-mire"]'));
@@ -627,18 +816,34 @@ async function handleForge() {
 }
 
 async function handleNormalPost() {
-  const typeSelect = document.querySelector('#lab-view-normal-post .fbi-select');
+  const typeSelect = document.getElementById('post-type-select');
+  const dimSelect = document.getElementById('post-dimension-select');
   const titleInput = document.querySelector('#lab-view-normal-post .fbi-input');
   const contentArea = document.querySelector('#lab-view-normal-post .fbi-textarea');
   const type = typeSelect?.value || 'parchment';
   const title = titleInput?.value?.trim();
   const content = contentArea?.value?.trim();
   if (!title||!content) { window.showSysToast?.('>> ⚠️ 标题和正文不能为空。'); return; }
+  
+  const postData = { type, title, content };
+  if (type === 'parchment' && dimSelect) postData.dimension = dimSelect.value;
+  // 附带上传的图片
+  if (window._pendingPostImage && window._pendingPostImage.length < 900000) {
+    postData.postImage = window._pendingPostImage;
+  }
+  
   try {
-    await createPost({type, title, content});
+    await createPost(postData);
     window.showSysToast?.('>> ✅ 封卷成功！已同步至泥潭。');
+    // 完全清空表单
     if (titleInput) titleInput.value = '';
     if (contentArea) contentArea.value = '';
+    window._pendingPostImage = null;
+    const imgDisplay = document.getElementById('archive-img-display');
+    if (imgDisplay) { imgDisplay.value = ''; imgDisplay.style.color = '#666'; imgDisplay.style.borderColor = '#333'; }
+    const imgInput = document.getElementById('archive-img-upload');
+    if (imgInput) imgInput.value = '';
+    
     window.closeLabModal?.();
     const tabMap = { 'parchment':'tab-parchments', 'terracotta':'tab-terracotta', 'bonfire':'tab-bonfire' };
     const targetTab = tabMap[type] || 'tab-parchments';
@@ -818,7 +1023,7 @@ function injectDictionaryData() {
       const proposalsList = document.getElementById('ui-proposals-list');
       if (proposalsList) {
         const analysisText = (isEn && en) ? en.a : (data.analysis || '');
-        proposalsList.innerHTML = `
+        let proposalsHtml = `
           <div class="proposal-item">
             <div class="proposal-meta">
               <span>> ${isEn?'Proposer':'提议者'}：<span class="proposal-author">@系统解析</span></span>
@@ -826,6 +1031,26 @@ function injectDictionaryData() {
             </div>
             <div class="proposal-text">${analysisText}</div>
           </div>`;
+        proposalsList.innerHTML = proposalsHtml;
+        
+        // 异步加载社区提案（200票以上的会标记为"已收录"）
+        getCharProposals(char).then(proposals => {
+          if (proposals.length === 0) return;
+          proposals.forEach(p => {
+            const promoted = (p.votes||0) >= 200;
+            const badge = promoted 
+              ? `<span style="color:var(--neon-red);font-size:0.7rem;border:1px solid rgba(255,42,42,0.3);padding:1px 6px;margin-left:6px;">✦ ${isEn?'ARCHIVED':'已收录'}</span>` 
+              : '';
+            proposalsList.innerHTML += `
+              <div class="proposal-item" style="${promoted?'border-left:2px solid var(--neon-red);padding-left:0.8rem;':''}">
+                <div class="proposal-meta">
+                  <span>> ${isEn?'Proposer':'提议者'}：<span class="proposal-author">${esc(p.authorName||'')}</span>${badge}</span>
+                  <span>[ ▵ ${p.votes||0} ]</span>
+                </div>
+                <div class="proposal-text">${esc(p.content||'')}</div>
+              </div>`;
+          });
+        });
       }
 
       const btn = document.getElementById('btn-decipher');
@@ -850,6 +1075,111 @@ function injectDictionaryData() {
     // 覆盖全局的backToNetwork
     window.backToNetwork = () => bridgeLoadNetwork('');
   }, 600);
+}
+
+// ==========================================
+// 🏛️ 拓片馆数据同步
+// ==========================================
+function setupProfileSync() {
+  // 暴露 tab 切换
+  window.switchProfileTab = function(tabId, btn) {
+    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.profile-tab-content').forEach(c => { c.classList.remove('active'); c.style.display = 'none'; });
+    btn?.classList.add('active');
+    const cont = document.getElementById(tabId === 'footprints' ? 'footprints-container' : 'resonated-container');
+    if (cont) { cont.classList.add('active'); cont.style.display = 'flex'; }
+  };
+  
+  // 监听用户变化，加载数据
+  onAuthChange(async user => {
+    if (!user) return;
+    await loadProfileData(user.uid);
+  });
+}
+
+async function loadProfileData(uid) {
+  if (!uid) return;
+  try {
+    const posts = await getUserPosts(uid);
+    const footprintsCont = document.getElementById('footprints-container');
+    const emptyEl = document.getElementById('footprints-empty');
+    
+    if (!footprintsCont) return;
+    
+    footprintsCont.querySelectorAll('.post-card').forEach(c => c.remove());
+    
+    if (posts.length === 0) {
+      if (emptyEl) emptyEl.style.display = 'block';
+    } else {
+      if (emptyEl) emptyEl.style.display = 'none';
+      window._fbPostsCache = window._fbPostsCache || {};
+      posts.forEach(p => {
+        window._fbPostsCache[p.id] = p;
+        const t = p.createdAt ? fmtTime(p.createdAt.toDate?.() || new Date(p.createdAt.seconds*1000)) : '';
+        const typeClass = { glyph:'card-glyph', parchment:'card-parchment', terracotta:'card-terracotta', bonfire:'card-bonfire' }[p.type]||'';
+        const dimLabels = { huaxia:'华夏纪元', huanyu:'寰宇纪元', lingjing:'灵境空间' };
+        const card = document.createElement('div');
+        card.className = `post-card ${typeClass}`;
+        card.setAttribute('data-post-id', p.id);
+        card.onclick = () => window.openFbPostDetail?.(p.id);
+        card.innerHTML = `
+          <div class="card-meta"><span class="card-author">${esc(p.authorName||'')}</span><span class="card-stats">${t}</span></div>
+          ${p.targetChar ? `<div class="post-target-char">${esc(p.targetChar)}</div>` : ''}
+          ${p.dimension ? `<span class="post-method-badge" style="color:#c8860a;border-color:rgba(200,134,10,0.3);">${dimLabels[p.dimension]||''}</span>` : ''}
+          ${p.title ? `<h3>${esc(p.title)}</h3>` : ''}
+          <div class="card-content">${esc((p.content||'').substring(0,100))}${(p.content||'').length>100?'...':''}</div>
+          <div class="card-actions" onclick="event.stopPropagation()">
+            <span style="font-size:0.75rem;color:var(--ash);font-family:var(--font-mono);">▵ ${p.votes||0} · 💬 ${p.comments||0}</span>
+            <button class="report-btn" style="color:var(--neon-red);border-color:rgba(255,42,42,0.3);margin-left:auto;" onclick="window.deleteOwnPost('${p.id}',this.closest('.post-card'))" title="删除">🗑</button>
+          </div>`;
+        footprintsCont.appendChild(card);
+      });
+    }
+    
+    // 更新勋章计数
+    const genesisCount = posts.filter(p => p.type === 'glyph' && (p.votes||0) >= 200).length;
+    const chiselerCount = posts.filter(p => p.type === 'parchment' && (p.votes||0) >= 200).length;
+    const genEl = document.getElementById('genesis-count');
+    const chiEl = document.getElementById('chiseler-count');
+    if (genEl) genEl.textContent = genesisCount.toString().padStart(2, '0');
+    if (chiEl) chiEl.textContent = chiselerCount.toString().padStart(2, '0');
+    
+    // 共振回响（显示所有投过票/共鸣过的帖子）
+    const resonatedCont = document.getElementById('resonated-container');
+    const resonatedEmpty = document.getElementById('resonated-empty');
+    if (resonatedCont) {
+      resonatedCont.querySelectorAll('.post-card').forEach(c => c.remove());
+      const votedIds = [...new Set([...(_votedPosts || []), ...(_likedPosts || [])])];
+      if (votedIds.length === 0) {
+        if (resonatedEmpty) resonatedEmpty.style.display = 'block';
+      } else {
+        let hasAny = false;
+        const toLoad = votedIds.slice(0, 20);
+        for (const postId of toLoad) {
+          let p = window._fbPostsCache?.[postId];
+          if (!p) {
+            p = await getPostById(postId);
+            if (p) { window._fbPostsCache[postId] = p; }
+          }
+          if (!p) continue;
+          hasAny = true;
+          const card = document.createElement('div');
+          card.className = 'post-card';
+          card.onclick = () => window.openFbPostDetail?.(postId);
+          card.innerHTML = `
+            <div class="card-meta"><span class="card-author">${esc(p.authorName||'')}</span></div>
+            ${p.targetChar ? `<div class="post-target-char">${esc(p.targetChar)}</div>` : ''}
+            ${p.title ? `<h3>${esc(p.title)}</h3>` : ''}
+            <div class="card-content">${esc((p.content||'').substring(0,80))}</div>
+            <div class="card-actions" onclick="event.stopPropagation()">
+              <span style="font-size:0.7rem;color:var(--ash);">▵ ${p.votes||0}</span>
+            </div>`;
+          resonatedCont.appendChild(card);
+        }
+        if (resonatedEmpty) resonatedEmpty.style.display = hasAny ? 'none' : 'block';
+      }
+    }
+  } catch(e) { console.warn('拓片馆数据加载失败:', e); }
 }
 
 // ==========================================
@@ -1022,7 +1352,7 @@ const CHAR_EN = {
 
 window.toggleLang = function() {
   window._lang = window._lang === 'zh' ? 'en' : 'zh';
-  const btn = document.getElementById('btn-lang');
+  const btn = document.getElementById('btn-lang-global');
   if (btn) btn.textContent = window._lang === 'zh' ? 'EN' : '中文';
   applyLang();
 };

@@ -1206,3 +1206,156 @@ body, html {
 }
 #btn-lang { letter-spacing: 1px; }
 #btn-lang:hover { border-color: var(--amber); color: var(--amber); }
+
+/* ==========================================
+   🌐 Global Language Toggle (always visible)
+   ========================================== */
+#btn-lang-global {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 99999;
+    background: rgba(11, 11, 10, 0.7);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--bone);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+    backdrop-filter: blur(6px);
+}
+#btn-lang-global:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: rgba(11, 11, 10, 0.9);
+}
+/* When nav is visible, shift right of nav */
+#global-nav[style*="opacity: 1"] ~ #btn-lang-global,
+#global-nav[style*="opacity:1"] ~ #btn-lang-global {
+    top: 18px;
+    right: auto;
+    left: 50%;
+    transform: translateX(calc(50vw - 40px));
+}
+/* Actually just keep it fixed top-right always */
+#btn-lang-global { right: 12px !important; left: auto !important; transform: none !important; }
+
+/* ==========================================
+   🔴 Enlarged target char in glyph posts
+   ========================================== */
+.post-target-char {
+    font-family: var(--font-serif) !important;
+    font-size: 7.5rem !important;
+    font-weight: 900 !important;
+    color: var(--neon-red) !important;
+    text-align: center !important;
+    padding: 0.8rem 0 !important;
+    text-shadow: 0 0 25px rgba(255,42,42,0.35) !important;
+    line-height: 1.1 !important;
+}
+/* Even bigger in modal detail view */
+#modal-content-area .post-target-char {
+    font-size: 7rem !important;
+    padding: 1rem 0 !important;
+}
+
+/* Canvas image preview in post detail */
+.post-canvas-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    border: 1px solid rgba(204,78,60,0.3);
+    margin: 1rem 0;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+.post-canvas-image:hover { transform: scale(1.02); }
+
+/* Full-screen image overlay */
+#image-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99998;
+    background: rgba(0,0,0,0.92);
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+#image-lightbox.active { display: flex; }
+#image-lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border: 1px solid rgba(204,78,60,0.3);
+}
+
+/* Post method badge */
+.post-method-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--amber);
+    border: 1px solid rgba(200,134,10,0.3);
+    padding: 2px 8px;
+    margin: 0.5rem 0;
+    letter-spacing: 1px;
+}
+
+/* ==========================================
+   🏛️ Profile Tabs
+   ========================================== */
+.profile-tabs-bar {
+    display: flex; gap: 0; margin-top: 2rem; border-bottom: 1px solid rgba(204,78,60,0.3);
+}
+.profile-tab {
+    font-family: var(--font-mono); font-size: 0.85rem; color: var(--ash);
+    padding: 10px 24px; cursor: pointer; transition: all 0.2s;
+    border-bottom: 2px solid transparent; letter-spacing: 1px;
+}
+.profile-tab:hover { color: var(--bone); }
+.profile-tab.active { color: var(--terracotta); border-bottom-color: var(--terracotta); }
+.profile-tab-content { display: none; }
+.profile-tab-content.active { display: flex; }
+/* Dimension select initially visible for parchment */
+#dimension-select-group { display: block; }
+
+/* ==========================================
+   Fix: Profile footprints grid layout
+   ========================================== */
+#footprints-container, #resonated-container {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    padding: 1rem 0;
+}
+#footprints-container.active, #resonated-container.active {
+    display: flex !important;
+}
+#footprints-container .post-card,
+#resonated-container .post-card {
+    width: calc(33.33% - 1rem);
+    min-width: 250px;
+    max-width: 350px;
+    flex-shrink: 0;
+}
+#footprints-container .post-target-char,
+#resonated-container .post-target-char {
+    font-size: 5rem !important;
+}
+@media (max-width: 900px) {
+    #footprints-container .post-card,
+    #resonated-container .post-card {
+        width: calc(50% - 0.8rem);
+        min-width: 200px;
+    }
+}
+@media (max-width: 600px) {
+    #footprints-container .post-card,
+    #resonated-container .post-card {
+        width: 100%;
+        max-width: none;
+    }
+}
