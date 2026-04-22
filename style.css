@@ -1359,3 +1359,32 @@ body, html {
         max-width: none;
     }
 }
+
+/* Star Detail Card Navigation Arrows */
+.star-nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(11, 11, 10, 0.7);
+    border: 1px solid rgba(204, 78, 60, 0.4);
+    color: var(--terracotta);
+    font-size: 2rem;
+    padding: 12px 10px;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s;
+    line-height: 1;
+}
+.star-nav-arrow:hover {
+    background: rgba(204, 78, 60, 0.15);
+    border-color: var(--terracotta);
+    color: var(--neon-red);
+    box-shadow: 0 0 15px rgba(255, 42, 42, 0.2);
+}
+.star-nav-left { left: -50px; border-radius: 3px 0 0 3px; }
+.star-nav-right { right: -50px; border-radius: 0 3px 3px 0; }
+@media (max-width: 768px) {
+    .star-nav-left { left: -5px; }
+    .star-nav-right { right: -5px; }
+    .star-nav-arrow { font-size: 1.5rem; padding: 8px 6px; }
+}

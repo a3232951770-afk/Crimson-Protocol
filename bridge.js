@@ -20,7 +20,7 @@ import {
   createPost, listenToPosts,
   addComment, listenToComments,
   votePost, reportPost, deletePost,
-  getUserPosts, getPostById, getPromotedProposals, getCharProposals
+  getUserPosts, getPostById, getPromotedProposals, getCharProposals, getAllPromotedGlyphs
 } from './firebase.js';
 
 // ==========================================
@@ -266,6 +266,9 @@ function injectStarFilter() {
       descEl.innerText = `${sw}\n${md}`;
     }
     card.classList.add('active');
+    
+    // 加载已收录的提案到轮播区
+    window.loadStarProposalCarousel?.(char);
   };
 }
 
@@ -618,7 +621,7 @@ window.openFbPostDetail = function(postId) {
   if (p.title) html += `<h3 style="color:var(--amber);margin:0.8rem 0 0.5rem;">${esc(p.title)}</h3>`;
   
   // 正文
-  if (p.content) html += `<div class="card-content" style="margin:1rem 0;line-height:1.8;color:var(--bone);font-size:0.95rem;">${esc(p.content)}</div>`;
+  if (p.content) html += `<div class="card-content" style="margin:1rem 0;line-height:1.8;color:var(--bone);font-size:0.95rem;">${escBr(p.content)}</div>`;
   
   // 上传的图片
   if (p.postImage) {
@@ -628,7 +631,7 @@ window.openFbPostDetail = function(postId) {
   }
   
   // 论证
-  if (p.reasoning) html += `<div style="margin:1rem 0;padding:0.8rem;border-left:2px solid var(--terracotta);color:var(--ash);font-size:0.85rem;"><strong>${isEn?'Reasoning':'论证'}：</strong>${esc(p.reasoning)}</div>`;
+  if (p.reasoning) html += `<div style="margin:1rem 0;padding:0.8rem;border-left:2px solid var(--terracotta);color:var(--ash);font-size:0.85rem;"><strong style="color:var(--terracotta);">${isEn?'Reasoning':'论证'}：</strong>${escBr(p.reasoning)}</div>`;
   
   // 画板截图（偏旁手术）
   if (p.canvasImage) {
@@ -906,6 +909,38 @@ function injectDictionaryData() {
     // 初始加载全部
     bridgeLoadNetwork('');
 
+    // 异步加载用户创造的200+票新字/词，注入字典
+    getAllPromotedGlyphs().then(promoted => {
+      if (!promoted || promoted.length === 0) return;
+      let added = 0;
+      promoted.forEach(p => {
+        const tc = p.targetChar;
+        if (!tc || CHARACTER_DATA[tc]) return; // 已存在的跳过
+        // 动态添加到CHARACTER_DATA
+        CHARACTER_DATA[tc] = {
+          char: tc, pinyin: tc, category: 'reclaim', pollutionLevel: 3,
+          shuowen: p.content || '用户提案',
+          modern: `社区重塑提案（▵ ${p.votes||0}票）`,
+          analysis: p.reasoning || p.content || '',
+          _userCreated: true
+        };
+        // 添加到拼音分组（用第一个字的拼音）
+        const firstChar = tc.charAt(0);
+        const existing = Object.values(CHARACTER_DATA).find(d => d.char === firstChar && d.pinyin);
+        const letter = existing ? existing.pinyin.charAt(0).toUpperCase() : '#';
+        if (!charsByLetter[letter]) charsByLetter[letter] = [];
+        charsByLetter[letter].push({ char: tc, ...CHARACTER_DATA[tc] });
+        added++;
+      });
+      if (added > 0) {
+        bridgeLoadNetwork(''); // 刷新侧边栏
+        // 更新星域总数
+        const totalEl = document.getElementById('star-total-count');
+        if (totalEl) totalEl.textContent = Object.keys(CHARACTER_DATA).length;
+        window.CHARACTER_DATA_CACHE = CHARACTER_DATA;
+      }
+    }).catch(()=>{});
+
     function bridgeLoadNetwork(letter) {
       document.querySelectorAll('.pinyin-cell').forEach(el => {
         el.classList.toggle('active', el.innerText.trim() === letter);
@@ -930,26 +965,33 @@ function injectDictionaryData() {
       const orbitsContainer = document.getElementById('network-orbit-nodes');
       if (orbitsContainer) {
         orbitsContainer.innerHTML = '';
-        // 停止旧动画
         if (window._dictNetworkAnimId) cancelAnimationFrame(window._dictNetworkAnimId);
         
         const orbitData = [];
         if (chars.length > 0) {
-          const angleStep = (Math.PI * 2) / chars.length;
+          // 使用多环 + 黄金角散布防止叠字
+          const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+          const ringsCount = chars.length <= 8 ? 1 : chars.length <= 20 ? 2 : 3;
+          const perRing = Math.ceil(chars.length / ringsCount);
+          
           chars.forEach((data, i) => {
-            const radius = 120 + Math.random() * 80;
-            const baseAngle = i * angleStep + Math.random() * 0.3;
-            const speed = 0.001 + Math.random() * 0.001;
+            const ring = Math.floor(i / perRing);
+            const posInRing = i % perRing;
+            // 每环半径不同
+            const baseRadius = 90 + ring * 80 + Math.random() * 25;
+            // 同环内用黄金角均匀分布
+            const baseAngle = posInRing * (Math.PI * 2 / perRing) + ring * 0.7 + (i * goldenAngle * 0.1);
+            const speed = (0.0006 + Math.random() * 0.0008) * (ring % 2 === 0 ? 1 : -1);
+            
             const nodeDiv = document.createElement('div');
             nodeDiv.className = 'network-word-node';
             nodeDiv.innerHTML = `<div class="network-word-char">${data.char}</div><div class="lucky-star"></div>`;
             nodeDiv.onclick = () => bridgeOpenWord(data.char);
             orbitsContainer.appendChild(nodeDiv);
-            orbitData.push({ element: nodeDiv, char: data.char, angle: baseAngle, radius, speed });
+            orbitData.push({ element: nodeDiv, char: data.char, angle: baseAngle, radius: baseRadius, speed, ringOffset: ring * 0.3 });
           });
         }
         
-        // 启动轨道动画
         const netCanvas = document.getElementById('network-canvas');
         if (netCanvas && orbitData.length > 0) {
           const wrapper = nv;
@@ -960,7 +1002,7 @@ function injectDictionaryData() {
           function animateDictNet() {
             orbitData.forEach(node => {
               node.angle += node.speed;
-              const floatY = Math.sin(Date.now()/1000 + node.angle) * 8;
+              const floatY = Math.sin(Date.now()/1000 + node.angle + node.ringOffset) * 6;
               const x = cx + Math.cos(node.angle) * (node.radius + floatY);
               const y = cy + Math.sin(node.angle) * (node.radius + floatY * 0.5);
               node.element.style.left = x + 'px';
@@ -1033,21 +1075,19 @@ function injectDictionaryData() {
           </div>`;
         proposalsList.innerHTML = proposalsHtml;
         
-        // 异步加载社区提案（200票以上的会标记为"已收录"）
-        getCharProposals(char).then(proposals => {
+        // 只加载已升入字典的提案（≥200票）
+        getPromotedProposals(char).then(proposals => {
           if (proposals.length === 0) return;
           proposals.forEach(p => {
-            const promoted = (p.votes||0) >= 200;
-            const badge = promoted 
-              ? `<span style="color:var(--neon-red);font-size:0.7rem;border:1px solid rgba(255,42,42,0.3);padding:1px 6px;margin-left:6px;">✦ ${isEn?'ARCHIVED':'已收录'}</span>` 
-              : '';
+            const reasonHtml = p.reasoning ? `<div style="margin-top:0.5rem;padding:0.6rem;border-left:2px solid var(--terracotta);color:var(--ash);font-size:0.8rem;"><strong style="color:var(--terracotta);">论证：</strong>${escBr(p.reasoning)}</div>` : '';
             proposalsList.innerHTML += `
-              <div class="proposal-item" style="${promoted?'border-left:2px solid var(--neon-red);padding-left:0.8rem;':''}">
+              <div class="proposal-item" style="border-left:2px solid var(--neon-red);padding-left:0.8rem;">
                 <div class="proposal-meta">
-                  <span>> ${isEn?'Proposer':'提议者'}：<span class="proposal-author">${esc(p.authorName||'')}</span>${badge}</span>
+                  <span>> ${isEn?'Proposer':'提议者'}：<span class="proposal-author">${esc(p.authorName||'')}</span><span style="color:var(--neon-red);font-size:0.7rem;border:1px solid rgba(255,42,42,0.3);padding:1px 6px;margin-left:6px;">✦ ${isEn?'ARCHIVED':'已收录'}</span></span>
                   <span>[ ▵ ${p.votes||0} ]</span>
                 </div>
-                <div class="proposal-text">${esc(p.content||'')}</div>
+                <div class="proposal-text">${escBr(p.content||'')}</div>
+                ${reasonHtml}
               </div>`;
           });
         });
@@ -1081,16 +1121,6 @@ function injectDictionaryData() {
 // 🏛️ 拓片馆数据同步
 // ==========================================
 function setupProfileSync() {
-  // 暴露 tab 切换
-  window.switchProfileTab = function(tabId, btn) {
-    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.profile-tab-content').forEach(c => { c.classList.remove('active'); c.style.display = 'none'; });
-    btn?.classList.add('active');
-    const cont = document.getElementById(tabId === 'footprints' ? 'footprints-container' : 'resonated-container');
-    if (cont) { cont.classList.add('active'); cont.style.display = 'flex'; }
-  };
-  
-  // 监听用户变化，加载数据
   onAuthChange(async user => {
     if (!user) return;
     await loadProfileData(user.uid);
@@ -1130,7 +1160,7 @@ async function loadProfileData(uid) {
           <div class="card-content">${esc((p.content||'').substring(0,100))}${(p.content||'').length>100?'...':''}</div>
           <div class="card-actions" onclick="event.stopPropagation()">
             <span style="font-size:0.75rem;color:var(--ash);font-family:var(--font-mono);">▵ ${p.votes||0} · 💬 ${p.comments||0}</span>
-            <button class="report-btn" style="color:var(--neon-red);border-color:rgba(255,42,42,0.3);margin-left:auto;" onclick="window.deleteOwnPost('${p.id}',this.closest('.post-card'))" title="删除">🗑</button>
+            <button class="report-btn" style="color:var(--neon-red);border-color:rgba(255,42,42,0.3);margin-left:auto;font-size:1rem;padding:4px 10px;" onclick="window.deleteOwnPost('${p.id}',this.closest('.post-card'))" title="删除">🗑 删除</button>
           </div>`;
         footprintsCont.appendChild(card);
       });
@@ -1143,42 +1173,6 @@ async function loadProfileData(uid) {
     const chiEl = document.getElementById('chiseler-count');
     if (genEl) genEl.textContent = genesisCount.toString().padStart(2, '0');
     if (chiEl) chiEl.textContent = chiselerCount.toString().padStart(2, '0');
-    
-    // 共振回响（显示所有投过票/共鸣过的帖子）
-    const resonatedCont = document.getElementById('resonated-container');
-    const resonatedEmpty = document.getElementById('resonated-empty');
-    if (resonatedCont) {
-      resonatedCont.querySelectorAll('.post-card').forEach(c => c.remove());
-      const votedIds = [...new Set([...(_votedPosts || []), ...(_likedPosts || [])])];
-      if (votedIds.length === 0) {
-        if (resonatedEmpty) resonatedEmpty.style.display = 'block';
-      } else {
-        let hasAny = false;
-        const toLoad = votedIds.slice(0, 20);
-        for (const postId of toLoad) {
-          let p = window._fbPostsCache?.[postId];
-          if (!p) {
-            p = await getPostById(postId);
-            if (p) { window._fbPostsCache[postId] = p; }
-          }
-          if (!p) continue;
-          hasAny = true;
-          const card = document.createElement('div');
-          card.className = 'post-card';
-          card.onclick = () => window.openFbPostDetail?.(postId);
-          card.innerHTML = `
-            <div class="card-meta"><span class="card-author">${esc(p.authorName||'')}</span></div>
-            ${p.targetChar ? `<div class="post-target-char">${esc(p.targetChar)}</div>` : ''}
-            ${p.title ? `<h3>${esc(p.title)}</h3>` : ''}
-            <div class="card-content">${esc((p.content||'').substring(0,80))}</div>
-            <div class="card-actions" onclick="event.stopPropagation()">
-              <span style="font-size:0.7rem;color:var(--ash);">▵ ${p.votes||0}</span>
-            </div>`;
-          resonatedCont.appendChild(card);
-        }
-        if (resonatedEmpty) resonatedEmpty.style.display = hasAny ? 'none' : 'block';
-      }
-    }
   } catch(e) { console.warn('拓片馆数据加载失败:', e); }
 }
 
@@ -1234,6 +1228,9 @@ window.activateAdmin = function(password) {
 // ==========================================
 function esc(s){
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escBr(s){
+  return esc(s).replace(/\n/g,'<br>');
 }
 function fmtTime(d){
   if(!d) return '';
@@ -1428,3 +1425,65 @@ function updateDictLang() {
 
 // 暴露给全局
 window.CHAR_EN = CHAR_EN;
+
+// ==========================================
+// ← → 星图详情卡字符导航
+// ==========================================
+window.navigateStarCard = function(direction) {
+  const list = Object.keys(CHARACTER_DATA);
+  if (!list || list.length === 0) return;
+  const currentChar = document.getElementById('card-title')?.innerText?.trim();
+  let idx = list.indexOf(currentChar);
+  if (idx === -1) idx = 0;
+  idx += direction;
+  if (idx < 0) idx = list.length - 1;
+  if (idx >= list.length) idx = 0;
+  const newChar = list[idx];
+  window.flyToCharCard?.(newChar);
+  window.flyToStarByChar?.(newChar);
+};
+
+// ==========================================
+// 🎠 星图详情卡提案轮播
+// ==========================================
+window.loadStarProposalCarousel = async function(char) {
+  const carousel = document.getElementById('star-proposal-carousel');
+  const content = document.getElementById('proposal-carousel-content');
+  const meta = document.getElementById('proposal-carousel-meta');
+  const prevBtn = document.getElementById('proposal-prev');
+  const nextBtn = document.getElementById('proposal-next');
+  const label = document.getElementById('proposal-carousel-label');
+  if (!carousel || !content) return;
+  
+  const isEn = window._lang === 'en';
+  if (label) label.textContent = isEn ? 'Archived proposals' : '已收录的新提案';
+  
+  // 重置
+  carousel.style.display = 'none';
+  content.innerHTML = '';
+  meta.innerHTML = '';
+  
+  try {
+    const proposals = await getPromotedProposals(char);
+    if (!proposals || proposals.length === 0) return;
+    
+    carousel.style.display = 'block';
+    let idx = 0;
+    
+    function render() {
+      const p = proposals[idx];
+      if (!p) return;
+      let html = escBr(p.content || '');
+      if (p.reasoning) html += `<div style="margin-top:0.5rem;padding:0.5rem;border-left:2px solid var(--terracotta);color:var(--ash);font-size:0.8rem;"><strong style="color:var(--terracotta);">论证：</strong>${escBr(p.reasoning)}</div>`;
+      content.innerHTML = html;
+      meta.innerHTML = `${isEn ? 'By' : '提议者'}：${esc(p.authorName||'')} · ▵ ${p.votes||0} · ${idx+1}/${proposals.length}`;
+      prevBtn.style.opacity = idx > 0 ? '1' : '0.3';
+      nextBtn.style.opacity = idx < proposals.length - 1 ? '1' : '0.3';
+    }
+    
+    prevBtn.onclick = () => { if (idx > 0) { idx--; render(); } };
+    nextBtn.onclick = () => { if (idx < proposals.length - 1) { idx++; render(); } };
+    
+    render();
+  } catch(e) { console.warn('Proposal carousel load failed:', e); }
+};

@@ -26,7 +26,12 @@ function createSoftParticleTexture() {
 const particleTexture = createSoftParticleTexture();
 const TOTAL_STARS = 400; const starsData = []; const starGroup = new THREE.Group(); scene.add(starGroup);
 const motherPos = new THREE.Vector3(0, 0, 0); starsData.push({ id: 0, type: 'mother', nebulaType: 0, pos: motherPos, color: 0xd91a3c, text: '女', active: true });
-const allDictWords = ['妒','嫉','奸','婪','妄','嫌','妖','娼','妓','嫖','奴','妾','奻','姘','媚','婢','婚','妻','妇','嫁','姓','姬','姜','妫','好','妙','媛','婵','嫣','姐','妥','委','媒','媳','娶','姻','姑','妈','娘','妍','娇','妩','妹'];
+// 使用所有字典字符（从 window.CHARACTER_DATA_CACHE 读取，回退到默认列表）
+const getAllDictWords = () => {
+    if (window.CHARACTER_DATA_CACHE) return Object.keys(window.CHARACTER_DATA_CACHE);
+    return ['妒','嫉','奸','婪','妄','嫌','妖','娼','妓','嫖','奴','妾','奻','姘','媚','婢','婚','妻','妇','嫁','姓','姬','姜','妫','好','妙','媛','婵','嫣','姐','妥','委','媒','媳','娶','姻','姑','妈','娘','妍','娇','妩','妹'];
+};
+const allDictWords = getAllDictWords();
 
 for (let i = 1; i < TOTAL_STARS; i++) {
     const isAmber = Math.random() < 0.25; const type = isAmber ? 'amber' : 'ash'; const color = isAmber ? 0xffaa00 : 0x88bbff; const nebulaType = Math.random() > 0.5 ? 1 : 2;
@@ -138,7 +143,31 @@ function openCard(star) {
         desc.innerText = isEn ? `${star.text}, from 女. A language anchor in the star map.` : `${star.text}，从女。语言星图中的锚点。`;
     }
     card.classList.add('active'); clearExplosion(); controls.autoRotate = false;
+    if (star.type !== 'mother') window.loadStarProposalCarousel?.(star.text);
 }
+
+// 星图字符导航 — 飞到指定字的星星
+window.flyToStarByChar = function(char) {
+    const targetStar = starsData.find(s => s.text === char);
+    if (!targetStar) return;
+    const targetPos = targetStar.pos.clone();
+    const direction = targetPos.clone().normalize();
+    const camTarget = targetPos.clone().sub(direction.multiplyScalar(120));
+    const startPos = camera.position.clone();
+    const startTarget = controls.target.clone();
+    const startTime = Date.now();
+    const duration = 1200;
+    function animateFly() {
+        const t = Math.min((Date.now() - startTime) / duration, 1);
+        const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+        camera.position.lerpVectors(startPos, camTarget, ease);
+        controls.target.lerpVectors(startTarget, targetPos, ease);
+        controls.update();
+        if (t < 1) requestAnimationFrame(animateFly);
+        else { controls.target.copy(targetPos); controls.update(); openCard(targetStar); }
+    }
+    animateFly();
+};
 
 window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); });
 

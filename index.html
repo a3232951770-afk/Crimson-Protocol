@@ -69,12 +69,23 @@
 
             <div id="detail-card" class="glass-panel">
                 <div class="close-btn">✕</div>
+                <button class="star-nav-arrow star-nav-left" onclick="window.navigateStarCard(-1)">‹</button>
+                <button class="star-nav-arrow star-nav-right" onclick="window.navigateStarCard(1)">›</button>
                 <div class="card-header" id="card-title">嫌</div>
                 <div class="card-subtitle" id="card-type">旧世字典释义 · 污染等级 IV</div>
                 <div class="redacted-text" id="card-desc" onclick="this.classList.add('revealed')">
                     嫌，怨也。从女，兼声。本义为厌恶、猜忌。常用于贬义女性特质。
                 </div>
-                <!-- 路线3：星空直达造字实验室 -->
+                <!-- 已收录提案轮播区 -->
+                <div id="star-proposal-carousel" style="display:none; margin: 1rem 0; border: 1px dashed rgba(204,78,60,0.3); padding: 1rem; position:relative;">
+                    <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--amber); letter-spacing: 1px; margin-bottom: 0.5rem;">
+                        ✦ <span id="proposal-carousel-label">已收录的新提案</span>
+                    </div>
+                    <button id="proposal-prev" style="position:absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); background:none; border:1px solid rgba(204,78,60,0.4); color:var(--terracotta); padding: 4px 8px; cursor: pointer; font-size: 1rem;">‹</button>
+                    <div id="proposal-carousel-content" style="min-height: 60px; padding: 0 2.5rem; color: var(--bone); font-size: 0.85rem; line-height: 1.6;"></div>
+                    <div id="proposal-carousel-meta" style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--ash); text-align: center; margin-top: 0.5rem;"></div>
+                    <button id="proposal-next" style="position:absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background:none; border:1px solid rgba(204,78,60,0.4); color:var(--terracotta); padding: 4px 8px; cursor: pointer; font-size: 1rem;">›</button>
+                </div>
                 <button class="btn-propose" onclick="openLabWithWord(document.getElementById('card-title').innerText)">拒绝接受！提交新提案 ➔</button>
             </div>
         </div>
@@ -258,16 +269,10 @@
                 </div>
             </div>
 
-            <!-- 底部：泥潭足迹 + 共振回响 -->
-            <div class="profile-tabs-bar">
-                <div class="profile-tab active" onclick="switchProfileTab('footprints',this)">泥潭足迹</div>
-                <div class="profile-tab" onclick="switchProfileTab('resonated',this)">共振回响</div>
-            </div>
-            <div class="waterfall-container profile-tab-content active" id="footprints-container">
+            <!-- 底部：泥潭足迹 -->
+            <div class="section-title">泥潭足迹</div>
+            <div class="waterfall-container" id="footprints-container">
                 <div class="empty-state" id="footprints-empty">[ 暂无足迹 · 开始发帖留下印记 ]</div>
-            </div>
-            <div class="waterfall-container profile-tab-content" id="resonated-container" style="display:none;">
-                <div class="empty-state" id="resonated-empty">[ 暂无共振 · 去泥潭为姐妹们的提案投票吧 ]</div>
             </div>
         </div>
     </div>
