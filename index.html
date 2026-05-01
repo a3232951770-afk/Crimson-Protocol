@@ -58,6 +58,14 @@
          🌍 Page 1: 第一母星 (Three.js 容器)
          ========================================== -->
     <div id="page-mother-star" class="page-section">
+        <!-- 滚动公告横幅 -->
+        <div id="announcement-banner" onclick="window.openLatestAnnouncement?.()">
+            <div id="announcement-banner-track">
+                <span class="announcement-icon">&gt;&gt; SYS_BROADCAST &lt;&lt;</span>
+                <span id="announcement-banner-text">SYS // 第一母星跨维观测站 · 正在接收信号...</span>
+            </div>
+            <button id="announcement-banner-close" onclick="event.stopPropagation(); window.dismissAnnouncement?.()" title="标记已读并隐藏">×</button>
+        </div>
         <div id="three-container">
             <div id="three-canvas-container"></div>
             <div id="glitch-text-container"></div>
@@ -177,25 +185,61 @@
     <div id="page-mire" class="page-section">
         <div class="mire-container">
             <nav class="mire-nav">
-                <div class="mire-tab active" onclick="switchMireTab('tab-glyphs', this)">凿字库 <span class="count">892</span></div>
-                <div class="mire-tab" onclick="switchMireTab('tab-parchments', this)">羊皮卷 <span class="count">304</span></div>
-                <div class="mire-tab" onclick="switchMireTab('tab-terracotta', this)">赤陶刻痕 <span class="count">12k+</span></div>
+                <div class="mire-tab active" onclick="switchMireTab('tab-glyphs', this)">凿字库 <span class="count" id="count-glyphs">0</span></div>
+                <div class="mire-tab" onclick="switchMireTab('tab-parchments', this)">羊皮卷 <span class="count" id="count-parchments">0</span></div>
+                <div class="mire-tab" onclick="switchMireTab('tab-terracotta', this)">赤陶刻痕 <span class="count" id="count-terracotta">0</span></div>
                 <div class="mire-tab" onclick="switchMireTab('tab-bonfire', this)">篝火阵 <span class="count">🔥</span></div>
             </nav>
 
             <main id="tab-glyphs" class="tab-content active waterfall-container">
+                <div class="post-card card-glyph pinned-post" data-pinned="true" data-pinned-id="pinned-glyph" onclick="window.openPinnedPost('pinned-glyph')">
+                    <div class="pinned-badge">📌 置顶</div>
+                    <h3>🔴 [ 新手协议 ] 欢迎来到凿字库：请拿起你的手术刀</h3>
+                    <div class="card-content"><strong style="color:var(--amber);">摘要：</strong> 这里是母星的基因手术台。我们解构旧字典，重写新释义。<br><br>欢迎来到凿字库。在这个分区，我们需要：夺回语言的定义权。</div>
+                    <div class="card-actions" onclick="event.stopPropagation()">
+                        <button class="action-btn like" onclick="window.fbLikePinned('pinned-glyph',this)">❤ 共鸣 <span>0</span></button>
+                        <button class="action-btn comment" onclick="window.openPinnedPost('pinned-glyph')">💬 响应 <span>0</span></button>
+                    </div>
+                </div>
                 <div class="empty-state">[ 暂无凿字提案 · 成为第一个造字者 ]</div>
             </main>
 
             <main id="tab-parchments" class="tab-content waterfall-container">
+                <div class="post-card card-parchment pinned-post" data-pinned="true" data-pinned-id="pinned-parchment" onclick="window.openPinnedPost('pinned-parchment')">
+                    <div class="pinned-badge">📌 置顶</div>
+                    <h3>📜 [ 阅览指引 ] 羊皮卷书写指南：让她的名字重见天日</h3>
+                    <div class="card-content"><strong style="color:var(--amber);">摘要：</strong> 我们在书写自己的历史（Herstory）。<br><br>羊皮卷区，是泥潭中最深邃的档案馆。这里无字数限制，也无学术门槛，只有对真相的渴求，和对女性力量的无限共鸣。</div>
+                    <div class="card-actions" onclick="event.stopPropagation()">
+                        <button class="action-btn like" onclick="window.fbLikePinned('pinned-parchment',this)">❤ 共鸣 <span>0</span></button>
+                        <button class="action-btn comment" onclick="window.openPinnedPost('pinned-parchment')">💬 响应 <span>0</span></button>
+                    </div>
+                </div>
                 <div class="empty-state">[ 暂无羊皮卷 · 等待第一篇考据 ]</div>
             </main>
 
             <main id="tab-terracotta" class="tab-content waterfall-container">
+                <div class="post-card card-terracotta pinned-post" data-pinned="true" data-pinned-id="pinned-terracotta" onclick="window.openPinnedPost('pinned-terracotta')">
+                    <div class="pinned-badge">📌 置顶</div>
+                    <h3>🏺 [ 刻痕守则 ] 赤陶刻痕：承载你的柔软与刺</h3>
+                    <div class="card-content"><strong style="color:var(--amber);">摘要：</strong> 把沉重的宏大叙事卸下吧，这里只关心你今天开不开心。<br><br>宏大的造字和考据交给了前面的房间，而"赤陶刻痕"，是我们留给日常生活的自留地。</div>
+                    <div class="card-actions" onclick="event.stopPropagation()">
+                        <button class="action-btn like" onclick="window.fbLikePinned('pinned-terracotta',this)">❤ 共鸣 <span>0</span></button>
+                        <button class="action-btn comment" onclick="window.openPinnedPost('pinned-terracotta')">💬 响应 <span>0</span></button>
+                    </div>
+                </div>
                 <div class="empty-state">[ 暂无刻痕 · 留下你的印记 ]</div>
             </main>
 
             <main id="tab-bonfire" class="tab-content waterfall-container">
+                <div class="post-card card-bonfire pinned-post" data-pinned="true" data-pinned-id="pinned-bonfire" onclick="window.openPinnedPost('pinned-bonfire')">
+                    <div class="pinned-badge">📌 置顶</div>
+                    <h3>🔥 [ 篝火盟约 ] 篝火阵畔：风雪再大，我们抱团取暖</h3>
+                    <div class="card-content"><strong style="color:var(--amber);">摘要：</strong> 迷路时请向天空发射信号弹，篝火阵的姐妹永远为你留一个位置。<br><br>这里是泥潭温度最高的地方。当你感到寒冷、困惑或受到威胁时，请进入篝火阵。</div>
+                    <div class="card-actions" onclick="event.stopPropagation()">
+                        <button class="action-btn like" onclick="window.fbLikePinned('pinned-bonfire',this)">❤ 共鸣 <span>0</span></button>
+                        <button class="action-btn comment" onclick="window.openPinnedPost('pinned-bonfire')">💬 响应 <span>0</span></button>
+                    </div>
+                </div>
                 <div class="empty-state">[ 暂无篝火 · 点燃第一堆火 ]</div>
             </main>
         </div>
@@ -212,8 +256,9 @@
             <div class="profile-top-section">
                 <!-- 左侧：头像与签名 -->
                 <div class="profile-left">
-                    <div class="avatar-box" onclick="alert('>>> 系统接口待接入：正在调取本地图腾档案库...')">
-                        <svg class="avatar-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <div class="avatar-box" onclick="document.getElementById('avatar-upload-input').click()">
+                        <img id="avatar-image" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" alt="avatar"/>
+                        <svg id="avatar-default-svg" class="avatar-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                             <path d="M 50,5 A 45,45 0 1,1 48,5 Z" fill="none" stroke="var(--terracotta)" stroke-width="2" stroke-dasharray="15 3 8 2 20 4"/>
                             <path d="M 50,8 A 42,42 0 1,1 49,8 Z" fill="none" stroke="var(--terracotta)" stroke-width="1" opacity="0.5"/>
                             <path d="M 22,35 L 28,12 L 42,28" fill="none" stroke="var(--terracotta)" stroke-width="2.5" stroke-linejoin="round"/>
@@ -224,6 +269,7 @@
                             <circle cx="66" cy="47" r="1.5" fill="var(--obsidian)"/>
                             <path d="M 45,58 Q 50,62 55,58" fill="none" stroke="var(--terracotta)" stroke-width="2.5" stroke-linecap="round"/>
                         </svg>
+                        <input id="avatar-upload-input" type="file" accept="image/*" style="display:none;" onchange="window.handleAvatarUpload(event)"/>
                         <div class="avatar-edit-overlay"><span>[ ✎ 变更图腾 ]</span></div>
                     </div>
                     <div class="signature-box editable-field" onclick="openEditField('signature')" title="点击雕刻铭文">
@@ -309,34 +355,23 @@
             <div class="drawer-close" onclick="closeDrawer()">✕</div>
         </div>
         <div id="view-announcements" class="drawer-view drawer-view-announcements active">
-            <div class="empty-state" style="padding:2rem;font-size:0.75rem;">[ 暂无系统公告 ]</div>
+            <div id="announcements-list">
+                <div class="empty-state" style="padding:2rem;font-size:0.75rem;">[ 加载公告中... ]</div>
+            </div>
         </div>
         <div id="view-dms" class="drawer-view drawer-view-dms">
             <div id="dms-list" class="dms-list-container active">
-                <div class="empty-state" style="padding:2rem;font-size:0.75rem;">[ 暂无私信 ]</div>
+                <div class="empty-state" style="padding:2rem;font-size:0.75rem;" id="dms-empty">[ 暂无私信 · 在泥潭里悬浮其他用户名可发起脑波直连 ]</div>
             </div>
             <div id="dms-chat" class="dms-chat-container">
                 <div class="chat-header">
                     <button class="btn-back-list" onclick="backToDmsList()">[ ↶ 返回列表 ]</button>
                     <span id="current-chat-name" style="font-family: var(--font-mono); color: var(--bone); font-size: 0.9rem;"></span>
                 </div>
-                <div class="terminal-chat-area">
-                    <div class="term-msg incoming">
-                        <span class="sender">RECV_FROM: <span class="chat-target-id"></span></span>
-                        > 看到你刚发的考据了。<br>> 关于逻辑非常锋利，我已经保存到本地节点了。
-                    </div>
-                    <div class="term-msg outgoing">
-                        <span class="sender">SEND_TO: <span class="chat-target-id"></span></span>
-                        > 收到。防线的建立必须是物理与精神的双重加固。
-                    </div>
-                    <div class="term-msg incoming">
-                        <span class="sender">RECV_FROM: <span class="chat-target-id"></span></span>
-                        > 等待你的信号源更新。OVER_
-                    </div>
-                </div>
+                <div class="terminal-chat-area" id="dm-message-area"></div>
                 <div class="term-input-box">
-                    <textarea placeholder="> _ 输入发射指令..."></textarea>
-                    <button class="btn-transmit" onclick="showSysToast('>>> 频段发射器故障：暂未接通广域网模块 <<<')">[ 发射信号 ]</button>
+                    <textarea id="dm-input" placeholder="> _ 输入发射指令... (Enter 发送，Shift+Enter 换行)"></textarea>
+                    <button class="btn-transmit" onclick="window.sendDmMessage()">[ 发射信号 ]</button>
                 </div>
             </div>
         </div>
@@ -416,7 +451,17 @@
                     <span class="term-cursor">_</span>
                 </div>
                 <div id="term-output-area" class="term-output-area"></div>
-                <textarea id="manual-old-def-input" class="cyber-terminal-input" placeholder=">_ 请在此录入该词的旧义..."></textarea>
+                <div id="new-word-category-group" style="display:none; margin-bottom:0.8rem;">
+                    <label style="font-family:var(--font-mono); font-size:0.75rem; color:var(--amber); letter-spacing:1px; display:block; margin-bottom:4px;">该字/词属于哪种类别？</label>
+                    <select id="new-word-category" style="background:#111; color:var(--bone); border:1px solid rgba(204,78,60,0.4); padding:6px 12px; font-family:var(--font-mono); font-size:0.8rem; width:100%;">
+                        <option value="stigma">贬义字（被污名化的）</option>
+                        <option value="institution">制度字（反映父权制度的）</option>
+                        <option value="reclaim">褒义字（值得珍藏或重新审视的）</option>
+                        <option value="matrilineal">母系遗存（保留母系记忆的）</option>
+                        <option value="neutral">中性字</option>
+                    </select>
+                </div>
+                <textarea id="manual-old-def-input" class="cyber-terminal-input" placeholder=">_ 请在此录入该词的旧义（必填）..."></textarea>
                 <button id="btn-reject" class="btn-reject-huge" onclick="goToWorkbench(event)">拒绝接受！进入重塑台 ➔</button>
             </div>
         </div>

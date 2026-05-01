@@ -29,7 +29,12 @@ export const auth = getAuth(app);
 
 /* ---- 字典硬编码数据 ---- */
 export const CHARACTER_DATA = {
-  // ===== 贬义字 (stigma) 19字 =====
+  // ===== 母星核心 =====
+  "女":{ char:"女", pinyin:"nǚ", category:"matrilineal", pollutionLevel:0,
+    shuowen:"妇人也。象形。",
+    modern:"女性，与「男」相对；女儿。",
+    analysis:"甲骨文和金文中的「女」字，是一个双膝跪地、两臂交叉放在胸前的人形。这个字是整个汉字女字旁体系的根基——超过240个常用汉字以「女」为部首。它既是母系社会最原始的生命符号，也是父权语言改造工程的首要目标。赤字协议的使命：重新点亮这颗根级星辰。" },
+  // ===== 贬义字 (stigma) =====
   "嫉":{ char:"嫉", pinyin:"jí", category:"stigma", pollutionLevel:5,
     shuowen:"害贤也。从女，疾声。",
     modern:"因他人胜过自己而产生的怨恨，常与「妒」连用。",
@@ -544,6 +549,99 @@ export async function getPostById(postId){
     if (snap.exists()) return { id: snap.id, ...snap.data() };
   } catch(e) {}
   return null;
+}
+
+// 更新用户头像
+export async function updateUserAvatar(uid, avatarUrl){
+  try {
+    await setDoc(doc(db,'users',uid),{avatarUrl, updatedAt:serverTimestamp()},{merge:true});
+    return true;
+  } catch(e) { console.error('头像更新失败:', e); return false; }
+}
+
+// 获取用户档案
+export async function getUserProfile(uid){
+  try {
+    const snap = await getDoc(doc(db,'users',uid));
+    if (snap.exists()) return snap.data();
+  } catch(e) {}
+  return null;
+}
+
+// ==========================================
+// 💬 私信功能
+// ==========================================
+function chatIdForUsers(uid1, uid2) {
+  return [uid1, uid2].sort().join('_');
+}
+
+// 发送私信
+export async function sendDirectMessage(toUid, toName, text) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('未登录');
+  if (!toUid || !text?.trim()) return;
+  const chatId = chatIdForUsers(user.uid, toUid);
+  
+  // 1. 在chat元数据里保存对话信息
+  await setDoc(doc(db,'dms',chatId), {
+    participants: [user.uid, toUid],
+    participantNames: {
+      [user.uid]: user.displayName || user.email,
+      [toUid]: toName || '匿名'
+    },
+    lastMessage: text.substring(0, 80),
+    lastMessageTime: serverTimestamp(),
+    lastSenderId: user.uid,
+    [`unread_${toUid}`]: true
+  }, { merge: true });
+  
+  // 2. 发送实际消息
+  await addDoc(collection(db,'dms',chatId,'messages'), {
+    fromId: user.uid,
+    fromName: user.displayName || user.email,
+    text: text.trim(),
+    createdAt: serverTimestamp()
+  });
+}
+
+// 监听某个对话的所有消息
+export function listenToDmMessages(chatId, cb) {
+  const q = query(collection(db,'dms',chatId,'messages'), orderBy('createdAt','asc'), limit(200));
+  return onSnapshot(q, snap => {
+    cb(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }, err => { console.warn('DM监听失败:', err); cb([]); });
+}
+
+// 监听用户的所有聊天列表
+export function listenToUserChats(uid, cb) {
+  const q = query(collection(db,'dms'), where('participants','array-contains',uid), limit(50));
+  return onSnapshot(q, snap => {
+    const chats = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    chats.sort((a,b) => (b.lastMessageTime?.seconds||0) - (a.lastMessageTime?.seconds||0));
+    cb(chats);
+  }, err => { console.warn('聊天列表监听失败:', err); cb([]); });
+}
+
+// 标记为已读
+export async function markChatAsRead(chatId, uid) {
+  try {
+    await setDoc(doc(db,'dms',chatId), { [`unread_${uid}`]: false }, { merge: true });
+  } catch(e) {}
+}
+
+// ==========================================
+// 📢 世界公告
+// ==========================================
+export async function getAnnouncements() {
+  try {
+    const q = query(collection(db,'announcements'), where('active','==',true), limit(20));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      return list.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    }
+  } catch(e) {}
+  return [];
 }
 
 // 获取某个字的所有已升阶提案（投票>=200）

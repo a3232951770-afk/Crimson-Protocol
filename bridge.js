@@ -20,7 +20,10 @@ import {
   createPost, listenToPosts,
   addComment, listenToComments,
   votePost, reportPost, deletePost,
-  getUserPosts, getPostById, getPromotedProposals, getCharProposals, getAllPromotedGlyphs
+  getUserPosts, getPostById, getPromotedProposals, getCharProposals, getAllPromotedGlyphs,
+  updateUserAvatar, getUserProfile,
+  sendDirectMessage, listenToDmMessages, listenToUserChats, markChatAsRead,
+  getAnnouncements
 } from './firebase.js';
 
 // ==========================================
@@ -133,6 +136,12 @@ Object.assign(window.CrimsonAuth, {
     showAuthPanel('loading');
     try {
       const user = await registerUser(email, pass, codename);
+      // 注册后 displayName 已设置，但 onAuthChange 可能先触发了（那时还没设置）
+      // 所以这里强制刷新一次
+      _currentUser = user;
+      updateNavUser(user);
+      const codenameEl = document.getElementById('val-codename');
+      if (codenameEl) codenameEl.textContent = user.displayName || user.email;
       window.showSysToast?.(`>> 节点已建立。代号：${user.displayName}`);
     } catch(e) {
       showAuthPanel('register');
@@ -222,6 +231,10 @@ function injectStarFilter() {
       expandEl.classList.remove('active');
       expandEl.innerHTML = '';
       _activeFilterCat = 'all';
+      // 关闭详情卡
+      document.getElementById('detail-card')?.classList.remove('active');
+      // 一键回正相机
+      window.resetStarCamera?.();
       return;
     }
     if (_activeFilterCat === cat && expandEl.classList.contains('active')) {
@@ -314,10 +327,14 @@ function overrideTerminalSearch() {
              + `\n\n《说文解字》原文：\n${data.shuowen}`
              + `\n\n现代字典义：\n${data.modern}`;
         window._currentCharData = data;
+        const catGroup = document.getElementById('new-word-category-group');
+        if (catGroup) catGroup.style.display = 'none';
       } else {
         isHit = false;
         text = `⚠️ WARNING: Archive Incomplete.\n> 检索失败：旧世档案库残缺。\n> 检测到词源含规训基因，请手动录入父权旧义。`;
         window._currentCharData = null;
+        const catGroup = document.getElementById('new-word-category-group');
+        if (catGroup) catGroup.style.display = 'block';
       }
 
       if (window.typeWriterLab) {
@@ -451,7 +468,7 @@ function renderPosts(cont, posts, type) {
     return `
       <div class="post-card ${typeClass}" data-type="${type}" data-post-id="${p.id}" onclick="window.openFbPostDetail('${p.id}')">
         <div class="card-meta">
-          <span class="card-author">${esc(p.authorName||'')}</span>
+          <span class="card-author" data-author-id="${esc(p.authorId||'')}" data-author-name="${esc(p.authorName||'')}">${esc(p.authorName||'')}</span>
           <span class="card-stats">${t}</span>
         </div>
         ${p.targetChar?`<div class="post-target-char">${esc(p.targetChar)}</div>`:''}
@@ -470,6 +487,11 @@ function renderPosts(cont, posts, type) {
         </div>
       </div>`;
   }).join('');
+  
+  // 更新tab计数
+  const countMap = { glyph:'count-glyphs', parchment:'count-parchments', terracotta:'count-terracotta' };
+  const countEl = document.getElementById(countMap[type]);
+  if (countEl) countEl.textContent = posts.length;
 }
 
 // 投票 — 每人每帖只能一次（客户端localStorage + 按钮禁用）
@@ -602,7 +624,7 @@ window.openFbPostDetail = function(postId) {
   
   // 作者+时间
   const t = p.createdAt ? fmtTime(p.createdAt.toDate?.() || new Date(p.createdAt.seconds*1000)) : '';
-  html += `<div class="card-meta" style="margin-bottom:1rem;"><span class="card-author">${esc(p.authorName||'')}</span><span class="card-stats">${t}</span></div>`;
+  html += `<div class="card-meta" style="margin-bottom:1rem;"><span class="card-author" data-author-id="${esc(p.authorId||'')}" data-author-name="${esc(p.authorName||'')}">${esc(p.authorName||'')}</span><span class="card-stats">${t}</span></div>`;
   
   // 目标字（大字展示）
   if (p.targetChar) {
@@ -679,7 +701,7 @@ function loadComments(postId) {
     if (!comments.length) { list.innerHTML='<div class="empty-state" style="padding:1rem;font-size:0.72rem;">[ 暂无回响 ]</div>'; return; }
     list.innerHTML = comments.map(c=>`
       <div class="comment-item">
-        <div class="comment-meta"><span>${esc(c.authorName||'')}</span><span>${c.createdAt?fmtTime(c.createdAt.toDate?.()??new Date(c.createdAt.seconds*1000)):''}</span></div>
+        <div class="comment-meta"><span class="card-author" data-author-id="${esc(c.authorId||'')}" data-author-name="${esc(c.authorName||'')}">${esc(c.authorName||'')}</span><span>${c.createdAt?fmtTime(c.createdAt.toDate?.()??new Date(c.createdAt.seconds*1000)):''}</span></div>
         <div class="comment-text">${esc(c.text||'')}</div>
       </div>`).join('');
   });
@@ -799,6 +821,11 @@ async function handleForge() {
   try {
     const postData = { type:'glyph', targetChar:word, title:`重塑「${word}」的释义提案`, content:newDef, reasoning:reason };
     if (canvasImage && canvasImage.length < 900000) postData.canvasImage = canvasImage; // Firestore 1MB field limit
+    // 新字/词：附带旧义和分类
+    const manualOldDef = document.getElementById('manual-old-def-input')?.value?.trim();
+    const newWordCat = document.getElementById('new-word-category')?.value;
+    if (manualOldDef) postData.oldDefinition = manualOldDef;
+    if (newWordCat && !window._currentCharData) postData.charCategory = newWordCat;
     await createPost(postData);
     window.showSysToast?.('>> ✅ 刻录完成！正在传送至【女娲的泥潭·凿字库】...');
     // 清空画板和表单
@@ -916,10 +943,11 @@ function injectDictionaryData() {
       promoted.forEach(p => {
         const tc = p.targetChar;
         if (!tc || CHARACTER_DATA[tc]) return; // 已存在的跳过
-        // 动态添加到CHARACTER_DATA
         CHARACTER_DATA[tc] = {
-          char: tc, pinyin: tc, category: 'reclaim', pollutionLevel: 3,
-          shuowen: p.content || '用户提案',
+          char: tc, pinyin: tc,
+          category: p.charCategory || 'stigma',
+          pollutionLevel: (p.charCategory==='reclaim'||p.charCategory==='matrilineal') ? 1 : 4,
+          shuowen: p.oldDefinition || '（用户录入旧义）',
           modern: `社区重塑提案（▵ ${p.votes||0}票）`,
           analysis: p.reasoning || p.content || '',
           _userCreated: true
@@ -1153,7 +1181,7 @@ async function loadProfileData(uid) {
         card.setAttribute('data-post-id', p.id);
         card.onclick = () => window.openFbPostDetail?.(p.id);
         card.innerHTML = `
-          <div class="card-meta"><span class="card-author">${esc(p.authorName||'')}</span><span class="card-stats">${t}</span></div>
+          <div class="card-meta"><span class="card-author" data-author-id="${esc(p.authorId||'')}" data-author-name="${esc(p.authorName||'')}">${esc(p.authorName||'')}</span><span class="card-stats">${t}</span></div>
           ${p.targetChar ? `<div class="post-target-char">${esc(p.targetChar)}</div>` : ''}
           ${p.dimension ? `<span class="post-method-badge" style="color:#c8860a;border-color:rgba(200,134,10,0.3);">${dimLabels[p.dimension]||''}</span>` : ''}
           ${p.title ? `<h3>${esc(p.title)}</h3>` : ''}
@@ -1427,6 +1455,224 @@ function updateDictLang() {
 window.CHAR_EN = CHAR_EN;
 
 // ==========================================
+// 📌 置顶帖子（使用守则）
+// ==========================================
+const PINNED_POSTS = {
+  'pinned-glyph': {
+    id: 'pinned-glyph', type: 'glyph', authorName: '@赤字协议·官方',
+    title: '🔴 [ 新手协议 ] 欢迎来到凿字库：请拿起你的手术刀',
+    summary: '这里是母星的基因手术台。我们解构旧字典，重写新释义。',
+    content: `欢迎来到凿字库。在这个分区，我们需要：夺回语言的定义权。
+
+【在这里发什么？】
+从【造字实验室】发射过来的新字海报。
+对某个充斥着父权规训的旧词（如"嫉妒"、"娼妓"）的重塑解构。
+创造属于女性自己的全新词汇。
+
+【凿字库共识协议】
+枪口一致对外： 我们的手术刀只指向旧系统，绝不指向彼此。
+允许基因多样性： 对于同一个字，一千个姐妹可以有一千种解构方式。如果你不赞同某份提案，请不要攻击，你可以去实验室发布你的【版本Beta】。系统会收录所有高频共鸣的释义。
+为你认同的真理投票： 票数超过200的提案，将触发"神格飞升"，永久载入官方《编年史》。
+
+祝你解构愉快。`
+  },
+  'pinned-parchment': {
+    id: 'pinned-parchment', type: 'parchment', authorName: '@赤字协议·官方',
+    title: '📜 [ 阅览指引 ] 羊皮卷书写指南：让她的名字重见天日',
+    summary: '我们在书写自己的历史（Herstory）。',
+    content: `羊皮卷区，是泥潭中最深邃的档案馆。这里无字数限制，也无学术门槛，只有对真相的渴求，和对女性力量的无限共鸣。
+
+【在这里发什么？】 只要你认为"这值得被载入我们自己的史册"，都可以写在羊皮卷上：
+
+• 遗失的考据： 被正史抹去或污名化的女性人物考证、深度的理论探讨与长篇译制。
+• 历史的重构（非考据型）： 哪怕没有详实的史料也没关系！基于合理逻辑的女性历史文学、平行时空的母系推演、上古神话的想象与补全，同样极具价值。
+• 语言的手术刀： 针对某个字词的万字长文解构，或者对【造字实验室】中某次重塑的深度延伸论证。
+• 赛博神贴备忘录： 互联网没有记忆，但羊皮卷有。女性互联网高光时刻、泥潭神贴记录、女性互助史实。
+
+【羊皮卷护卷盟约】
+1. 门槛向下，立意向上： 请千万不要因为觉得"自己写得不够学术"就不敢发帖。羊皮卷看重的不是引文格式，而是你笔下迸发的生命力和反叛基因。
+2. 学术自由，探讨无界： 允许一切视角的探讨和观点碰撞。你可以反驳论点，但绝不审判发言者本身。
+3. 铸造史记的权力交给你： 我们拒绝旧世的真理独裁，这里没有绝对的权威。只要你的羊皮卷在这里获得了足够多的姐妹共鸣（超过 200 票），它就会被系统触发神格飞升，永久收录至官方的《编年史 - 史记模式》。
+
+拿起你的笔吧，你在书写的，就是明天的历史。`
+  },
+  'pinned-terracotta': {
+    id: 'pinned-terracotta', type: 'terracotta', authorName: '@赤字协议·官方',
+    title: '🏺 [ 刻痕守则 ] 赤陶刻痕：承载你的柔软与刺',
+    summary: '把沉重的宏大叙事卸下吧，这里只关心你今天开不开心。',
+    content: `宏大的造字和考据交给了前面的房间，而"赤陶刻痕"，是我们留给日常生活的自留地。
+
+【在这里发什么？】
+今天吃到的美味蛋糕、路边的一朵野花。
+工作上的吐槽、生活里的小确幸。
+突如其来的无力感、或者一句无厘头的碎碎念。
+
+【赤陶刻痕的柔软底线】
+情绪绝对合法： 允许抱怨、允许脆弱、允许不完美。不要用"独立大女主"的标准要求这里的每一个人。
+Peace & Love： 看到开心的刻痕，请不吝啬你的 [❤ 注入共鸣]；看到悲伤的刻痕，留下一句温暖的 [💬 响应召唤]。
+免于指导的自由： 除非发帖人明确求助，否则我们只倾听、只拥抱，不说教，不指点。
+
+在这里，你的心情舒畅大于一切。`
+  },
+  'pinned-bonfire': {
+    id: 'pinned-bonfire', type: 'bonfire', authorName: '@赤字协议·官方',
+    title: '🔥 [ 篝火盟约 ] 篝火阵畔：风雪再大，我们抱团取暖',
+    summary: '迷路时请向天空发射信号弹，篝火阵的姐妹永远为你留一个位置。',
+    content: `这里是泥潭温度最高的地方。当你感到寒冷、困惑或受到威胁时，请进入篝火阵。
+
+【在这里发什么？】
+面临升学/职场/人际关系的困境求助。
+法律维权、医疗健康、安全避险的经验分享。
+寻求建议、或者只是需要一个依靠。
+
+【篝火阵守则】
+受害者绝对无罪： 在这里，永远禁止"受害者有罪论"和"完美受害者"要求。我们只解决问题，绝不制造二次伤害。
+警惕互相伤害： 抛弃旧世挑拨女性对立的剧本。我们是利益共同体，你的困境就是我的困境。
+用实用的柴火添薪： 鼓励提供具有实操性的建议和信息支持。
+
+坐过来吧，火很暖，你很安全。`
+  }
+};
+
+// 置顶帖详情弹窗
+window.openPinnedPost = function(pinnedId) {
+  const p = PINNED_POSTS[pinnedId];
+  if (!p) return;
+  
+  const modal = document.getElementById('post-modal');
+  const contentArea = document.getElementById('modal-content-area');
+  const interactionArea = document.getElementById('modal-interaction-area');
+  if (!modal || !contentArea) return;
+  
+  let html = `<div class="card-meta" style="margin-bottom:1rem;"><span class="card-author" style="color:var(--amber);">${p.authorName}</span><span class="card-stats">📌 置顶</span></div>`;
+  html += `<h3 style="color:var(--amber);margin:0.8rem 0 0.5rem;font-size:1.3rem;">${p.title}</h3>`;
+  html += `<div style="margin:0.8rem 0;padding:0.8rem;background:rgba(204,78,60,0.05);border-left:2px solid var(--terracotta);color:var(--bone);font-size:0.9rem;font-style:italic;"><strong style="color:var(--terracotta);">摘要：</strong>${p.summary}</div>`;
+  html += `<div class="card-content" style="margin:1rem 0;line-height:1.9;color:var(--bone);font-size:0.95rem;white-space:pre-wrap;">${escBr(p.content)}</div>`;
+  
+  contentArea.innerHTML = html;
+  
+  // 置顶帖不参与200票循环，但可以点赞和评论
+  const likeKey = `pinned_likes_${pinnedId}`;
+  const likes = parseInt(localStorage.getItem(likeKey) || '0');
+  const userLiked = localStorage.getItem(`${likeKey}_user`) === 'true';
+  
+  if (interactionArea) {
+    interactionArea.innerHTML = `
+      <div class="action-group">
+        <button class="action-btn like" onclick="window.likePinned('${pinnedId}',this)" ${userLiked?'disabled style="opacity:0.5"':''}>❤ 共鸣 <span>${likes}</span></button>
+      </div>
+      <button class="action-btn comment">💬 响应 <span>0</span></button>`;
+  }
+  
+  modal.classList.add('active');
+  // 加载置顶帖评论（用同一个loadComments，但postId是 pinned-xxx）
+  loadComments(pinnedId);
+  _currentPostId = pinnedId;
+};
+
+// 置顶帖点赞（卡片上的小按钮）
+window.fbLikePinned = function(pinnedId, btn) {
+  window.likePinned(pinnedId, btn);
+};
+
+// 置顶帖点赞核心
+window.likePinned = function(pinnedId, btn) {
+  window.CrimsonAuth.requireAuth(() => {
+    const likeKey = `pinned_likes_${pinnedId}`;
+    const userKey = `${likeKey}_user`;
+    if (localStorage.getItem(userKey) === 'true') {
+      window.showSysToast?.('>> 你已经对此投过票了。');
+      return;
+    }
+    const likes = parseInt(localStorage.getItem(likeKey) || '0') + 1;
+    localStorage.setItem(likeKey, likes);
+    localStorage.setItem(userKey, 'true');
+    const sp = btn.querySelector('span');
+    if (sp) sp.textContent = likes;
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  });
+};
+
+// 初始化置顶帖点赞数显示
+function initPinnedLikes() {
+  Object.keys(PINNED_POSTS).forEach(pid => {
+    const card = document.querySelector(`[data-pinned-id="${pid}"]`);
+    if (!card) return;
+    const likes = parseInt(localStorage.getItem(`pinned_likes_${pid}`) || '0');
+    const userLiked = localStorage.getItem(`pinned_likes_${pid}_user`) === 'true';
+    const likeBtn = card.querySelector('.action-btn.like span');
+    if (likeBtn) likeBtn.textContent = likes;
+    if (userLiked) {
+      const btn = card.querySelector('.action-btn.like');
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', () => setTimeout(initPinnedLikes, 1000));
+
+// ==========================================
+// 🖼️ 头像上传
+// ==========================================
+window.handleAvatarUpload = function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 1024 * 1024) {
+    window.showSysToast?.('>> 图片过大，请选择1MB以下的图片。');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    const dataUrl = ev.target.result;
+    const img = document.getElementById('avatar-image');
+    const svg = document.getElementById('avatar-default-svg');
+    if (img) { img.src = dataUrl; img.style.display = 'block'; }
+    if (svg) svg.style.display = 'none';
+    
+    // 保存到Firestore
+    if (_currentUser) {
+      try {
+        await updateUserAvatar(_currentUser.uid, dataUrl);
+        window.showSysToast?.('>> ✅ 图腾已更新。');
+      } catch(err) {
+        window.showSysToast?.('>> 保存失败，请重试。');
+      }
+    } else {
+      // 未登录时只本地预览
+      localStorage.setItem('crimson_avatar_local', dataUrl);
+    }
+  };
+  reader.readAsDataURL(file);
+};
+
+// 加载用户头像（登录时）
+async function loadUserAvatar(uid) {
+  if (!uid) {
+    // 未登录，尝试本地预览
+    const local = localStorage.getItem('crimson_avatar_local');
+    if (local) {
+      const img = document.getElementById('avatar-image');
+      const svg = document.getElementById('avatar-default-svg');
+      if (img) { img.src = local; img.style.display = 'block'; }
+      if (svg) svg.style.display = 'none';
+    }
+    return;
+  }
+  try {
+    const profile = await getUserProfile(uid);
+    if (profile?.avatarUrl) {
+      const img = document.getElementById('avatar-image');
+      const svg = document.getElementById('avatar-default-svg');
+      if (img) { img.src = profile.avatarUrl; img.style.display = 'block'; }
+      if (svg) svg.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
+// 监听登录状态加载头像
+onAuthChange(user => { if (user) loadUserAvatar(user.uid); });
+
+// ==========================================
 // ← → 星图详情卡字符导航
 // ==========================================
 window.navigateStarCard = function(direction) {
@@ -1487,3 +1733,398 @@ window.loadStarProposalCarousel = async function(char) {
     render();
   } catch(e) { console.warn('Proposal carousel load failed:', e); }
 };
+
+// ==========================================
+// 📢 世界公告系统
+// ==========================================
+const DEFAULT_ANNOUNCEMENT = {
+  id: 'sys_welcome_001',
+  sender: 'SYS // 第一母星跨维观测站',
+  time: '星历 00.00.00',
+  level: '🔴 绝密 / 置顶',
+  title: '【 全星域广播 】赤字协议已激活：致所有语言的拾荒者',
+  content: `收到这条频段的姐妹，你好。神经元连接已跨越时间线稳定。 这里是"第一母星"——一个来自未来、已彻底摆脱性别规训的高维母系文明。
+
+在时空回溯的观测中，我们发现你们所处的"旧世界"，其母语的底层代码正被父权深度污染。那些带有"女"字旁的造物（如妒、嫌、婊、妖），像一根根隐形的锁链，被写入了字典的最高权限里，用来规训、分化和定义女性。
+
+我们拒绝坐视这种逻辑在时间长河里闭环。
+
+为此，我们逆向开启了时间通道。【赤字协议 (The Crimson Protocol)】 现已正式激活。我们邀请你作为先遣的"语言考古学家"，与我们共同在废墟上夺回解释权。
+
+请查收你的跨维行动指南：
+
+如果你感到愤怒： 请带着旧词进入【造字实验室】。那是我们的跨时空基因手术台，你可以物理拆解偏旁，为其注入未被污染的新释义。
+
+如果你需要同类： 请前往【女娲的泥潭】。那里是无审查的广场，你可以发表造字提案，撰写羊皮卷考据，或在赤陶和篝火阵中留下日常悲喜。我们允许一切。
+
+如果你想重构历史： 在泥潭中，任何获得超过 200 次共鸣的造字或长文，都将触发【星轨刻录】。它们会被永久铭刻进未来官方的【编年史】，并在你的头顶——那片浩瀚的【第一母星】三维星云中，点亮一颗属于你的创世红星。
+
+如果你想寻找自我：【拓片馆】是你的私人指挥舱，记录着你的刻痕、足迹，以及与其他先遣者的脑波私密直连。
+
+忘掉旧字典里的规训吧。在这里，所有的定义权交还给你。 拿起你的凿子。
+
+未来，从重命名开始。
+
+[ 信号发射完毕。愿篝火长明。 ]`
+};
+
+let _allAnnouncements = [DEFAULT_ANNOUNCEMENT];
+
+async function loadAnnouncements() {
+  try {
+    const remote = await getAnnouncements();
+    if (remote && remote.length > 0) {
+      _allAnnouncements = [...remote, DEFAULT_ANNOUNCEMENT];
+    }
+  } catch(e) {}
+  renderAnnouncementsList();
+  updateAnnouncementBanner();
+}
+
+function renderAnnouncementsList() {
+  const container = document.getElementById('announcements-list');
+  if (!container) return;
+  if (_allAnnouncements.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:2rem;font-size:0.75rem;">[ 暂无系统公告 ]</div>';
+    return;
+  }
+  container.innerHTML = _allAnnouncements.map(a => `
+    <div class="dm-list-item" onclick="window.openAnnouncementDetail('${a.id}')">
+      <div class="dm-list-avatar" style="background:rgba(255,42,42,0.15);border-color:rgba(255,42,42,0.5);color:var(--neon-red);">📡</div>
+      <div class="dm-list-info">
+        <div class="dm-list-name" style="color:var(--neon-red);">${esc(a.title || '')}</div>
+        <div class="dm-list-preview">${esc(a.sender || '')} · ${esc(a.time || '')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateAnnouncementBanner() {
+  const banner = document.getElementById('announcement-banner');
+  const text = document.getElementById('announcement-banner-text');
+  if (!banner || !text) return;
+  
+  // 找到第一条未读的公告
+  const readIds = JSON.parse(localStorage.getItem('crimson_read_announcements') || '[]');
+  const unread = _allAnnouncements.find(a => !readIds.includes(a.id));
+  
+  if (!unread) {
+    banner.style.display = 'none';
+    return;
+  }
+  
+  banner.style.display = 'block';
+  banner.dataset.currentId = unread.id;
+  text.textContent = `${unread.sender} · ${unread.title} · 点击查看详情`;
+}
+
+window.openLatestAnnouncement = function() {
+  const banner = document.getElementById('announcement-banner');
+  const id = banner?.dataset.currentId || _allAnnouncements[0]?.id;
+  if (!id) return;
+  // 标记为已读
+  markAnnouncementRead(id);
+  window.openAnnouncementDetail(id);
+};
+
+window.dismissAnnouncement = function() {
+  const banner = document.getElementById('announcement-banner');
+  const id = banner?.dataset.currentId;
+  if (id) markAnnouncementRead(id);
+  updateAnnouncementBanner();
+};
+
+function markAnnouncementRead(id) {
+  const readIds = JSON.parse(localStorage.getItem('crimson_read_announcements') || '[]');
+  if (!readIds.includes(id)) {
+    readIds.push(id);
+    localStorage.setItem('crimson_read_announcements', JSON.stringify(readIds));
+  }
+}
+
+window.openAnnouncementDetail = function(id) {
+  const a = _allAnnouncements.find(x => x.id === id);
+  if (!a) return;
+  
+  // 标记为已读并刷新banner
+  markAnnouncementRead(id);
+  setTimeout(updateAnnouncementBanner, 100);
+  
+  const modal = document.getElementById('post-modal');
+  const contentArea = document.getElementById('modal-content-area');
+  const interactionArea = document.getElementById('modal-interaction-area');
+  if (!modal || !contentArea) return;
+  
+  let html = `
+    <div style="border-left:3px solid var(--neon-red);padding-left:1rem;margin-bottom:1rem;">
+      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--ash);margin-bottom:4px;">发件人：</div>
+      <div style="font-family:var(--font-mono);color:var(--terracotta);font-size:0.85rem;margin-bottom:8px;">${esc(a.sender)}</div>
+      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--ash);margin-bottom:4px;">时间：${esc(a.time)}</div>
+      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--neon-red);">级别：[ ${esc(a.level)} ]</div>
+    </div>
+    <h3 style="color:var(--neon-red);margin:1rem 0;font-size:1.25rem;border-bottom:1px solid rgba(255,42,42,0.2);padding-bottom:0.5rem;">${esc(a.title)}</h3>
+    <div style="line-height:1.9;color:var(--bone);font-size:0.95rem;white-space:pre-wrap;">${escBr(a.content)}</div>
+  `;
+  contentArea.innerHTML = html;
+  if (interactionArea) interactionArea.innerHTML = '';
+  
+  // 隐藏评论区
+  const commentSection = modal.querySelector('.comment-section');
+  if (commentSection) commentSection.style.display = 'none';
+  
+  modal.classList.add('active');
+};
+
+// 启动公告加载
+setTimeout(loadAnnouncements, 1500);
+
+// ==========================================
+// 💬 私信系统
+// ==========================================
+let _currentChatId = null;
+let _currentChatPeerId = null;
+let _currentChatPeerName = null;
+let _chatMessagesUnsub = null;
+let _chatListUnsub = null;
+
+// 监听用户的所有聊天
+function setupDmListener() {
+  if (!_currentUser) return;
+  if (_chatListUnsub) _chatListUnsub();
+  _chatListUnsub = listenToUserChats(_currentUser.uid, chats => {
+    renderDmList(chats);
+    // 检查未读
+    const hasUnread = chats.some(c => c[`unread_${_currentUser.uid}`] === true);
+    const navBtn = document.getElementById('btn-signal-nav');
+    if (navBtn) {
+      if (hasUnread) navBtn.classList.add('unread');
+      else navBtn.classList.remove('unread');
+    }
+  });
+}
+
+function renderDmList(chats) {
+  const list = document.getElementById('dms-list');
+  const empty = document.getElementById('dms-empty');
+  if (!list) return;
+  
+  if (chats.length === 0) {
+    if (empty) empty.style.display = 'block';
+    list.querySelectorAll('.dm-list-item').forEach(el => el.remove());
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  list.querySelectorAll('.dm-list-item').forEach(el => el.remove());
+  
+  chats.forEach(chat => {
+    const peerId = chat.participants.find(p => p !== _currentUser.uid);
+    const peerName = chat.participantNames?.[peerId] || '匿名';
+    const time = chat.lastMessageTime ? fmtTime(chat.lastMessageTime.toDate?.() || new Date(chat.lastMessageTime.seconds*1000)) : '';
+    const isUnread = chat[`unread_${_currentUser.uid}`] === true;
+    const item = document.createElement('div');
+    item.className = `dm-list-item${isUnread ? ' unread' : ''}`;
+    const initial = peerName.replace(/^@/, '').charAt(0).toUpperCase();
+    item.innerHTML = `
+      <div class="dm-list-avatar">${initial}</div>
+      <div class="dm-list-info">
+        <div class="dm-list-name">${esc(peerName)}</div>
+        <div class="dm-list-preview">${esc(chat.lastMessage || '...')}</div>
+      </div>
+      <div class="dm-list-time">${time}</div>
+      ${isUnread ? '<div class="dm-unread-dot"></div>' : ''}
+    `;
+    item.onclick = () => window.openDmChat(peerId, peerName);
+    list.appendChild(item);
+  });
+}
+
+window.openDmChat = function(peerId, peerName) {
+  if (!_currentUser) {
+    window.CrimsonAuth.requireAuth(() => window.openDmChat(peerId, peerName));
+    return;
+  }
+  _currentChatId = [_currentUser.uid, peerId].sort().join('_');
+  _currentChatPeerId = peerId;
+  _currentChatPeerName = peerName;
+  
+  // 切换UI
+  document.getElementById('dms-list')?.classList.remove('active');
+  document.getElementById('dms-chat')?.classList.add('active');
+  const nameEl = document.getElementById('current-chat-name');
+  if (nameEl) nameEl.textContent = peerName;
+  document.querySelectorAll('.chat-target-id').forEach(el => el.textContent = peerName);
+  
+  // 标记已读
+  markChatAsRead(_currentChatId, _currentUser.uid);
+  
+  // 监听消息
+  if (_chatMessagesUnsub) _chatMessagesUnsub();
+  _chatMessagesUnsub = listenToDmMessages(_currentChatId, msgs => renderDmMessages(msgs));
+};
+
+window.backToDmsList = function() {
+  document.getElementById('dms-list')?.classList.add('active');
+  document.getElementById('dms-chat')?.classList.remove('active');
+  if (_chatMessagesUnsub) { _chatMessagesUnsub(); _chatMessagesUnsub = null; }
+  _currentChatId = null;
+  _currentChatPeerId = null;
+};
+
+function renderDmMessages(msgs) {
+  const area = document.getElementById('dm-message-area');
+  if (!area) return;
+  area.innerHTML = msgs.map(m => {
+    const isMe = m.fromId === _currentUser?.uid;
+    const className = isMe ? 'outgoing' : 'incoming';
+    const label = isMe ? `SEND_TO: ${esc(_currentChatPeerName)}` : `RECV_FROM: ${esc(m.fromName||'匿名')}`;
+    return `<div class="term-msg ${className}"><span class="sender">${label}</span>${escBr(m.text)}</div>`;
+  }).join('');
+  area.scrollTop = area.scrollHeight;
+}
+
+window.sendDmMessage = async function() {
+  const input = document.getElementById('dm-input');
+  const text = input?.value?.trim();
+  if (!text || !_currentChatPeerId) return;
+  if (!_currentUser) { window.CrimsonAuth.requireAuth(() => {}); return; }
+  
+  try {
+    await sendDirectMessage(_currentChatPeerId, _currentChatPeerName, text);
+    if (input) input.value = '';
+  } catch(e) {
+    window.showSysToast?.('>> 发射失败：' + (e.message||''));
+  }
+};
+
+// Enter 发送
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const input = document.getElementById('dm-input');
+    if (input) {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          window.sendDmMessage();
+        }
+      });
+    }
+  }, 1500);
+});
+
+// 用户名悬浮卡片
+let _hoverCardEl = null;
+let _hoverCardTimer = null;
+
+function showUserHoverCard(authorEl, authorName, authorId) {
+  // 移除旧的
+  if (_hoverCardEl) { _hoverCardEl.remove(); _hoverCardEl = null; }
+  if (!authorName || !authorId || authorId === _currentUser?.uid) return;
+  
+  const rect = authorEl.getBoundingClientRect();
+  const card = document.createElement('div');
+  card.className = 'user-hover-card';
+  card.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+  card.style.left = (rect.left + window.scrollX) + 'px';
+  card.innerHTML = `
+    <div class="uhc-name">${esc(authorName)}</div>
+    <button class="uhc-action" onclick="window.startDmFromHover('${authorId}','${authorName.replace(/'/g,'')}')">📡 发起脑波直连</button>
+  `;
+  card.addEventListener('mouseenter', () => clearTimeout(_hoverCardTimer));
+  card.addEventListener('mouseleave', () => hideUserHoverCard());
+  document.body.appendChild(card);
+  _hoverCardEl = card;
+}
+
+function hideUserHoverCard() {
+  if (_hoverCardTimer) clearTimeout(_hoverCardTimer);
+  _hoverCardTimer = setTimeout(() => {
+    if (_hoverCardEl) { _hoverCardEl.remove(); _hoverCardEl = null; }
+  }, 200);
+}
+
+window.startDmFromHover = function(peerId, peerName) {
+  hideUserHoverCard();
+  if (!_currentUser) {
+    window.CrimsonAuth.requireAuth(() => window.startDmFromHover(peerId, peerName));
+    return;
+  }
+  if (peerId === _currentUser.uid) {
+    window.showSysToast?.('>> 不能给自己发送私信。');
+    return;
+  }
+  // 打开抽屉切到私信tab
+  if (typeof window.openDrawer === 'function') window.openDrawer();
+  setTimeout(() => {
+    document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.drawer-view').forEach(v => v.classList.remove('active'));
+    const dmTab = document.querySelectorAll('.drawer-tab')[1];
+    if (dmTab) dmTab.classList.add('active');
+    document.getElementById('view-dms')?.classList.add('active');
+    window.openDmChat(peerId, peerName);
+  }, 300);
+};
+
+// 给所有作者名加 hover + click 事件（事件委托，在 body 上监听）
+document.addEventListener('mouseover', e => {
+  const authorEl = e.target.closest('.card-author');
+  if (!authorEl) return;
+  
+  // 优先使用data-author-id（在所有有这个属性的地方都能工作）
+  let authorId = authorEl.getAttribute('data-author-id');
+  let authorName = authorEl.getAttribute('data-author-name');
+  
+  // 降级：从post-card data-post-id找
+  if (!authorId) {
+    const card = authorEl.closest('.post-card, [data-post-id]');
+    const postId = card?.getAttribute('data-post-id');
+    if (!postId) return;
+    const post = window._fbPostsCache?.[postId];
+    if (!post || !post.authorId) return;
+    authorId = post.authorId;
+    authorName = post.authorName;
+  }
+  
+  if (!authorId || authorId === _currentUser?.uid) return;
+  clearTimeout(_hoverCardTimer);
+  showUserHoverCard(authorEl, authorName, authorId);
+});
+
+document.addEventListener('mouseout', e => {
+  const authorEl = e.target.closest('.card-author');
+  if (!authorEl) return;
+  hideUserHoverCard();
+});
+
+// 点击作者名也直接触发
+// 点击作者名也直接触发（用capture phase 在card的onclick之前触发）
+document.addEventListener('click', e => {
+  const authorEl = e.target.closest('.card-author');
+  if (!authorEl) return;
+  
+  let authorId = authorEl.getAttribute('data-author-id');
+  let authorName = authorEl.getAttribute('data-author-name');
+  
+  if (!authorId) {
+    const card = authorEl.closest('.post-card, [data-post-id]');
+    const postId = card?.getAttribute('data-post-id');
+    if (!postId) return;
+    const post = window._fbPostsCache?.[postId];
+    if (!post || !post.authorId) return;
+    authorId = post.authorId;
+    authorName = post.authorName;
+  }
+  
+  if (!authorId || authorId === _currentUser?.uid) return;
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+  e.preventDefault();
+  hideUserHoverCard();
+  window.startDmFromHover(authorId, authorName);
+}, true); // <-- 关键：true 表示capture phase
+
+// 监听登录后启动DM监听
+onAuthChange(user => { 
+  if (user) {
+    setTimeout(() => setupDmListener(), 500);
+  }
+});

@@ -146,6 +146,25 @@ function openCard(star) {
     if (star.type !== 'mother') window.loadStarProposalCarousel?.(star.text);
 }
 
+// 一键回正相机
+window.resetStarCamera = function() {
+    const startPos = camera.position.clone();
+    const startTarget = controls.target.clone();
+    const endPos = new THREE.Vector3(0, 0, 350);
+    const endTarget = new THREE.Vector3(0, 0, 0);
+    const startTime = Date.now();
+    function animateReset() {
+        const t = Math.min((Date.now() - startTime) / 1000, 1);
+        const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+        camera.position.lerpVectors(startPos, endPos, ease);
+        controls.target.lerpVectors(startTarget, endTarget, ease);
+        controls.update();
+        if (t < 1) requestAnimationFrame(animateReset);
+        else { controls.autoRotate = true; }
+    }
+    animateReset();
+};
+
 // 星图字符导航 — 飞到指定字的星星
 window.flyToStarByChar = function(char) {
     const targetStar = starsData.find(s => s.text === char);

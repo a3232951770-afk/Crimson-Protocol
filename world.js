@@ -551,6 +551,10 @@
         }
 
         function closePostModal(event) {
+            // 只在点击弹窗外的遮罩、或关闭按钮时才关闭
+            if (event && event.target !== document.getElementById('post-modal') && !event.target.closest('.modal-close')) {
+                return;
+            }
             if (event) event.stopPropagation();
             document.getElementById('post-modal').classList.remove('active');
         }

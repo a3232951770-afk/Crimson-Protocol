@@ -518,7 +518,7 @@ body, html {
 .drawer-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-    z-index: 9100; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+    z-index: 9800; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
 }
 .drawer-overlay.active { opacity: 1; pointer-events: auto; }
 
@@ -526,7 +526,7 @@ body, html {
     position: fixed; top: 0; right: -450px; width: 400px; height: 100vh;
     background: #080808; border-left: 2px solid var(--terracotta);
     box-shadow: -10px 0 40px rgba(204, 78, 60, 0.1), inset 0 0 50px rgba(0,0,0,0.9);
-    z-index: 9200; transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 9900; transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex; flex-direction: column;
 }
 .comm-drawer.active { right: 0; }
@@ -1387,4 +1387,273 @@ body, html {
     .star-nav-left { left: -5px; }
     .star-nav-right { right: -5px; }
     .star-nav-arrow { font-size: 1.5rem; padding: 8px 6px; }
+}
+
+/* ==========================================
+   📌 Pinned Posts
+   ========================================== */
+.pinned-post {
+    border: 1px solid rgba(204, 78, 60, 0.5) !important;
+    box-shadow: 0 0 20px rgba(204, 78, 60, 0.1), inset 0 0 30px rgba(204, 78, 60, 0.03) !important;
+    position: relative;
+    order: -1 !important;
+    cursor: pointer;
+}
+.pinned-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--amber);
+    background: rgba(11,11,10,0.8);
+    padding: 2px 8px;
+    border: 1px solid rgba(200,134,10,0.3);
+    letter-spacing: 1px;
+    z-index: 2;
+}
+.pinned-post h3 {
+    color: var(--amber) !important;
+}
+.pinned-post .card-content {
+    color: var(--bone) !important;
+}
+
+/* ==========================================
+   📡 World Announcement Banner
+   ========================================== */
+#announcement-banner {
+    position: fixed;
+    top: 80px; /* 让出导航栏高度 */
+    left: 0;
+    right: 0;
+    height: 28px;
+    background: rgba(11,11,10,0.92);
+    border-top: 1px solid rgba(255,42,42,0.4);
+    border-bottom: 1px solid rgba(255,42,42,0.4);
+    overflow: hidden;
+    z-index: 90;
+    cursor: pointer;
+    display: none;
+    box-shadow: inset 0 0 30px rgba(255,42,42,0.05), 0 2px 12px rgba(255,42,42,0.15);
+}
+/* 故障扫描线效果 */
+#announcement-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(255,42,42,0) 0,
+        rgba(255,42,42,0) 2px,
+        rgba(255,42,42,0.04) 2px,
+        rgba(255,42,42,0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+/* 闪烁的红点 */
+#announcement-banner::after {
+    content: '';
+    position: absolute;
+    left: 8px; top: 50%;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--neon-red);
+    box-shadow: 0 0 8px var(--neon-red);
+    transform: translateY(-50%);
+    animation: blinkDot 1.5s ease-in-out infinite;
+    z-index: 3;
+}
+@keyframes blinkDot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+#page-mother-star.active ~ #announcement-banner,
+.page-section#page-mother-star.active #announcement-banner {
+    display: block;
+}
+#page-mother-star #announcement-banner { display: block; }
+#announcement-banner:hover {
+    background: rgba(204,78,60,0.1);
+    border-top-color: var(--neon-red);
+    border-bottom-color: var(--neon-red);
+}
+/* 关闭按钮 */
+#announcement-banner-close {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px; height: 18px;
+    background: none;
+    border: 1px solid rgba(255,42,42,0.4);
+    color: var(--neon-red);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 4;
+    transition: all 0.2s;
+}
+#announcement-banner-close:hover {
+    background: rgba(255,42,42,0.2);
+    border-color: var(--neon-red);
+}
+#announcement-banner-track {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 100%;
+    padding: 0 30px 0 24px;
+    white-space: nowrap;
+    animation: marquee 35s linear infinite;
+    position: relative;
+    z-index: 2;
+}
+@keyframes marquee {
+    from { transform: translateX(100vw); }
+    to { transform: translateX(-100%); }
+}
+.announcement-icon {
+    font-family: var(--font-mono);
+    color: var(--neon-red);
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    letter-spacing: 1px;
+}
+#announcement-banner-text {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--bone);
+    letter-spacing: 1px;
+    text-shadow: 0 0 4px rgba(255,42,42,0.3);
+}
+#announcement-banner-text::before { content: '[ '; color: var(--neon-red); }
+#announcement-banner-text::after { content: ' ]'; color: var(--neon-red); }
+
+/* ==========================================
+   💬 DM System Styles
+   ========================================== */
+.dm-list-item {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.dm-list-item:hover { background: rgba(204,78,60,0.05); }
+.dm-list-item.unread { background: rgba(255,42,42,0.05); }
+.dm-list-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(204,78,60,0.2);
+    border: 1px solid rgba(204,78,60,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--terracotta);
+    font-family: var(--font-serif);
+    font-weight: 700;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.dm-list-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.dm-list-info { flex: 1; min-width: 0; }
+.dm-list-name {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--bone);
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dm-list-preview {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--ash);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dm-list-time {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--ash);
+    flex-shrink: 0;
+}
+.dm-unread-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--neon-red);
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px var(--neon-red);
+}
+
+/* ==========================================
+   📡 用户悬浮卡片（发起私信）
+   ========================================== */
+.user-hover-card {
+    position: absolute;
+    background: rgba(11,11,10,0.95);
+    border: 1px solid rgba(204,78,60,0.5);
+    padding: 8px 12px;
+    z-index: 99999;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(204,78,60,0.4);
+    animation: hoverFadeIn 0.2s;
+}
+@keyframes hoverFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.user-hover-card .uhc-name {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--terracotta);
+    margin-bottom: 6px;
+}
+.user-hover-card .uhc-action {
+    background: none;
+    border: 1px solid rgba(204,78,60,0.4);
+    color: var(--terracotta);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+.user-hover-card .uhc-action:hover {
+    background: rgba(204,78,60,0.15);
+    color: var(--neon-red);
+    border-color: var(--neon-red);
+}
+
+/* 帖子作者名hover提示 */
+.card-author { cursor: pointer; transition: color 0.2s; }
+.card-author:hover { color: var(--neon-red) !important; text-decoration: underline; }
+
+/* ==========================================
+   Author name clickable cue
+   ========================================== */
+.card-author {
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    border-bottom: 1px dashed transparent;
+}
+.card-author:hover {
+    color: var(--neon-red) !important;
+    border-bottom-color: var(--neon-red);
+    text-shadow: 0 0 8px rgba(255,42,42,0.4);
+}
+/* Modal-specific author hover - more visible */
+#post-modal .card-author:hover {
+    color: var(--neon-red) !important;
+    text-shadow: 0 0 10px rgba(255,42,42,0.6);
 }
