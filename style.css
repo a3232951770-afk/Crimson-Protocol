@@ -518,7 +518,7 @@ body, html {
 .drawer-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-    z-index: 9800; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+    z-index: 9100; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
 }
 .drawer-overlay.active { opacity: 1; pointer-events: auto; }
 
@@ -526,7 +526,7 @@ body, html {
     position: fixed; top: 0; right: -450px; width: 400px; height: 100vh;
     background: #080808; border-left: 2px solid var(--terracotta);
     box-shadow: -10px 0 40px rgba(204, 78, 60, 0.1), inset 0 0 50px rgba(0,0,0,0.9);
-    z-index: 9900; transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 9200; transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex; flex-direction: column;
 }
 .comm-drawer.active { right: 0; }
