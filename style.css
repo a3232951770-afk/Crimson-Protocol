@@ -1685,3 +1685,393 @@ body, html {
     transform: scale(0.96);
 }
 
+
+/* ==========================================================================
+   📱 MOBILE ADAPTATION (桌面版样式不变，仅在 ≤768px 生效)
+   ========================================================================== */
+@media (max-width: 768px) {
+
+  /* ---- 全局基础 ---- */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+  input, textarea, select {
+    font-size: 16px !important; /* 防 iOS 自动缩放 */
+  }
+  /* 触摸友好的最小点击区 */
+  button, .action-btn, .nav-links a, .star-filter-btn {
+    min-height: 36px;
+  }
+
+  /* ---- 顶部导航栏 ---- */
+  .nav-bar {
+    padding: 0.5rem 0.8rem !important;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .nav-logo {
+    font-size: 0.9rem !important;
+    flex: 0 0 auto;
+  }
+  .nav-logo .nav-subtitle {
+    display: none; /* 隐藏副标题节省空间 */
+  }
+  /* 链接区改为汉堡菜单触发的下拉 */
+  .nav-links {
+    order: 10;
+    width: 100%;
+    flex-direction: column !important;
+    gap: 0 !important;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s;
+    background: rgba(11,11,10,0.98);
+    border-top: 1px solid rgba(204,78,60,0.3);
+    margin-top: 0.5rem !important;
+  }
+  .nav-links.mobile-open {
+    max-height: 400px;
+    padding: 0.5rem 0;
+  }
+  .nav-links a {
+    padding: 0.7rem 1rem !important;
+    width: 100%;
+    border-bottom: 1px dashed rgba(204,78,60,0.15);
+    font-size: 0.85rem !important;
+  }
+  /* 汉堡按钮 */
+  .nav-mobile-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid rgba(204,78,60,0.4);
+    color: var(--terracotta);
+    font-size: 1.1rem;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    margin-right: 4px;
+  }
+  /* 频段按钮和EN按钮缩小 */
+  .btn-signal-recv {
+    font-size: 0.7rem !important;
+    padding: 5px 10px !important;
+    letter-spacing: 1px !important;
+  }
+  .btn-signal-text { font-size: 0.7rem !important; }
+  .btn-lang-global, #btn-lang-global {
+    font-size: 0.7rem !important;
+    padding: 5px 8px !important;
+  }
+
+  /* ---- 第一母星：公告栏 ---- */
+  #announcement-banner {
+    top: 56px !important;
+    height: 24px !important;
+  }
+  #announcement-banner-text { font-size: 0.65rem !important; letter-spacing: 0.5px !important; }
+  .announcement-icon { font-size: 0.6rem !important; }
+  
+  /* ---- 第一母星：详情卡（变成底部抽屉） ---- */
+  #detail-card.glass-panel {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    border-radius: 16px 16px 0 0 !important;
+    transform: translateY(100%) !important;
+    transition: transform 0.3s !important;
+  }
+  #detail-card.glass-panel.active {
+    transform: translateY(0) !important;
+  }
+  /* 详情卡的左右箭头 */
+  .star-nav-arrow {
+    font-size: 1.3rem !important;
+    padding: 6px 4px !important;
+  }
+  .star-nav-left { left: 4px !important; }
+  .star-nav-right { right: 4px !important; }
+  /* UI层提示文字缩小 */
+  #ui-layer {
+    font-size: 0.65rem !important;
+    padding: 0.5rem 0.8rem !important;
+  }
+  /* 星域分类按钮 */
+  .star-filter-btn {
+    font-size: 0.65rem !important;
+    padding: 4px 8px !important;
+  }
+
+  /* ---- 编年史：单列垂直 ---- */
+  .chronicle-layout, .chron-content {
+    flex-direction: column !important;
+  }
+  .chron-tabs-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chron-tab {
+    flex-shrink: 0 !important;
+    font-size: 0.75rem !important;
+    padding: 8px 12px !important;
+  }
+  /* 字典页面双栏改单栏 */
+  .dictionary-grid, .dict-content-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  /* 字典网络节点缩小 */
+  #network-canvas {
+    height: 280px !important;
+  }
+  .network-word-char { font-size: 1.1rem !important; }
+
+  /* ---- 女娲的泥潭：双列瀑布流 ---- */
+  .mire-tabs-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    padding: 0 0.5rem !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mire-tab {
+    flex-shrink: 0 !important;
+    font-size: 0.8rem !important;
+    padding: 0.6rem 0.8rem !important;
+    white-space: nowrap;
+  }
+  .mire-tab .count {
+    font-size: 0.65rem !important;
+    padding: 1px 5px !important;
+  }
+  .waterfall-container {
+    padding: 0.6rem !important;
+    gap: 0.6rem !important;
+  }
+  .waterfall-container .post-card {
+    width: calc(50% - 0.3rem) !important; /* 双列 */
+    min-width: 0 !important;
+    padding: 0.7rem !important;
+  }
+  .post-card h3 { font-size: 0.85rem !important; line-height: 1.4 !important; }
+  .post-card .card-content { font-size: 0.7rem !important; }
+  .post-card .post-target-char { font-size: 3rem !important; }
+  .post-card .card-author, .post-card .card-stats { font-size: 0.6rem !important; }
+  .post-card .action-btn { font-size: 0.65rem !important; padding: 3px 4px !important; }
+  /* 全局发帖按钮 */
+  #global-chisel-btn {
+    bottom: 16px !important;
+    right: 16px !important;
+    font-size: 0.7rem !important;
+    padding: 8px 14px !important;
+  }
+
+  /* ---- 拓片馆：上下垂直 ---- */
+  .profile-container, .profile-layout {
+    flex-direction: column !important;
+    padding: 1rem !important;
+  }
+  .profile-left {
+    width: 100% !important;
+    align-items: center !important;
+    text-align: center !important;
+    margin-bottom: 1.5rem !important;
+  }
+  .profile-right {
+    width: 100% !important;
+  }
+  .avatar-box {
+    width: 120px !important;
+    height: 120px !important;
+    margin: 0 auto !important;
+  }
+  /* PROTOCOL ID + 退出按钮 */
+  .id-header {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .btn-logout {
+    font-size: 0.7rem !important;
+    padding: 5px 10px !important;
+    letter-spacing: 1px !important;
+  }
+  /* 数据行 */
+  .data-grid, .stats-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.6rem !important;
+  }
+  .data-card {
+    padding: 0.7rem !important;
+  }
+  .data-card .data-label { font-size: 0.6rem !important; }
+  .data-card .data-value { font-size: 1.1rem !important; }
+  /* 勋章保持横向（按用户要求） */
+  .medal-grid, .medal-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 0.6rem !important;
+    padding-bottom: 4px;
+  }
+  .medal-card, .medal-item {
+    flex-shrink: 0 !important;
+    min-width: 110px !important;
+    padding: 0.6rem !important;
+  }
+  /* 泥潭足迹改成双列（按用户要求） */
+  #footprints-container {
+    gap: 0.6rem !important;
+  }
+  #footprints-container .post-card {
+    width: calc(50% - 0.3rem) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  #footprints-container .post-target-char {
+    font-size: 3rem !important;
+  }
+
+  /* ---- 帖子详情弹窗（移动端全屏） ---- */
+  .modal-overlay .modal-container {
+    width: calc(100% - 1rem) !important;
+    max-width: none !important;
+    max-height: 92vh !important;
+    margin: 0.5rem !important;
+    padding: 1rem !important;
+  }
+  .modal-overlay h3 { font-size: 1.1rem !important; }
+  .modal-close {
+    font-size: 0.75rem !important;
+    padding: 6px 10px !important;
+  }
+  .post-target-char {
+    font-size: 4rem !important;
+  }
+  /* 评论区 */
+  .comment-section { padding: 0.6rem 0 !important; }
+  .comment-input-area textarea {
+    min-height: 60px !important;
+  }
+
+  /* ---- 频段抽屉：占满全屏 ---- */
+  .comm-drawer {
+    width: 100% !important;
+    right: -100% !important;
+    border-left: none !important;
+  }
+  .comm-drawer.active { right: 0 !important; }
+  .drawer-tab {
+    font-size: 0.8rem !important;
+    padding: 0.7rem 0.5rem !important;
+  }
+  .drawer-close {
+    font-size: 1rem !important;
+    padding: 0.7rem !important;
+  }
+  /* 私信消息气泡 */
+  .term-msg {
+    max-width: 85% !important;
+    font-size: 0.85rem !important;
+    padding: 0.6rem 0.8rem !important;
+  }
+  .term-msg .sender {
+    font-size: 0.7rem !important;
+  }
+  .term-input-box textarea {
+    font-size: 16px !important;
+    min-height: 50px !important;
+  }
+  .btn-transmit {
+    font-size: 0.85rem !important;
+    padding: 0.7rem !important;
+  }
+
+  /* ---- 造字实验室弹窗 ---- */
+  #lab-modal {
+    width: calc(100% - 0.5rem) !important;
+    max-width: none !important;
+    max-height: 95vh !important;
+    margin: 0.25rem !important;
+    padding: 0.8rem !important;
+  }
+  .wb-tabs { flex-wrap: wrap; gap: 0.3rem; }
+  .wb-tab {
+    font-size: 0.7rem !important;
+    padding: 6px 10px !important;
+  }
+  .cyber-terminal-input {
+    font-size: 16px !important;
+    min-height: 80px !important;
+  }
+  /* 偏旁手术区 */
+  #surgery-canvas-container {
+    height: 280px !important;
+  }
+  .radical-pool {
+    flex-wrap: wrap;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  .radical-pool .radical-tile {
+    font-size: 1.3rem !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .canvas-toolbar {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .tool-btn {
+    font-size: 0.7rem !important;
+    padding: 5px 8px !important;
+  }
+  /* 字符目标 */
+  .target-char-display {
+    font-size: 4rem !important;
+  }
+  /* 提交按钮 */
+  .btn-bottom-action, #btn-launch-poster {
+    font-size: 0.85rem !important;
+    padding: 0.8rem !important;
+  }
+
+  /* ---- 用户悬浮卡片 ---- */
+  .user-hover-card {
+    max-width: 200px;
+    font-size: 0.75rem !important;
+  }
+
+  /* ---- 公告全文弹窗 ---- */
+  .modal-overlay .modal-container .card-content {
+    font-size: 0.85rem !important;
+    line-height: 1.7 !important;
+  }
+
+  /* ---- 凿字海报预览 ---- */
+  .poster-preview {
+    max-width: 100% !important;
+    transform: scale(0.85) !important;
+  }
+}
+
+/* ---- 超小屏幕额外优化（≤480px，iPhone SE 等）---- */
+@media (max-width: 480px) {
+  .nav-logo { font-size: 0.8rem !important; }
+  .btn-signal-recv { font-size: 0.65rem !important; padding: 4px 8px !important; }
+  .waterfall-container .post-card {
+    /* 超小屏改成单列也可以容忍，但用户说要双列就保持 */
+    padding: 0.6rem !important;
+  }
+  .post-card .post-target-char { font-size: 2.5rem !important; }
+  .post-card h3 { font-size: 0.78rem !important; }
+  #footprints-container .post-target-char { font-size: 2.5rem !important; }
+  .avatar-box { width: 100px !important; height: 100px !important; }
+}

@@ -16,8 +16,9 @@
 
     <!-- 🌐 全局 UI 框架 -->
     <nav id="global-nav">
-        <div class="nav-logo">[ 赤字协议 ]<br><span style="font-size: 0.7rem; letter-spacing: 5px; color:#666;">THE CRIMSON PROTOCOL</span></div>
-        <div class="nav-links">
+        <div class="nav-logo">[ 赤字协议 ]<br><span class="nav-subtitle" style="font-size: 0.7rem; letter-spacing: 5px; color:#666;">THE CRIMSON PROTOCOL</span></div>
+        <button class="nav-mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('mobile-open')" style="display:none;">☰</button>
+        <div class="nav-links" onclick="this.classList.remove('mobile-open')">
             <a onclick="switchPage('page-mother-star', this)" class="active">第一母星</a>
             <a onclick="switchPage('page-chronicle', this)">编年史</a>
             <a onclick="switchPage('page-mire', this)">女娲的泥潭</a>
