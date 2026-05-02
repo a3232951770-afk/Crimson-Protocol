@@ -280,8 +280,9 @@
 
                 <!-- 右侧：代号、数据、勋章 -->
                 <div class="profile-right">
-                    <div class="id-header">
+                    <div class="id-header" style="display:flex;justify-content:space-between;align-items:center;">
                         <span class="id-label">PROTOCOL ID //</span>
+                        <button class="btn-logout" onclick="window.handleLogout()" title="切断神经元连接">[ ⎋ 退出协议 ]</button>
                     </div>
                     <div class="id-codename editable-field" onclick="openEditField('codename')" title="点击重塑代号">
                         <span id="val-codename">女娲的泥点_031</span>

@@ -1657,3 +1657,28 @@ body, html {
     color: var(--neon-red) !important;
     text-shadow: 0 0 10px rgba(255,42,42,0.6);
 }
+
+/* ==========================================
+   ⎋ Logout Button
+   ========================================== */
+.btn-logout {
+    background: rgba(255, 42, 42, 0.05);
+    border: 1px solid rgba(255, 42, 42, 0.4);
+    color: var(--neon-red);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-transform: uppercase;
+}
+.btn-logout:hover {
+    background: rgba(255, 42, 42, 0.15);
+    color: var(--neon-red);
+    border-color: var(--neon-red);
+    box-shadow: 0 0 10px rgba(255, 42, 42, 0.3);
+}
+.btn-logout:active {
+    transform: scale(0.96);
+}
