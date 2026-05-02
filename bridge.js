@@ -1617,56 +1617,81 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(initPinnedLikes, 
 window.handleAvatarUpload = function(e) {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 1024 * 1024) {
-    window.showSysToast?.('>> 图片过大，请选择1MB以下的图片。');
+  if (file.size > 5 * 1024 * 1024) {
+    window.showSysToast?.('>> 图片过大，请选择5MB以下的图片。');
     return;
   }
   const reader = new FileReader();
-  reader.onload = async function(ev) {
-    const dataUrl = ev.target.result;
-    const img = document.getElementById('avatar-image');
-    const svg = document.getElementById('avatar-default-svg');
-    if (img) { img.src = dataUrl; img.style.display = 'block'; }
-    if (svg) svg.style.display = 'none';
-    
-    // 保存到Firestore
-    if (_currentUser) {
+  reader.onload = function(ev) {
+    // 用canvas压缩成200x200 jpeg，保证大小够小
+    const tempImg = new Image();
+    tempImg.onload = async function() {
+      const canvas = document.createElement('canvas');
+      const size = 200;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      // 居中裁剪
+      const minDim = Math.min(tempImg.width, tempImg.height);
+      const sx = (tempImg.width - minDim) / 2;
+      const sy = (tempImg.height - minDim) / 2;
+      ctx.drawImage(tempImg, sx, sy, minDim, minDim, 0, 0, size, size);
+      const compressedUrl = canvas.toDataURL('image/jpeg', 0.85);
+      
+      // 立即更新UI
+      const img = document.getElementById('avatar-image');
+      const svg = document.getElementById('avatar-default-svg');
+      if (img) { img.src = compressedUrl; img.style.display = 'block'; }
+      if (svg) svg.style.display = 'none';
+      
+      // 总是存到本地（双保险，刷新后即使Firebase失败也能看到）
       try {
-        await updateUserAvatar(_currentUser.uid, dataUrl);
-        window.showSysToast?.('>> ✅ 图腾已更新。');
-      } catch(err) {
-        window.showSysToast?.('>> 保存失败，请重试。');
+        localStorage.setItem('crimson_avatar_' + (_currentUser?.uid||'anon'), compressedUrl);
+      } catch(e) { console.warn('localStorage头像存储失败（可能太大）'); }
+      
+      // 保存到Firestore
+      if (_currentUser) {
+        try {
+          await updateUserAvatar(_currentUser.uid, compressedUrl);
+          window.showSysToast?.('>> ✅ 图腾已更新。');
+        } catch(err) {
+          console.error('Avatar save error:', err);
+          window.showSysToast?.('>> 云端保存失败，但本地已保存：' + (err.code||err.message||''));
+        }
       }
-    } else {
-      // 未登录时只本地预览
-      localStorage.setItem('crimson_avatar_local', dataUrl);
-    }
+    };
+    tempImg.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 };
 
 // 加载用户头像（登录时）
 async function loadUserAvatar(uid) {
-  if (!uid) {
-    // 未登录，尝试本地预览
-    const local = localStorage.getItem('crimson_avatar_local');
-    if (local) {
-      const img = document.getElementById('avatar-image');
-      const svg = document.getElementById('avatar-default-svg');
-      if (img) { img.src = local; img.style.display = 'block'; }
-      if (svg) svg.style.display = 'none';
-    }
-    return;
+  const img = document.getElementById('avatar-image');
+  const svg = document.getElementById('avatar-default-svg');
+  
+  // 1. 优先从localStorage加载（瞬间显示）
+  const localKey = 'crimson_avatar_' + (uid||'anon');
+  const local = localStorage.getItem(localKey);
+  if (local && img) {
+    img.src = local;
+    img.style.display = 'block';
+    if (svg) svg.style.display = 'none';
   }
-  try {
-    const profile = await getUserProfile(uid);
-    if (profile?.avatarUrl) {
-      const img = document.getElementById('avatar-image');
-      const svg = document.getElementById('avatar-default-svg');
-      if (img) { img.src = profile.avatarUrl; img.style.display = 'block'; }
-      if (svg) svg.style.display = 'none';
-    }
-  } catch(e) {}
+  
+  // 2. 然后从Firestore更新（如果有更新的话）
+  if (uid) {
+    try {
+      const profile = await getUserProfile(uid);
+      if (profile?.avatarUrl && img) {
+        img.src = profile.avatarUrl;
+        img.style.display = 'block';
+        if (svg) svg.style.display = 'none';
+        // 同步到localStorage
+        try { localStorage.setItem(localKey, profile.avatarUrl); } catch(e) {}
+      }
+    } catch(e) { console.warn('头像加载失败:', e); }
+  }
 }
 
 // 监听登录状态加载头像
@@ -2073,10 +2098,14 @@ window.sendDmMessage = async function() {
   if (!text || !_currentChatPeerId) return;
   if (!_currentUser) { window.CrimsonAuth.requireAuth(() => {}); return; }
   
+  // 立即清空输入框（先于网络请求）
+  if (input) input.value = '';
+  
   try {
     await sendDirectMessage(_currentChatPeerId, _currentChatPeerName, text);
-    if (input) input.value = '';
   } catch(e) {
+    // 发送失败，恢复输入框内容
+    if (input) input.value = text;
     window.showSysToast?.('>> 发射失败：' + (e.message||''));
   }
 };
