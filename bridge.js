@@ -2045,11 +2045,24 @@ window.backToDmsList = function() {
 function renderDmMessages(msgs) {
   const area = document.getElementById('dm-message-area');
   if (!area) return;
+  const myUid = _currentUser?.uid || window.firebase?.auth?.()?.currentUser?.uid;
   area.innerHTML = msgs.map(m => {
-    const isMe = m.fromId === _currentUser?.uid;
+    const isMe = m.fromId === myUid;
     const className = isMe ? 'outgoing' : 'incoming';
     const label = isMe ? `SEND_TO: ${esc(_currentChatPeerName)}` : `RECV_FROM: ${esc(m.fromName||'匿名')}`;
-    return `<div class="term-msg ${className}"><span class="sender">${label}</span>${escBr(m.text)}</div>`;
+    // 时间戳显示
+    let timeStr = '';
+    if (m._sortTs) {
+      const d = new Date(m._sortTs);
+      const now = new Date();
+      if (d.toDateString() === now.toDateString()) {
+        timeStr = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+      } else {
+        timeStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+      }
+    }
+    const timeHtml = timeStr ? `<span style="font-size:0.65rem;color:var(--ash);float:right;margin-left:8px;">${timeStr}</span>` : '';
+    return `<div class="term-msg ${className}"><span class="sender">${label}${timeHtml}</span>${escBr(m.text)}</div>`;
   }).join('');
   area.scrollTop = area.scrollHeight;
 }

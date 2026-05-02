@@ -1659,25 +1659,27 @@ body, html {
 }
 
 /* ==========================================
-   ⎋ Logout Button
+   ⎋ Logout Button (匹配频段按钮风格)
    ========================================== */
 .btn-logout {
-    background: rgba(255, 42, 42, 0.05);
-    border: 1px solid rgba(255, 42, 42, 0.4);
+    background: linear-gradient(135deg, rgba(255, 42, 42, 0.15) 0%, rgba(11, 11, 10, 0.95) 100%);
     color: var(--neon-red);
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    letter-spacing: 1px;
-    padding: 4px 12px;
+    border: 2px dashed var(--neon-red);
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    font-weight: 900;
+    padding: 8px 16px;
     cursor: pointer;
-    transition: all 0.25s;
-    text-transform: uppercase;
+    transition: all 0.3s;
+    letter-spacing: 2px;
+    display: block;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.6);
 }
 .btn-logout:hover {
-    background: rgba(255, 42, 42, 0.15);
-    color: var(--neon-red);
+    background: linear-gradient(135deg, rgba(255, 42, 42, 0.25) 0%, rgba(11, 11, 10, 0.95) 100%);
+    color: #fff;
     border-color: var(--neon-red);
-    box-shadow: 0 0 10px rgba(255, 42, 42, 0.3);
+    box-shadow: 0 0 15px rgba(255, 42, 42, 0.4);
 }
 .btn-logout:active {
     transform: scale(0.96);

@@ -621,11 +621,21 @@ export async function sendDirectMessage(toUid, toName, text) {
   Promise.all([updateMyIndex, updatePeerIndex]).catch(()=>{});
 }
 
-// 监听某个对话的所有消息
+// 监听某个对话的所有消息（客户端排序，处理pending writes）
 export function listenToDmMessages(chatId, cb) {
-  const q = query(collection(db,'dms',chatId,'messages'), orderBy('createdAt','asc'), limit(200));
-  return onSnapshot(q, snap => {
-    cb(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  const q = query(collection(db,'dms',chatId,'messages'), limit(500));
+  return onSnapshot(q, { includeMetadataChanges: true }, snap => {
+    const msgs = snap.docs.map(d => {
+      const data = d.data();
+      // 如果createdAt还是null（pending write），用本地时间戳代替
+      const ts = data.createdAt?.seconds 
+        ? data.createdAt.seconds * 1000 + (data.createdAt.nanoseconds||0)/1e6
+        : Date.now();
+      return { id: d.id, ...data, _sortTs: ts };
+    });
+    // 客户端按时间升序排
+    msgs.sort((a, b) => a._sortTs - b._sortTs);
+    cb(msgs);
   }, err => { console.warn('DM监听失败:', err); cb([]); });
 }
 
