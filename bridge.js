@@ -1934,39 +1934,6 @@ window.refreshDmListener = function() {
   setupDmListener();
 };
 
-// ==========================================
-// 🚪 退出登录
-// ==========================================
-window.handleLogout = function() {
-  if (!confirm('确认要切断神经元连接？')) return;
-  // 清理本地DM状态
-  if (_chatListUnsub) { _chatListUnsub(); _chatListUnsub = null; }
-  if (_chatMessagesUnsub) { _chatMessagesUnsub(); _chatMessagesUnsub = null; }
-  _currentChatId = null;
-  _currentChatPeerId = null;
-  _currentChatPeerName = null;
-  
-  logoutUser().then(() => {
-    window.showSysToast?.('>> 已切断神经元连接。');
-    // 重置UI
-    _currentUser = null;
-    const codenameEl = document.getElementById('val-codename');
-    if (codenameEl) codenameEl.textContent = '未连接';
-    // 重置头像
-    const img = document.getElementById('avatar-image');
-    const svg = document.getElementById('avatar-default-svg');
-    if (img) img.style.display = 'none';
-    if (svg) svg.style.display = 'block';
-    // 重置DM列表
-    renderDmList([]);
-    updateSignalBadge(0);
-    // 刷新页面以彻底清除状态
-    setTimeout(() => location.reload(), 800);
-  }).catch(e => {
-    window.showSysToast?.('>> 退出失败：' + (e.message||''));
-  });
-};
-
 function renderDmList(chats) {
   const list = document.getElementById('dms-list');
   const empty = document.getElementById('dms-empty');
