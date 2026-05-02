@@ -1889,24 +1889,95 @@ let _chatListUnsub = null;
 
 // 监听用户的所有聊天
 function setupDmListener() {
-  if (!_currentUser) return;
+  // 直接从全局auth获取，不依赖_currentUser的时序
+  const user = window.firebase?.auth?.()?.currentUser || _currentUser;
+  if (!user) {
+    console.log('[DM] No user, retrying setupDmListener in 1s...');
+    setTimeout(setupDmListener, 1000);
+    return;
+  }
   if (_chatListUnsub) _chatListUnsub();
-  _chatListUnsub = listenToUserChats(_currentUser.uid, chats => {
+  console.log('[DM] Setting up listener for', user.uid);
+  _chatListUnsub = listenToUserChats(user.uid, chats => {
+    console.log('[DM] Received chats:', chats.length, chats);
     renderDmList(chats);
-    // 检查未读
-    const hasUnread = chats.some(c => c[`unread_${_currentUser.uid}`] === true);
-    const navBtn = document.getElementById('btn-signal-nav');
-    if (navBtn) {
-      if (hasUnread) navBtn.classList.add('unread');
-      else navBtn.classList.remove('unread');
-    }
+    // 计算未读数量
+    const unreadCount = chats.filter(c => c[`unread_${user.uid}`] === true).length;
+    updateSignalBadge(unreadCount);
   });
 }
+
+// 更新频段按钮上的未读数
+function updateSignalBadge(count) {
+  const navBtn = document.getElementById('btn-signal-nav');
+  if (!navBtn) return;
+  if (count > 0) {
+    navBtn.classList.add('unread');
+  } else {
+    navBtn.classList.remove('unread');
+  }
+  // 更新 .btn-signal-text 内的数字
+  const textEl = navBtn.querySelector('.btn-signal-text');
+  if (textEl) {
+    textEl.innerHTML = `<span style="font-size:1rem;">📡</span> 频段(${count})`;
+    // 如果有未读则数字变红
+    if (count > 0) {
+      textEl.style.color = 'var(--neon-red)';
+    } else {
+      textEl.style.color = '';
+    }
+  }
+}
+
+// 暴露给ui.js使用
+window.refreshDmListener = function() {
+  setupDmListener();
+};
+
+// ==========================================
+// 🚪 退出登录
+// ==========================================
+window.handleLogout = function() {
+  if (!confirm('确认要切断神经元连接？')) return;
+  // 清理本地DM状态
+  if (_chatListUnsub) { _chatListUnsub(); _chatListUnsub = null; }
+  if (_chatMessagesUnsub) { _chatMessagesUnsub(); _chatMessagesUnsub = null; }
+  _currentChatId = null;
+  _currentChatPeerId = null;
+  _currentChatPeerName = null;
+  
+  logoutUser().then(() => {
+    window.showSysToast?.('>> 已切断神经元连接。');
+    // 重置UI
+    _currentUser = null;
+    const codenameEl = document.getElementById('val-codename');
+    if (codenameEl) codenameEl.textContent = '未连接';
+    // 重置头像
+    const img = document.getElementById('avatar-image');
+    const svg = document.getElementById('avatar-default-svg');
+    if (img) img.style.display = 'none';
+    if (svg) svg.style.display = 'block';
+    // 重置DM列表
+    renderDmList([]);
+    updateSignalBadge(0);
+    // 刷新页面以彻底清除状态
+    setTimeout(() => location.reload(), 800);
+  }).catch(e => {
+    window.showSysToast?.('>> 退出失败：' + (e.message||''));
+  });
+};
 
 function renderDmList(chats) {
   const list = document.getElementById('dms-list');
   const empty = document.getElementById('dms-empty');
   if (!list) return;
+  
+  // 获取当前用户uid（多重保险）
+  const myUid = _currentUser?.uid || window.firebase?.auth?.()?.currentUser?.uid;
+  if (!myUid) {
+    console.warn('[DM] Cannot render list: no current user');
+    return;
+  }
   
   if (chats.length === 0) {
     if (empty) empty.style.display = 'block';
@@ -1917,10 +1988,11 @@ function renderDmList(chats) {
   list.querySelectorAll('.dm-list-item').forEach(el => el.remove());
   
   chats.forEach(chat => {
-    const peerId = chat.participants.find(p => p !== _currentUser.uid);
+    const peerId = chat.participants?.find(p => p !== myUid);
+    if (!peerId) return;
     const peerName = chat.participantNames?.[peerId] || '匿名';
     const time = chat.lastMessageTime ? fmtTime(chat.lastMessageTime.toDate?.() || new Date(chat.lastMessageTime.seconds*1000)) : '';
-    const isUnread = chat[`unread_${_currentUser.uid}`] === true;
+    const isUnread = chat[`unread_${myUid}`] === true;
     const item = document.createElement('div');
     item.className = `dm-list-item${isUnread ? ' unread' : ''}`;
     const initial = peerName.replace(/^@/, '').charAt(0).toUpperCase();

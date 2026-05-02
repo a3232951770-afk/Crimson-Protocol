@@ -581,27 +581,44 @@ export async function sendDirectMessage(toUid, toName, text) {
   if (!user) throw new Error('未登录');
   if (!toUid || !text?.trim()) return;
   const chatId = chatIdForUsers(user.uid, toUid);
+  const messageText = text.trim();
+  const senderName = user.displayName || user.email || '匿名';
+  const peerName = toName || '匿名';
+  const preview = messageText.substring(0, 80);
   
-  // 1. 在chat元数据里保存对话信息
-  await setDoc(doc(db,'dms',chatId), {
+  // 关键操作（必须成功）：发送实际消息到 /dms/{chatId}/messages
+  const sendMessage = addDoc(collection(db,'dms',chatId,'messages'), {
+    fromId: user.uid,
+    fromName: senderName,
+    text: messageText,
+    createdAt: serverTimestamp()
+  });
+  
+  // 元数据更新（与消息发送并行）
+  const updateMeta = setDoc(doc(db,'dms',chatId), {
     participants: [user.uid, toUid],
-    participantNames: {
-      [user.uid]: user.displayName || user.email,
-      [toUid]: toName || '匿名'
-    },
-    lastMessage: text.substring(0, 80),
+    participantNames: { [user.uid]: senderName, [toUid]: peerName },
+    lastMessage: preview,
     lastMessageTime: serverTimestamp(),
     lastSenderId: user.uid,
     [`unread_${toUid}`]: true
   }, { merge: true });
   
-  // 2. 发送实际消息
-  await addDoc(collection(db,'dms',chatId,'messages'), {
-    fromId: user.uid,
-    fromName: user.displayName || user.email,
-    text: text.trim(),
-    createdAt: serverTimestamp()
-  });
+  // 索引更新（并行，失败不阻塞）
+  const updateMyIndex = setDoc(doc(db,'users',user.uid,'chats',chatId), {
+    chatId, peerId: toUid, peerName,
+    lastMessage: preview, lastMessageTime: serverTimestamp(), unread: false
+  }, { merge: true }).catch(e => console.warn('我的对话索引失败:', e));
+  
+  const updatePeerIndex = setDoc(doc(db,'users',toUid,'chats',chatId), {
+    chatId, peerId: user.uid, peerName: senderName,
+    lastMessage: preview, lastMessageTime: serverTimestamp(), unread: true
+  }, { merge: true }).catch(e => console.warn('对方对话索引失败:', e));
+  
+  // 等待关键操作完成（消息和元数据），索引在后台异步执行
+  await Promise.all([sendMessage, updateMeta]);
+  // 索引不阻塞，让用户立即看到消息已发送
+  Promise.all([updateMyIndex, updatePeerIndex]).catch(()=>{});
 }
 
 // 监听某个对话的所有消息
@@ -612,11 +629,22 @@ export function listenToDmMessages(chatId, cb) {
   }, err => { console.warn('DM监听失败:', err); cb([]); });
 }
 
-// 监听用户的所有聊天列表
+// 监听用户的所有聊天列表（从用户子集合读取，避免顶层query规则问题）
 export function listenToUserChats(uid, cb) {
-  const q = query(collection(db,'dms'), where('participants','array-contains',uid), limit(50));
+  // 改成从 users/{uid}/chats 子集合读取
+  const q = query(collection(db,'users',uid,'chats'), limit(50));
   return onSnapshot(q, snap => {
-    const chats = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const chats = snap.docs.map(d => {
+      const data = d.data();
+      return {
+        id: data.chatId || d.id,
+        participants: [uid, data.peerId],
+        participantNames: { [uid]: '我', [data.peerId]: data.peerName || '匿名' },
+        lastMessage: data.lastMessage || '',
+        lastMessageTime: data.lastMessageTime,
+        [`unread_${uid}`]: data.unread === true
+      };
+    });
     chats.sort((a,b) => (b.lastMessageTime?.seconds||0) - (a.lastMessageTime?.seconds||0));
     cb(chats);
   }, err => { console.warn('聊天列表监听失败:', err); cb([]); });
@@ -625,7 +653,9 @@ export function listenToUserChats(uid, cb) {
 // 标记为已读
 export async function markChatAsRead(chatId, uid) {
   try {
+    // 同时更新主dms文档和用户子集合
     await setDoc(doc(db,'dms',chatId), { [`unread_${uid}`]: false }, { merge: true });
+    await setDoc(doc(db,'users',uid,'chats',chatId), { unread: false }, { merge: true });
   } catch(e) {}
 }
 

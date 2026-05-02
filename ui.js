@@ -159,11 +159,9 @@ function closeEditModal() {
 function openDrawer() {
     document.getElementById('comm-drawer-overlay').classList.add('active');
     document.getElementById('comm-drawer').classList.add('active');
-    // 使用 '' 而非 'auto'，以保留 body 的 overflow:hidden CSS
-    const btnSignalNav = document.getElementById('btn-signal-nav');
-    if (btnSignalNav) {
-        btnSignalNav.classList.remove('unread');
-        btnSignalNav.querySelector('.btn-signal-text').innerHTML = '<span style="font-size:1rem;">📡</span> 频段(0)';
+    // 触发DM监听刷新（防止首次打开抽屉时列表为空）
+    if (typeof window.refreshDmListener === 'function') {
+        window.refreshDmListener();
     }
 }
 
