@@ -17,6 +17,12 @@
             const target = document.getElementById(pageId);
             if(target) target.classList.add('active');
 
+            // 同步底部移动tab的active状态
+            document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+                if(btn.dataset.page === pageId) btn.classList.add('active');
+                else if(btn.dataset.page) btn.classList.remove('active');
+            });
+
             if(pageId === 'page-mother-star') {
                 if(window.resumeThreeJS) window.resumeThreeJS();
             } else {
@@ -25,10 +31,25 @@
 
             if(pageId === 'page-chronicle') {
                 if(window.resizeDnaCanvas) setTimeout(window.resizeDnaCanvas, 100);
-                // 移动端：确保每次进入编年史字典模式，侧边栏都是展开的状态以展示搜索栏
                 document.getElementById('dict-sidebar').classList.remove('collapsed');
             }
         }
+        
+        // 移动端tab切换：直接调用 switchPage
+        window.mobileSwitchPage = function(pageId, btnElement) {
+            // 先调用switchPage（不传navElement，让我们手动处理active状态）
+            switchPage(pageId, null);
+            // 设置桌面nav对应的链接为active（保持状态一致）
+            document.querySelectorAll('.nav-links a').forEach(a => {
+                const onclickStr = a.getAttribute('onclick') || '';
+                if(onclickStr.includes(pageId)) a.classList.add('active');
+            });
+            // 让被点击的mobile tab高亮
+            document.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+        };
+        // 暴露 switchPage 给全局
+        window.switchPage = switchPage;
 
         /* 3. 启示录前导动画 (p5.js 逻辑) */
         let p5Instance;

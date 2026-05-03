@@ -1686,193 +1686,348 @@ body, html {
 }
 
 
+
 /* ==========================================================================
-   📱 MOBILE ADAPTATION (桌面版样式不变，仅在 ≤768px 生效)
+   📱 MOBILE ADAPTATION v2 (小红书式底部Tab栏 + 顶部紧凑导航)
+   桌面版样式100%不变，仅在 ≤768px 生效
    ========================================================================== */
 @media (max-width: 768px) {
 
   /* ---- 全局基础 ---- */
   body {
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 64px !important; /* 让出底部tab栏空间 */
   }
-  input, textarea, select {
-    font-size: 16px !important; /* 防 iOS 自动缩放 */
-  }
-  /* 触摸友好的最小点击区 */
-  button, .action-btn, .nav-links a, .star-filter-btn {
-    min-height: 36px;
-  }
+  input, textarea, select { font-size: 16px !important; }
 
-  /* ---- 顶部导航栏 ---- */
-  .nav-bar {
+  /* ---- 顶部紧凑导航栏 ---- */
+  #global-nav, .nav-bar {
     padding: 0.5rem 0.8rem !important;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+    height: 48px !important;
+    flex-wrap: nowrap !important;
+    background: rgba(11, 11, 10, 0.96) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(204, 78, 60, 0.3) !important;
+    z-index: 1000;
   }
   .nav-logo {
-    font-size: 0.9rem !important;
+    font-size: 0.85rem !important;
+    line-height: 1.2 !important;
+    flex: 1;
+  }
+  .nav-logo .nav-subtitle, 
+  .nav-logo > span:not(:first-child) {
+    display: none !important;
+  }
+  /* 隐藏汉堡菜单和链接（手机版用底部tab） */
+  .nav-mobile-toggle { display: none !important; }
+  .nav-links { display: none !important; }
+  
+  /* 频段按钮：紧凑图标版 */
+  .nav-right-controls {
+    display: flex !important;
+    align-items: center;
+    gap: 6px !important;
     flex: 0 0 auto;
   }
-  .nav-logo .nav-subtitle {
-    display: none; /* 隐藏副标题节省空间 */
-  }
-  /* 链接区改为汉堡菜单触发的下拉 */
-  .nav-links {
-    order: 10;
-    width: 100%;
-    flex-direction: column !important;
-    gap: 0 !important;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s;
-    background: rgba(11,11,10,0.98);
-    border-top: 1px solid rgba(204,78,60,0.3);
-    margin-top: 0.5rem !important;
-  }
-  .nav-links.mobile-open {
-    max-height: 400px;
-    padding: 0.5rem 0;
-  }
-  .nav-links a {
-    padding: 0.7rem 1rem !important;
-    width: 100%;
-    border-bottom: 1px dashed rgba(204,78,60,0.15);
-    font-size: 0.85rem !important;
-  }
-  /* 汉堡按钮 */
-  .nav-mobile-toggle {
+  .btn-signal-recv {
+    background: rgba(204, 78, 60, 0.1) !important;
+    border: 1.5px dashed var(--terracotta) !important;
+    padding: 4px 8px !important;
+    font-size: 0 !important; /* 隐藏文字 */
+    width: 40px !important;
+    height: 36px !important;
+    position: relative;
     display: flex !important;
     align-items: center;
     justify-content: center;
-    background: none;
-    border: 1px solid rgba(204,78,60,0.4);
-    color: var(--terracotta);
-    font-size: 1.1rem;
-    width: 36px;
-    height: 36px;
-    cursor: pointer;
-    margin-right: 4px;
+    letter-spacing: 0 !important;
+    box-shadow: none !important;
   }
-  /* 频段按钮和EN按钮缩小 */
-  .btn-signal-recv {
-    font-size: 0.7rem !important;
-    padding: 5px 10px !important;
-    letter-spacing: 1px !important;
+  .btn-signal-recv .btn-signal-text {
+    font-size: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
-  .btn-signal-text { font-size: 0.7rem !important; }
-  .btn-lang-global, #btn-lang-global {
+  .btn-signal-recv .btn-signal-text > span:first-child {
+    font-size: 1.1rem !important;
+  }
+  /* 数字徽章：右上角红色小气泡 */
+  .btn-signal-recv .btn-signal-text::after {
+    content: attr(data-count);
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--neon-red);
+    color: #fff;
+    font-size: 0.6rem !important;
+    font-family: var(--font-mono);
+    border-radius: 8px;
+    padding: 1px 5px;
+    min-width: 14px;
+    line-height: 1.2;
+    border: 1px solid #000;
+  }
+  /* EN按钮 */
+  #btn-lang-global, .btn-lang-global {
     font-size: 0.7rem !important;
     padding: 5px 8px !important;
+    min-width: 32px !important;
+    height: 36px !important;
   }
 
-  /* ---- 第一母星：公告栏 ---- */
-  #announcement-banner {
-    top: 56px !important;
-    height: 24px !important;
+  /* ---- 底部固定 Tab 栏（核心导航） ---- */
+  #mobile-bottom-tabs {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: rgba(11, 11, 10, 0.97);
+    backdrop-filter: blur(15px);
+    border-top: 1px solid rgba(204, 78, 60, 0.4);
+    z-index: 9000;
+    padding: 0;
   }
-  #announcement-banner-text { font-size: 0.65rem !important; letter-spacing: 0.5px !important; }
-  .announcement-icon { font-size: 0.6rem !important; }
+  .mobile-tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--ash);
+    font-family: var(--font-serif);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 4px;
+    position: relative;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 1px;
+  }
+  .mobile-tab-btn.active {
+    color: var(--neon-red);
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(255, 42, 42, 0.4);
+  }
+  .mobile-tab-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 2px;
+    background: var(--neon-red);
+    box-shadow: 0 0 6px var(--neon-red);
+  }
+  /* 中间凿字+按钮特殊样式 */
+  .mobile-tab-btn.tab-post {
+    flex: 0 0 56px;
+    color: var(--neon-red);
+    font-size: 1.4rem !important;
+    font-weight: 900;
+  }
+  .mobile-tab-btn.tab-post .tab-post-circle {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--terracotta), var(--neon-red));
+    color: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 12px rgba(255, 42, 42, 0.5);
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+  /* 桌面版导航栏隐藏的元素：移动版用底部tab */
+  /* 顶端浮动凿字按钮在手机版隐藏（用底部tab代替） */
+  #global-chisel-btn { display: none !important; }
+
+  /* ---- 公告横幅 ---- */
+  #announcement-banner {
+    top: 48px !important;
+    height: 26px !important;
+  }
+  #announcement-banner-text { font-size: 0.7rem !important; letter-spacing: 0.5px !important; }
+  #announcement-banner-track { padding: 0 30px 0 22px !important; }
+  .announcement-icon { font-size: 0.65rem !important; }
+
+  /* ---- 第一母星 ---- */
+  /* 星图保持全屏沉浸 */
+  #three-container {
+    margin-top: 0 !important;
+  }
+  /* UI 提示文字缩小 */
+  #ui-layer {
+    font-size: 0.65rem !important;
+    padding: 0.5rem 0.7rem !important;
+    bottom: 70px !important;
+    max-width: 60%;
+  }
+  /* 星域分类按钮 → 顶部浮层（在公告下方）*/
+  #expandable-stars {
+    position: fixed !important;
+    top: 76px !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    background: rgba(11, 11, 10, 0.85) !important;
+    backdrop-filter: blur(10px);
+    padding: 8px 12px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    display: flex !important;
+    gap: 6px !important;
+    z-index: 50;
+  }
+  .star-filter-btn {
+    flex-shrink: 0 !important;
+    font-size: 0.7rem !important;
+    padding: 5px 10px !important;
+    white-space: nowrap !important;
+  }
   
-  /* ---- 第一母星：详情卡（变成底部抽屉） ---- */
+  /* 详情卡：底部抽屉式 */
   #detail-card.glass-panel {
     position: fixed !important;
     top: auto !important;
-    bottom: 0 !important;
+    bottom: 56px !important; /* 让出底部tab栏 */
     right: 0 !important;
     left: 0 !important;
     width: 100% !important;
+    max-width: none !important;
     max-height: 70vh !important;
     overflow-y: auto !important;
     border-radius: 16px 16px 0 0 !important;
     transform: translateY(100%) !important;
     transition: transform 0.3s !important;
+    padding: 1.2rem 1rem 1rem !important;
   }
   #detail-card.glass-panel.active {
     transform: translateY(0) !important;
   }
-  /* 详情卡的左右箭头 */
+  /* 详情卡详情卡内的左右箭头 */
   .star-nav-arrow {
     font-size: 1.3rem !important;
-    padding: 6px 4px !important;
+    padding: 6px 6px !important;
+    width: 32px;
+    height: 38px;
   }
   .star-nav-left { left: 4px !important; }
   .star-nav-right { right: 4px !important; }
-  /* UI层提示文字缩小 */
-  #ui-layer {
-    font-size: 0.65rem !important;
-    padding: 0.5rem 0.8rem !important;
-  }
-  /* 星域分类按钮 */
-  .star-filter-btn {
-    font-size: 0.65rem !important;
-    padding: 4px 8px !important;
-  }
+  /* 详情卡内字符 */
+  #detail-card .card-header { font-size: 3.5rem !important; }
+  #detail-card .card-subtitle { font-size: 0.75rem !important; }
 
-  /* ---- 编年史：单列垂直 ---- */
-  .chronicle-layout, .chron-content {
-    flex-direction: column !important;
+  /* ---- 编年史 ---- */
+  /* 隐藏左侧时间轴 */
+  .chron-timeline-side, .timeline-vertical, .vertical-timeline {
+    display: none !important;
   }
-  .chron-tabs-bar {
+  /* 主切换tab */
+  .chron-switch, .switch-bar {
+    flex-direction: row !important;
+    justify-content: center;
+    gap: 0 !important;
+  }
+  .switch-option {
+    font-size: 0.85rem !important;
+    padding: 8px 16px !important;
+  }
+  /* 维度tab栏（华夏/寰宇/灵境）改顶部，单行 */
+  .chron-tabs-bar, .dimension-tabs {
     overflow-x: auto;
     flex-wrap: nowrap !important;
     -webkit-overflow-scrolling: touch;
+    padding: 0.5rem !important;
+    gap: 6px !important;
   }
   .chron-tab {
     flex-shrink: 0 !important;
-    font-size: 0.75rem !important;
-    padding: 8px 12px !important;
+    font-size: 0.78rem !important;
+    padding: 6px 12px !important;
+    white-space: nowrap;
   }
-  /* 字典页面双栏改单栏 */
-  .dictionary-grid, .dict-content-grid {
+  /* 编年史内容区改单栏垂直 */
+  .chronicle-layout, .chron-content, .dictionary-grid, .dict-content-grid {
     grid-template-columns: 1fr !important;
+    flex-direction: column !important;
     gap: 1rem !important;
   }
-  /* 字典网络节点缩小 */
+  /* 字典字母索引：保留原样但缩小 */
   #network-canvas {
     height: 280px !important;
   }
-  .network-word-char { font-size: 1.1rem !important; }
+  .network-word-char { font-size: 1rem !important; }
 
-  /* ---- 女娲的泥潭：双列瀑布流 ---- */
+  /* ---- 女娲泥潭 ---- */
+  /* 4个tab两行紧凑布局 */
   .mire-tabs-bar {
-    overflow-x: auto;
-    flex-wrap: nowrap !important;
-    padding: 0 0.5rem !important;
-    -webkit-overflow-scrolling: touch;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px !important;
+    padding: 0.4rem !important;
   }
   .mire-tab {
     flex-shrink: 0 !important;
-    font-size: 0.8rem !important;
-    padding: 0.6rem 0.8rem !important;
-    white-space: nowrap;
+    font-size: 0.78rem !important;
+    padding: 0.5rem 0.4rem !important;
+    text-align: center;
+    white-space: nowrap !important;
+    border: 1px solid rgba(204,78,60,0.2) !important;
+  }
+  .mire-tab.active {
+    border-color: var(--neon-red) !important;
   }
   .mire-tab .count {
     font-size: 0.65rem !important;
     padding: 1px 5px !important;
   }
+  /* 帖子双列瀑布流（小红书风） */
   .waterfall-container {
-    padding: 0.6rem !important;
-    gap: 0.6rem !important;
+    padding: 0.5rem !important;
+    gap: 0.4rem !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
   }
   .waterfall-container .post-card {
-    width: calc(50% - 0.3rem) !important; /* 双列 */
+    width: calc(50% - 4px) !important;
     min-width: 0 !important;
-    padding: 0.7rem !important;
+    max-width: none !important;
+    padding: 0.6rem !important;
+    flex: 0 0 calc(50% - 4px) !important;
+    box-sizing: border-box !important;
   }
-  .post-card h3 { font-size: 0.85rem !important; line-height: 1.4 !important; }
-  .post-card .card-content { font-size: 0.7rem !important; }
-  .post-card .post-target-char { font-size: 3rem !important; }
-  .post-card .card-author, .post-card .card-stats { font-size: 0.6rem !important; }
+  .post-card h3 { font-size: 0.82rem !important; line-height: 1.4 !important; margin: 0.4rem 0 !important; }
+  .post-card .card-content { font-size: 0.7rem !important; line-height: 1.5 !important; }
+  .post-card .post-target-char { font-size: 2.8rem !important; padding: 0.3rem 0 !important; }
+  .post-card .card-author, .post-card .card-stats { font-size: 0.62rem !important; }
+  .post-card .card-meta { gap: 4px !important; flex-wrap: wrap !important; }
   .post-card .action-btn { font-size: 0.65rem !important; padding: 3px 4px !important; }
-  /* 全局发帖按钮 */
-  #global-chisel-btn {
-    bottom: 16px !important;
-    right: 16px !important;
-    font-size: 0.7rem !important;
-    padding: 8px 14px !important;
+  .post-card .card-actions { gap: 6px !important; flex-wrap: wrap !important; }
+  /* 置顶徽章移到左上角，避免压标题 */
+  .pinned-post {
+    padding-top: 1.4rem !important;
+  }
+  .pinned-badge {
+    top: 6px !important;
+    right: auto !important;
+    left: 6px !important;
+    font-size: 0.6rem !important;
+    padding: 1px 6px !important;
   }
 
-  /* ---- 拓片馆：上下垂直 ---- */
+  /* ---- 拓片馆 ---- */
   .profile-container, .profile-layout {
     flex-direction: column !important;
     padding: 1rem !important;
@@ -1883,15 +2038,12 @@ body, html {
     text-align: center !important;
     margin-bottom: 1.5rem !important;
   }
-  .profile-right {
-    width: 100% !important;
-  }
+  .profile-right { width: 100% !important; }
   .avatar-box {
     width: 120px !important;
     height: 120px !important;
     margin: 0 auto !important;
   }
-  /* PROTOCOL ID + 退出按钮 */
   .id-header {
     flex-wrap: wrap !important;
     gap: 8px !important;
@@ -1901,17 +2053,14 @@ body, html {
     padding: 5px 10px !important;
     letter-spacing: 1px !important;
   }
-  /* 数据行 */
   .data-grid, .stats-row {
     grid-template-columns: 1fr 1fr !important;
     gap: 0.6rem !important;
   }
-  .data-card {
-    padding: 0.7rem !important;
-  }
+  .data-card { padding: 0.7rem !important; }
   .data-card .data-label { font-size: 0.6rem !important; }
   .data-card .data-value { font-size: 1.1rem !important; }
-  /* 勋章保持横向（按用户要求） */
+  /* 勋章保持横向滚动 */
   .medal-grid, .medal-row {
     display: flex !important;
     flex-direction: row !important;
@@ -1926,24 +2075,25 @@ body, html {
     min-width: 110px !important;
     padding: 0.6rem !important;
   }
-  /* 泥潭足迹改成双列（按用户要求） */
+  /* 泥潭足迹双列 */
   #footprints-container {
-    gap: 0.6rem !important;
+    gap: 0.4rem !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
   }
   #footprints-container .post-card {
-    width: calc(50% - 0.3rem) !important;
+    width: calc(50% - 4px) !important;
     min-width: 0 !important;
     max-width: none !important;
+    flex: 0 0 calc(50% - 4px) !important;
   }
-  #footprints-container .post-target-char {
-    font-size: 3rem !important;
-  }
+  #footprints-container .post-target-char { font-size: 2.8rem !important; }
 
-  /* ---- 帖子详情弹窗（移动端全屏） ---- */
+  /* ---- 帖子详情弹窗（全屏） ---- */
   .modal-overlay .modal-container {
     width: calc(100% - 1rem) !important;
     max-width: none !important;
-    max-height: 92vh !important;
+    max-height: 88vh !important;
     margin: 0.5rem !important;
     padding: 1rem !important;
   }
@@ -1952,39 +2102,46 @@ body, html {
     font-size: 0.75rem !important;
     padding: 6px 10px !important;
   }
-  .post-target-char {
-    font-size: 4rem !important;
-  }
-  /* 评论区 */
+  .modal-overlay .post-target-char { font-size: 4rem !important; }
   .comment-section { padding: 0.6rem 0 !important; }
-  .comment-input-area textarea {
-    min-height: 60px !important;
-  }
+  .comment-input-area textarea { min-height: 60px !important; }
 
-  /* ---- 频段抽屉：占满全屏 ---- */
+  /* ---- 频段抽屉：全宽 + 顶部留出关闭按钮空间 ---- */
   .comm-drawer {
     width: 100% !important;
     right: -100% !important;
     border-left: none !important;
+    z-index: 9999 !important; /* 确保在底部tab之上 */
   }
   .comm-drawer.active { right: 0 !important; }
+  .drawer-overlay { z-index: 9998 !important; }
+  .drawer-header {
+    padding: 0.6rem 0.5rem !important;
+    padding-right: 56px !important; /* 给EN按钮让出空间 */
+    position: relative;
+  }
   .drawer-tab {
     font-size: 0.8rem !important;
-    padding: 0.7rem 0.5rem !important;
+    padding: 0.6rem 0.4rem !important;
   }
   .drawer-close {
     font-size: 1rem !important;
-    padding: 0.7rem !important;
+    padding: 0.6rem !important;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
   }
+  /* 抽屉打开时隐藏全局EN按钮 */
+  body.drawer-open #btn-lang-global,
+  body.drawer-open .btn-lang-global { display: none !important; }
   /* 私信消息气泡 */
   .term-msg {
     max-width: 85% !important;
     font-size: 0.85rem !important;
     padding: 0.6rem 0.8rem !important;
   }
-  .term-msg .sender {
-    font-size: 0.7rem !important;
-  }
+  .term-msg .sender { font-size: 0.7rem !important; }
   .term-input-box textarea {
     font-size: 16px !important;
     min-height: 50px !important;
@@ -2011,10 +2168,7 @@ body, html {
     font-size: 16px !important;
     min-height: 80px !important;
   }
-  /* 偏旁手术区 */
-  #surgery-canvas-container {
-    height: 280px !important;
-  }
+  #surgery-canvas-container { height: 280px !important; }
   .radical-pool {
     flex-wrap: wrap;
     max-height: 100px;
@@ -2025,19 +2179,12 @@ body, html {
     width: 44px !important;
     height: 44px !important;
   }
-  .canvas-toolbar {
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
+  .canvas-toolbar { flex-wrap: wrap; gap: 0.4rem; }
   .tool-btn {
     font-size: 0.7rem !important;
     padding: 5px 8px !important;
   }
-  /* 字符目标 */
-  .target-char-display {
-    font-size: 4rem !important;
-  }
-  /* 提交按钮 */
+  .target-char-display { font-size: 4rem !important; }
   .btn-bottom-action, #btn-launch-poster {
     font-size: 0.85rem !important;
     padding: 0.8rem !important;
@@ -2054,24 +2201,19 @@ body, html {
     font-size: 0.85rem !important;
     line-height: 1.7 !important;
   }
-
-  /* ---- 凿字海报预览 ---- */
-  .poster-preview {
-    max-width: 100% !important;
-    transform: scale(0.85) !important;
-  }
 }
 
-/* ---- 超小屏幕额外优化（≤480px，iPhone SE 等）---- */
+/* 桌面端隐藏底部移动tab栏 */
+@media (min-width: 769px) {
+  #mobile-bottom-tabs { display: none !important; }
+}
+
+/* ---- 超小屏幕额外优化（≤480px）---- */
 @media (max-width: 480px) {
-  .nav-logo { font-size: 0.8rem !important; }
-  .btn-signal-recv { font-size: 0.65rem !important; padding: 4px 8px !important; }
-  .waterfall-container .post-card {
-    /* 超小屏改成单列也可以容忍，但用户说要双列就保持 */
-    padding: 0.6rem !important;
-  }
-  .post-card .post-target-char { font-size: 2.5rem !important; }
+  .nav-logo { font-size: 0.78rem !important; }
+  .post-card .post-target-char { font-size: 2.4rem !important; }
   .post-card h3 { font-size: 0.78rem !important; }
-  #footprints-container .post-target-char { font-size: 2.5rem !important; }
+  #footprints-container .post-target-char { font-size: 2.4rem !important; }
   .avatar-box { width: 100px !important; height: 100px !important; }
+  .mobile-tab-btn { font-size: 0.72rem !important; }
 }

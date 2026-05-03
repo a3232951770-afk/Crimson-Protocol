@@ -1941,11 +1941,11 @@ function updateSignalBadge(count) {
   } else {
     navBtn.classList.remove('unread');
   }
-  // 更新 .btn-signal-text 内的数字
+  // 更新 .btn-signal-text 内的数字（桌面版显示，手机版CSS隐藏文字保留图标+徽章）
   const textEl = navBtn.querySelector('.btn-signal-text');
   if (textEl) {
     textEl.innerHTML = `<span style="font-size:1rem;">📡</span> 频段(${count})`;
-    // 如果有未读则数字变红
+    textEl.setAttribute('data-count', count); // 手机版CSS用这个属性显示数字徽章
     if (count > 0) {
       textEl.style.color = 'var(--neon-red)';
     } else {

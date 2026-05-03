@@ -670,5 +670,14 @@
         </div>
     </div>
 
+    <!-- 📱 移动端底部固定Tab栏（仅手机显示） -->
+    <nav id="mobile-bottom-tabs" style="display:none;">
+        <button class="mobile-tab-btn active" data-page="page-mother-star" onclick="window.mobileSwitchPage('page-mother-star', this)">第一母星</button>
+        <button class="mobile-tab-btn" data-page="page-chronicle" onclick="window.mobileSwitchPage('page-chronicle', this)">编年史</button>
+        <button class="mobile-tab-btn tab-post" onclick="openLabModal()" title="凿字/发帖"><span class="tab-post-circle">+</span></button>
+        <button class="mobile-tab-btn" data-page="page-mire" onclick="window.mobileSwitchPage('page-mire', this)">女娲泥潭</button>
+        <button class="mobile-tab-btn" data-page="page-rubbing-pavilion" onclick="window.mobileSwitchPage('page-rubbing-pavilion', this)">拓片馆</button>
+    </nav>
+
 </body>
 </html>

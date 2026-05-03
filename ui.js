@@ -159,6 +159,7 @@ function closeEditModal() {
 function openDrawer() {
     document.getElementById('comm-drawer-overlay').classList.add('active');
     document.getElementById('comm-drawer').classList.add('active');
+    document.body.classList.add('drawer-open'); // 让CSS隐藏EN按钮
     // 触发DM监听刷新（防止首次打开抽屉时列表为空）
     if (typeof window.refreshDmListener === 'function') {
         window.refreshDmListener();
@@ -168,6 +169,7 @@ function openDrawer() {
 function closeDrawer() {
     document.getElementById('comm-drawer-overlay').classList.remove('active');
     document.getElementById('comm-drawer').classList.remove('active');
+    document.body.classList.remove('drawer-open');
 }
 
 function switchDrawerTab(viewId, element) {
