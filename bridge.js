@@ -215,6 +215,26 @@ function injectStarFilter() {
   `;
   motherStar.appendChild(filterDiv);
 
+  // 移动端：点击 ::before 伪元素的位置（顶部"星域分类 ▼"标签）来展开/折叠
+  filterDiv.addEventListener('click', (e) => {
+    if (window.innerWidth > 768) return; // 桌面版不变
+    // 点击在按钮或count区域内时不切换（让按钮自己处理）
+    if (e.target.closest('.star-filter-btn') || e.target.closest('#star-filter-count')) return;
+    // 点击在伪元素位置（顶部~36px内）时切换
+    const rect = filterDiv.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    if (clickY < 36 || filterDiv.classList.contains('mobile-expanded')) {
+      filterDiv.classList.toggle('mobile-expanded');
+    }
+  });
+  // 选了某个分类后自动收起
+  filterDiv.addEventListener('click', (e) => {
+    if (window.innerWidth > 768) return;
+    if (e.target.closest('.star-filter-btn')) {
+      setTimeout(() => filterDiv.classList.remove('mobile-expanded'), 100);
+    }
+  });
+
   let _activeFilterCat = 'all';
 
   window.applyStarFilter = (cat, btn) => {

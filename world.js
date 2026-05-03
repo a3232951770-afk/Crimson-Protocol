@@ -247,7 +247,14 @@
 
             if (window.fadeOutWind) window.fadeOutWind();
             p5Container.style.opacity = '0';
-            setTimeout(() => { p5Container.style.display = 'none'; if (typeof p5_noLoop === 'function') window.p5_noLoop(); }, 2000);
+            p5Container.style.pointerEvents = 'none'; // 立即禁用触摸
+            setTimeout(() => { 
+                p5Container.style.display = 'none'; 
+                p5Container.style.visibility = 'hidden';
+                p5Container.style.zIndex = '-1';
+                if (typeof p5_noLoop === 'function') window.p5_noLoop();
+                window._prologueDone = true;
+            }, 2000);
 
             globalNav.style.opacity = '1'; globalNav.style.pointerEvents = 'auto';
             chiselBtn.style.opacity = '1'; chiselBtn.style.pointerEvents = 'auto';
