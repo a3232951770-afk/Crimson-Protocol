@@ -357,7 +357,18 @@ function overrideTerminalSearch() {
         if (catGroup) catGroup.style.display = 'block';
       }
 
-      if (window.typeWriterLab) {
+      if (window.unfurlScroll) {
+        window.unfurlScroll(text, out, () => {
+          if (isHit) {
+            out.classList.add('confidential');
+            if (reject) { reject.innerText='🚫 拒绝接受！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',200); }
+          } else {
+            if (manual) manual.style.display='block';
+            if (reject) { reject.innerText='🔒 锁定旧字！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',200); }
+          }
+        });
+      } else if (window.typeWriterLab) {
+        // 兜底：万一unfurlScroll未加载，仍可用旧打字机
         window.typeWriterLab(text, out, 0, () => {
           if (isHit) {
             out.classList.add('confidential');
@@ -822,7 +833,14 @@ async function handleForge() {
           canvasImage = compCanvas.toDataURL('image/png');
         }
       } catch(e) { console.warn('画板截图失败:', e); }
-      newDef = '偏旁手术重构提案（详见画板截图）';
+      // 改动3：读取偏旁手术的新字读音 + 字义阐释，拼进 newDef 与 reason
+      const surgeryPron = document.getElementById('surgery-pronunciation')?.value?.trim() || '';
+      const surgeryExpl = document.getElementById('surgery-explanation')?.value?.trim() || '';
+      const parts = [];
+      if (surgeryPron) parts.push(`【新字读音】${surgeryPron}`);
+      if (surgeryExpl) parts.push(`【字义阐释】${surgeryExpl}`);
+      newDef = parts.length ? parts.join('\n') : '偏旁手术重构提案（详见画板截图）';
+      reason = surgeryExpl || reason;
     } else if (panelId === 'tab-replace-word') {
       const inputs = activePanel.querySelectorAll('textarea.wb-textarea, input.wb-textarea');
       if (inputs.length >= 1) newDef = inputs[0]?.value?.trim() || '';

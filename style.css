@@ -139,9 +139,29 @@ body, html {
 #detail-card .card-subtitle { color: #aaa; font-size: 0.85rem; margin-bottom: 25px; letter-spacing: 1.5px; font-family: var(--font-sans); }
 .redacted-text { background-color: #000; color: #000; padding: 15px; cursor: pointer; transition: all 0.3s; user-select: none; line-height: 1.9; font-size: 1.05rem; border-radius: 2px; position: relative; box-shadow: inset 0 0 15px rgba(0,0,0,0.9); min-height: 60px; font-family: var(--font-serif); }
 .redacted-text::before { content: ' '; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(20,20,20,0.8) 10px, rgba(20,20,20,0.8) 20px); pointer-events: none; opacity: 0.5; }
-.redacted-text:hover::after { content: ' [⚠️ 污染封印，点击破译]'; color: var(--terracotta); font-size: 0.85rem; position: absolute; right: 10px; bottom: -28px; text-shadow: 0 0 5px var(--terracotta); }
+/* 改动1：常驻呼吸提示 — 居中显示在黑条正中央，缓慢脉动 */
+.redacted-text::after {
+    content: '[ ⚠ 污染封印 · 点击破译 ]';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--terracotta);
+    font-size: 0.85rem;
+    font-family: var(--font-mono);
+    letter-spacing: 2px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 2;
+    animation: redactedHintPulse 2.4s ease-in-out infinite;
+}
+@keyframes redactedHintPulse {
+    0%, 100% { opacity: 0.55; text-shadow: 0 0 4px rgba(204, 78, 60, 0.4); }
+    50%      { opacity: 1;    text-shadow: 0 0 10px rgba(255, 42, 42, 0.85), 0 0 18px rgba(204, 78, 60, 0.5); }
+}
+.redacted-text:hover::after { color: var(--neon-red); animation-duration: 1.2s; }
 .redacted-text.revealed { background-color: rgba(255, 255, 255, 0.05); color: #ccc; text-decoration: line-through; text-decoration-color: var(--blood-red); text-decoration-thickness: 2px; }
-.redacted-text.revealed::before, .redacted-text.revealed:hover::after { display: none; }
+.redacted-text.revealed::before, .redacted-text.revealed::after { display: none; }
 .btn-propose { display: block; width: 100%; margin-top: 45px; padding: 15px 20px; background-color: rgba(204, 78, 60, 0.1); color: var(--terracotta); border: 1px solid var(--terracotta); text-transform: uppercase; font-weight: 700; letter-spacing: 3px; cursor: pointer; transition: all 0.3s; font-family: var(--font-sans); }
 .btn-propose:hover { background-color: var(--blood-red); border-color: var(--blood-red); box-shadow: 0 0 25px rgba(255, 17, 17, 0.6); color: #fff; }
 .close-btn { position: absolute; top: 20px; right: 25px; cursor: pointer; color: #888; font-size: 1.5rem; transition: color 0.2s; font-family: var(--font-sans); }
@@ -251,6 +271,8 @@ body, html {
 .chronicle-nav { display: flex; justify-content: center; gap: 4rem; margin-bottom: 1.5rem; flex-shrink: 0; }
 .chron-tab { font-family: var(--font-display); font-size: 1.2rem; color: var(--ash-text); cursor: pointer; padding-bottom: 0.5rem; border-bottom: 2px solid transparent; transition: all 0.3s; letter-spacing: 0.1em; }
 .chron-tab:hover, .chron-tab.active { color: var(--terracotta); border-bottom-color: var(--terracotta); text-shadow: 0 0 10px var(--terracotta-dim); }
+.chron-tab-hint { font-family: var(--font-mono); font-size: 0.7rem; color: rgba(139,90,43,0.7); letter-spacing: 0.05em; margin-left: 4px; font-weight: normal; }
+.chron-tab.active .chron-tab-hint, .chron-tab:hover .chron-tab-hint { color: var(--terracotta); }
 .chronicle-content { display: flex; flex: 1; gap: 3rem; overflow: hidden; min-height: 0; }
 .timeline-axis { width: 15%; min-width: 160px; position: relative; border-right: 1px dashed var(--ochre-dark); }
 #scroll-dna-canvas { display: block; width: 100%; height: 100%; cursor: ns-resize; }
@@ -748,6 +770,17 @@ body, html {
     font-size: 1.3rem; font-weight: 900; line-height: 2.2; color: #111;
     box-shadow: 15px 15px 30px rgba(0,0,0,0.9), inset 0 0 60px rgba(90, 60, 30, 0.4);
     position: relative; transform: rotate(-0.5deg); display: none;
+    /* 改动2：卷轴展开动画 — 从顶端缓缓拉下，配合clip-path揭示文字 */
+    transform-origin: top center;
+    overflow: hidden;
+}
+.term-output-area.unfurling {
+    animation: scrollUnfurl 1.3s cubic-bezier(0.2, 0, 0.6, 0) both;
+}
+@keyframes scrollUnfurl {
+    0%   { clip-path: inset(0 0 100% 0); max-height: 0;    opacity: 0.4; transform: rotate(-0.5deg) scaleY(0.85); }
+    40%  {                                                  opacity: 0.85; }
+    100% { clip-path: inset(0 0 0 0);    max-height: 2000px; opacity: 1;   transform: rotate(-0.5deg) scaleY(1); }
 }
 .term-output-area.confidential::after {
     content: 'CONFIDENTIAL\n[ 已污染 ]'; position: absolute; top: 25px; right: 20px;
@@ -770,23 +803,183 @@ body, html {
 }
 .btn-reject-huge:hover { background: var(--neon-red); color: #fff; border-color: var(--neon-red); box-shadow: 0 0 40px rgba(255, 42, 10, 0.6); }
 
-/* 视图四：常规发帖 */
+/* 视图四：篆刻泥板 — 横屏远古赛博档案 */
 .fbi-form-container {
-    width: 85%; max-width: 700px; background-color: #0c0c0c; border: 2px solid #333; border-top: 8px solid var(--bone);
-    padding: 3.5rem 4rem; box-shadow: 0 20px 60px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,0,0,1); display: flex; flex-direction: column; gap: 1.2rem; color: var(--bone);
+    width: 88%;
+    max-width: 1300px;
+    max-height: 88vh;
+    background-color: #0a0908;
+    background-image:
+        /* 极淡颗粒杂色 — 远古泥板粗粝感 */
+        repeating-linear-gradient(0deg, rgba(204,78,60,0.015) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, rgba(204,121,0,0.012) 0 1px, transparent 1px 4px),
+        /* 中心微光 */
+        radial-gradient(ellipse at 50% 0%, rgba(204,78,60,0.06) 0%, transparent 60%);
+    border: 1px solid #2a221c;
+    padding: 3rem 3.5rem 1.8rem;
+    box-shadow:
+        0 25px 80px rgba(0,0,0,0.95),
+        inset 0 0 60px rgba(0,0,0,0.6),
+        inset 0 0 0 1px rgba(139,90,43,0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    color: var(--bone);
+    position: relative;
+    overflow: hidden;
 }
-.fbi-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 1rem; margin-bottom: 1rem; }
-.fbi-header h1 { font-family: var(--font-serif); font-size: 2.5rem; font-weight: 900; color: var(--bone); letter-spacing: 5px; }
-.fbi-header .sub { font-family: var(--font-mono); font-size: 0.85rem; letter-spacing: 5px; margin-top: 10px; color: #888; }
-.fbi-input-group { display: flex; align-items: flex-end; width: 100%; margin-bottom: 1rem; gap: 15px; }
-.fbi-label { font-family: var(--font-serif); font-weight: 900; color: var(--ash-text); font-size: 1.1rem; white-space: nowrap; width: 100px; }
-.fbi-select, .fbi-input { flex: 1; background: transparent; border: none; border-bottom: 2px solid #333; color: var(--bone); font-family: var(--font-serif); font-size: 1.2rem; font-weight: bold; padding: 5px 10px; outline: none; cursor: pointer; transition: border-color 0.3s; }
-.fbi-select:focus, .fbi-input:focus { border-bottom-color: var(--bone); }
-.fbi-select option { background: #111; color: var(--bone); }
-.fbi-textarea { width: 100%; background: #050505; border: 2px solid #333; margin-top: 1rem; height: 180px; padding: 15px; font-family: var(--font-serif); font-size: 1.2rem; font-weight: bold; color: var(--bone); outline: none; resize: none; line-height: 1.8; transition: border-color 0.3s; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
-.fbi-textarea:focus { border-color: var(--bone); }
-.btn-fbi-submit { align-self: flex-end; background: var(--bone); color: #000; border: none; font-family: var(--font-serif); font-size: 1.3rem; font-weight: 900; padding: 12px 40px; cursor: pointer; transition: all 0.2s; letter-spacing: 5px; margin-top: 1rem; box-shadow: 4px 4px 0 #333; }
-.btn-fbi-submit:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #444; }
+
+/* 顶部红线呼吸灯 */
+.fbi-neon-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, var(--neon-red) 20%, var(--neon-red) 80%, transparent 100%);
+    animation: fbiNeonPulse 3.2s ease-in-out infinite;
+    z-index: 3;
+}
+@keyframes fbiNeonPulse {
+    0%, 100% { opacity: 0.45; box-shadow: 0 0 6px rgba(255, 42, 42, 0.4), 0 0 12px rgba(204, 78, 60, 0.2); }
+    50%      { opacity: 1;    box-shadow: 0 0 14px rgba(255, 42, 42, 0.9), 0 0 28px rgba(204, 78, 60, 0.5), 0 0 50px rgba(255, 42, 42, 0.25); }
+}
+
+/* 四角扫描定位框 */
+.fbi-corner {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--terracotta);
+    pointer-events: none;
+    z-index: 2;
+}
+.fbi-corner-tl { top: 14px;    left: 14px;    border-right: none;  border-bottom: none; }
+.fbi-corner-tr { top: 14px;    right: 14px;   border-left: none;   border-bottom: none; }
+.fbi-corner-bl { bottom: 14px; left: 14px;    border-right: none;  border-top: none;    }
+.fbi-corner-br { bottom: 14px; right: 14px;   border-left: none;   border-top: none;    }
+
+/* 右上角档案编号 */
+.fbi-archive-no {
+    position: absolute;
+    top: 22px;
+    right: 56px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: rgba(139, 90, 43, 0.8);
+    z-index: 2;
+    text-shadow: 0 0 6px rgba(204,121,0,0.3);
+}
+
+/* 标题 */
+.fbi-header { text-align: center; border-bottom: 1px dashed rgba(139,90,43,0.4); padding-bottom: 1rem; margin-bottom: 0.5rem; }
+.fbi-header h1 { font-family: var(--font-serif); font-size: 2.4rem; font-weight: 900; color: var(--bone); letter-spacing: 8px; text-shadow: 0 0 20px rgba(204,78,60,0.3); }
+.fbi-header .sub { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 5px; margin-top: 8px; color: var(--ash-text); }
+
+/* 横屏主体：左右双栏 + 中间虚线分隔 */
+.fbi-body-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.85fr) 1px minmax(0, 1.4fr);
+    gap: 2.5rem;
+    flex: 1;
+    min-height: 0;
+}
+.fbi-col-left { display: flex; flex-direction: column; gap: 1.1rem; }
+.fbi-col-right { display: flex; flex-direction: column; min-height: 0; gap: 8px; }
+.fbi-divider {
+    background-image: linear-gradient(180deg, transparent 0%, rgba(139,90,43,0.5) 15%, rgba(139,90,43,0.5) 85%, transparent 100%);
+    background-size: 1px 8px;
+    background-repeat: repeat-y;
+    background-position: center;
+    width: 1px;
+}
+
+/* 表单字段 — 紧凑版 */
+.fbi-input-group { display: flex; align-items: flex-end; width: 100%; gap: 12px; margin: 0; }
+.fbi-label { font-family: var(--font-serif); font-weight: 900; color: var(--ash-text); font-size: 0.95rem; white-space: nowrap; width: 90px; letter-spacing: 2px; flex-shrink: 0; }
+.fbi-label-hint { font-family: var(--font-mono); font-size: 0.65rem; color: rgba(139,90,43,0.7); font-weight: normal; letter-spacing: 1px; margin-left: 2px; }
+.fbi-label-block { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; width: auto; }
+.fbi-select, .fbi-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(139,90,43,0.5);
+    color: var(--bone);
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: bold;
+    padding: 6px 8px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+.fbi-select:focus, .fbi-input:focus {
+    border-bottom-color: var(--terracotta);
+    box-shadow: 0 6px 8px -6px rgba(204, 78, 60, 0.6);
+}
+.fbi-select option { background: #0a0908; color: var(--bone); }
+#archive-img-display { color: rgba(180,165,140,0.5); }
+#archive-img-display:not([placeholder="[+] 点击上传图片附件 (选填)"]) { color: var(--bone); }
+
+/* 正文 textarea — 撑满右栏 */
+.fbi-textarea {
+    width: 100%;
+    flex: 1;
+    min-height: 280px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(139,90,43,0.4);
+    border-left: 3px solid var(--terracotta);
+    padding: 16px 18px;
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--bone);
+    outline: none;
+    resize: none;
+    line-height: 1.85;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.7);
+}
+.fbi-textarea:focus {
+    border-color: var(--terracotta);
+    border-left-color: var(--neon-red);
+    box-shadow: inset 0 0 25px rgba(204,78,60,0.12), 0 0 12px rgba(204,78,60,0.2);
+}
+.fbi-textarea::placeholder { color: rgba(180,165,140,0.35); font-style: italic; }
+
+/* 底部页脚条 */
+.fbi-footer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px dashed rgba(139,90,43,0.4);
+    gap: 1.5rem;
+}
+.fbi-footer-text {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: rgba(139,90,43,0.7);
+    letter-spacing: 2px;
+}
+
+/* 提交按钮 — 保留骨白色但更符合赛博泥板 */
+.btn-fbi-submit {
+    background: var(--bone);
+    color: #000;
+    border: none;
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    font-weight: 900;
+    padding: 12px 36px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 4px;
+    box-shadow: 4px 4px 0 var(--ochre-dark);
+    position: relative;
+}
+.btn-fbi-submit:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--terracotta); background: var(--neon-red); color: #fff; }
 .btn-fbi-submit:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #222; }
 
 /* 视图三：基因重塑台 */
@@ -852,13 +1045,80 @@ body, html {
 }
 .surgery-title::before, .surgery-title::after { content: '❖'; font-family: var(--font-mono); color: var(--terracotta); font-size: 0.9rem; }
 .surgery-title .target-word-placeholder { color: var(--neon-red); text-shadow: 0 0 15px rgba(255, 42, 10, 0.6); }
-.canvas-footer-area { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 10px; gap: 20px; }
+.canvas-footer-area { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 22px; gap: 20px; }
 .canvas-footer-actions { display: flex; gap: 15px; align-items: flex-end; flex-shrink: 0; margin-top: 5px; }
 .btn-bottom-action { background: transparent; font-family: var(--font-mono); cursor: pointer; padding: 6px 15px; font-weight: bold; transition: all 0.2s; white-space: nowrap; }
 .btn-upload-canvas { border: 1px solid var(--bone); color: var(--bone); }
 .btn-upload-canvas:hover { background: var(--bone); color: #000; box-shadow: 0 0 15px rgba(226, 220, 208, 0.4); }
 .btn-clear-canvas { border: 1px solid var(--neon-red); color: var(--neon-red); }
 .btn-clear-canvas:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 15px rgba(255, 42, 10, 0.6); }
+
+/* 改动3：偏旁手术新字释义区 — 画布下方，与画布同分一列 */
+.surgery-meaning-area {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 18px 16px;
+    background: linear-gradient(180deg, rgba(11,11,10,0.95), rgba(20,15,12,0.95));
+    border: 1px solid var(--ochre-dark);
+    border-left: 4px solid var(--terracotta);
+    position: relative;
+}
+.surgery-meaning-area::before {
+    content: '> NEW_GLYPH_INSCRIPTION';
+    position: absolute;
+    top: -9px;
+    left: 16px;
+    background: var(--obsidian);
+    padding: 0 8px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--terracotta);
+    letter-spacing: 2px;
+}
+.surgery-meaning-row { display: flex; align-items: flex-start; gap: 14px; }
+.surgery-meaning-label {
+    font-family: var(--font-serif);
+    font-weight: 900;
+    color: var(--bone);
+    font-size: 0.95rem;
+    width: 90px;
+    flex-shrink: 0;
+    padding-top: 8px;
+    letter-spacing: 2px;
+}
+.surgery-meaning-input,
+.surgery-meaning-textarea {
+    flex: 1;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--ochre-dark);
+    color: var(--bone);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    line-height: 1.7;
+}
+.surgery-meaning-textarea {
+    min-height: 70px;
+    max-height: 110px;
+    resize: vertical;
+    font-family: var(--font-serif);
+}
+.surgery-meaning-input:focus,
+.surgery-meaning-textarea:focus {
+    border-color: var(--terracotta);
+    box-shadow: inset 0 0 12px rgba(204, 78, 60, 0.2);
+}
+.surgery-meaning-input::placeholder,
+.surgery-meaning-textarea::placeholder {
+    color: rgba(180, 165, 140, 0.4);
+    font-style: italic;
+}
+/* 让canvas-area在偏旁手术tab下高度收缩，给释义区让位 */
+#tab-radical-surgery .canvas-area { max-height: 52vh; min-height: 280px; }
 #freehand-canvas { position: absolute; top: 0; left: 0; z-index: 5; width: 100%; height: 100%; }
 
 .dropped-radical {
@@ -926,10 +1186,21 @@ body, html {
     .canvas-area { min-height: 380px; border-width: 2px; }
     .canvas-footer-area { flex-direction: column; align-items: flex-start; gap: 15px; }
     .canvas-footer-actions { width: 100%; justify-content: flex-end; }
-    .fbi-form-container { width: 95%; padding: 2rem 1.5rem; }
+    .fbi-form-container { width: 95%; padding: 2rem 1.5rem; max-height: 90vh; overflow-y: auto; }
     .fbi-input-group { flex-direction: column; align-items: flex-start; gap: 5px; }
     .fbi-label { width: 100%; font-size: 1rem; }
     .fbi-select, .fbi-input { width: 100%; font-size: 1.1rem; }
+    /* 改动4：移动端横屏布局降级为堆叠 */
+    .fbi-body-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+    .fbi-divider { display: none; }
+    .fbi-archive-no { font-size: 0.6rem; right: 50px; top: 18px; }
+    .fbi-corner { width: 20px; height: 20px; }
+    .fbi-footer-bar { flex-direction: column; align-items: stretch; gap: 12px; }
+    .fbi-footer-text { font-size: 0.6rem; text-align: center; }
+    .btn-fbi-submit { width: 100%; }
+    .fbi-textarea { min-height: 200px; }
+    .fbi-header h1 { font-size: 1.8rem; letter-spacing: 4px; }
+    .fbi-header .sub { font-size: 0.7rem; letter-spacing: 3px; }
     .folders-container { flex-direction: column; align-items: center; height: auto; gap: 4rem; }
     .folder-wrapper { width: 90%; height: 250px; }
     .folder-tab-top { top: -40px; font-size: 1rem; padding: 0 15px; }

@@ -165,9 +165,9 @@
             <!-- 史记模式 -->
             <main id="layer-chronicle" class="view-layer">
                 <nav class="chronicle-nav">
-                    <div class="chron-tab active" onclick="switchDimension('huaxia', this)">华夏纪元</div>
-                    <div class="chron-tab" onclick="switchDimension('huanyu', this)">寰宇纪元</div>
-                    <div class="chron-tab" onclick="switchDimension('lingjing', this)">灵境空间</div>
+                    <div class="chron-tab active" onclick="switchDimension('huaxia', this)">华夏纪元<span class="chron-tab-hint">（中国）</span></div>
+                    <div class="chron-tab" onclick="switchDimension('huanyu', this)">寰宇纪元<span class="chron-tab-hint">（世界）</span></div>
+                    <div class="chron-tab" onclick="switchDimension('lingjing', this)">灵境空间<span class="chron-tab-hint">（虚拟）</span></div>
                 </nav>
                 <div class="chronicle-content">
                     <div class="timeline-axis" id="dna-sidebar-container">
@@ -540,6 +540,17 @@
                                             <button class="btn-bottom-action btn-clear-canvas" onclick="clearSurgeryCanvas(event)">[ 清空画板 ]</button>
                                         </div>
                                     </div>
+                                    <!-- 改动3：偏旁手术 — 新字释义区 -->
+                                    <div class="surgery-meaning-area">
+                                        <div class="surgery-meaning-row">
+                                            <label class="surgery-meaning-label">新字读音</label>
+                                            <input type="text" id="surgery-pronunciation" class="surgery-meaning-input" placeholder="例如：jié / 第二声 / 选填" maxlength="40">
+                                        </div>
+                                        <div class="surgery-meaning-row">
+                                            <label class="surgery-meaning-label">字义阐释</label>
+                                            <textarea id="surgery-explanation" class="surgery-meaning-textarea" placeholder="为什么这样造？这个新字想表达什么？请用你自己的话写下它的灵魂。"></textarea>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -554,40 +565,67 @@
         <!-- 视图四：发帖表单 -->
         <div id="lab-view-normal-post" class="lab-view">
             <div class="fbi-form-container" onclick="event.stopPropagation()">
+                <!-- 改动4：顶部红线呼吸灯 -->
+                <div class="fbi-neon-line"></div>
+                <!-- 改动4：四角扫描定位框 -->
+                <span class="fbi-corner fbi-corner-tl"></span>
+                <span class="fbi-corner fbi-corner-tr"></span>
+                <span class="fbi-corner fbi-corner-bl"></span>
+                <span class="fbi-corner fbi-corner-br"></span>
+                <!-- 改动4：右上角档案编号 -->
+                <div class="fbi-archive-no" id="fbi-archive-no">&gt; ARCHIVE_FORM // 0x4F-7A21</div>
+
                 <div class="fbi-header">
                     <h1>女娲的泥潭</h1>
                     <div class="sub">NÜWA'S MIRE - SECURE ARCHIVE FORM</div>
                 </div>
-                <div class="fbi-input-group">
-                    <label class="fbi-label">归属板块</label>
-                    <select class="fbi-select" id="post-type-select" onchange="toggleDimensionSelect()">
-                        <option value="parchment">羊皮卷 (解构历史)</option>
-                        <option value="terracotta">赤陶刻痕 (日常倾诉)</option>
-                        <option value="bonfire">篝火阵 (互帮互助)</option>
-                    </select>
+
+                <!-- 改动4：横屏双栏主体 -->
+                <div class="fbi-body-grid">
+                    <!-- 左栏：元数据字段 -->
+                    <div class="fbi-col-left">
+                        <div class="fbi-input-group">
+                            <label class="fbi-label">归属板块</label>
+                            <select class="fbi-select" id="post-type-select" onchange="toggleDimensionSelect()">
+                                <option value="parchment">羊皮卷 (解构历史)</option>
+                                <option value="terracotta">赤陶刻痕 (日常倾诉)</option>
+                                <option value="bonfire">篝火阵 (互帮互助)</option>
+                            </select>
+                        </div>
+                        <div class="fbi-input-group" id="dimension-select-group">
+                            <label class="fbi-label">史记维度 <span class="fbi-label-hint">(投票超200后将收录)</span></label>
+                            <select class="fbi-select" id="post-dimension-select">
+                                <option value="huaxia">华夏纪元（中国）</option>
+                                <option value="huanyu">寰宇纪元（世界）</option>
+                                <option value="lingjing">灵境空间（虚拟）</option>
+                            </select>
+                        </div>
+                        <div class="fbi-input-group">
+                            <label class="fbi-label">档案标题</label>
+                            <input type="text" class="fbi-input" placeholder="刻下核心主旨...">
+                        </div>
+                        <div class="fbi-input-group">
+                            <label class="fbi-label">视觉拓片</label>
+                            <input type="file" id="archive-img-upload" accept="image/*" style="display:none;" onchange="handleArchiveImageUpload(event)">
+                            <input type="text" id="archive-img-display" class="fbi-input" placeholder="[+] 点击上传图片附件 (选填)" readonly style="cursor:pointer;" onclick="document.getElementById('archive-img-upload').click()">
+                        </div>
+                    </div>
+
+                    <!-- 改动4：左右栏之间的虚线分隔 -->
+                    <div class="fbi-divider"></div>
+
+                    <!-- 右栏：正文 textarea -->
+                    <div class="fbi-col-right">
+                        <label class="fbi-label fbi-label-block">正文刻痕 <span class="fbi-label-hint">// MAIN INSCRIPTION</span></label>
+                        <textarea class="fbi-textarea" placeholder="输入档案详尽内容..."></textarea>
+                    </div>
                 </div>
-                <div class="fbi-input-group" id="dimension-select-group">
-                    <label class="fbi-label">史记维度 (投票超200后将收录至对应史记)</label>
-                    <select class="fbi-select" id="post-dimension-select">
-                        <option value="huaxia">华夏纪元</option>
-                        <option value="huanyu">寰宇纪元</option>
-                        <option value="lingjing">灵境空间</option>
-                    </select>
+
+                <!-- 改动4：底部页脚 -->
+                <div class="fbi-footer-bar">
+                    <span class="fbi-footer-text">&gt; END_OF_FORM // ENCRYPTED_BY_NÜWA-PROTOCOL_v2.3</span>
+                    <button class="btn-fbi-submit" onclick="submitNormalPost()">刻录并封卷 ➔</button>
                 </div>
-                <div class="fbi-input-group">
-                    <label class="fbi-label">档案标题</label>
-                    <input type="text" class="fbi-input" placeholder="刻下核心主旨...">
-                </div>
-                <div class="fbi-input-group">
-                    <label class="fbi-label">视觉拓片</label>
-                    <input type="file" id="archive-img-upload" accept="image/*" style="display:none;" onchange="handleArchiveImageUpload(event)">
-                    <input type="text" id="archive-img-display" class="fbi-input" placeholder="[+] 点击上传图片附件 (选填)" readonly style="color:#666; cursor:pointer;" onclick="document.getElementById('archive-img-upload').click()">
-                </div>
-                <div style="margin-top: 1rem; flex: 1; display: flex; flex-direction: column;">
-                    <label class="fbi-label" style="display:block; margin-bottom: 5px;">正文刻痕 :</label>
-                    <textarea class="fbi-textarea" placeholder="输入档案详尽内容..."></textarea>
-                </div>
-                <button class="btn-fbi-submit" onclick="submitNormalPost()">刻录并封卷 ➔</button>
             </div>
         </div>
     </div>

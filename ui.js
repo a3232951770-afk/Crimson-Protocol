@@ -371,6 +371,12 @@ function openLabWithWord(word) {
     currentWord = word || '';
     document.getElementById('lab-modal-overlay').classList.add('active');
     switchLabView('lab-view-terminal');
+    // 改动4：刷新篆刻泥板右上角随机档案编号
+    const archEl = document.getElementById('fbi-archive-no');
+    if (archEl) {
+        const hex = () => Math.floor(Math.random()*0xFFFF).toString(16).toUpperCase().padStart(4,'0');
+        archEl.textContent = `> ARCHIVE_FORM // 0x${hex()}-${hex()}`;
+    }
     setTimeout(() => {
         const input = document.getElementById('term-search-input');
         if (input && currentWord) {
@@ -387,9 +393,12 @@ function closeLabModal() {
     const rejectBtn = document.getElementById('btn-reject');
     const manualInput = document.getElementById('manual-old-def-input');
     if (searchInput) searchInput.value = '';
-    if (outputArea) outputArea.style.display = 'none';
+    if (outputArea) { outputArea.style.display = 'none'; outputArea.classList.remove('unfurling','confidential'); outputArea.innerHTML = ''; }
     if (rejectBtn) rejectBtn.style.display = 'none';
     if (manualInput) manualInput.style.display = 'none';
+    // 改动3：清空偏旁手术新字读音 / 字义阐释字段
+    const sp = document.getElementById('surgery-pronunciation'); if (sp) sp.value = '';
+    const se = document.getElementById('surgery-explanation');   if (se) se.value = '';
 }
 
 function switchLabView(viewId) {
@@ -436,6 +445,7 @@ function initTerminalSearch() {
             outputArea.style.display = 'block';
             outputArea.innerHTML = '';
             outputArea.classList.remove('confidential');
+            outputArea.classList.remove('unfurling');
             rejectBtn.style.display = 'none';
             manualInput.style.display = 'none';
             manualInput.value = '';
@@ -446,22 +456,43 @@ function initTerminalSearch() {
             } else {
                 textToType = "THE CRIMSON PROTOCOL\nARCHIVE NO. " + Math.floor(Math.random()*90000+10000) + "\n\n【 卷宗释义 】：\n" + textToType;
             }
-            typeWriterLab(textToType, outputArea, 0, () => {
+            // 改动2：卷轴式展开 — 内容一次性注入，配合CSS clip-path 动画揭示
+            unfurlScroll(textToType, outputArea, () => {
                 if (isHit) {
                     outputArea.classList.add('confidential');
                     rejectBtn.innerText = " 拒绝接受！进入重塑台 ➔";
-                    setTimeout(() => rejectBtn.style.display = 'block', 500);
+                    setTimeout(() => rejectBtn.style.display = 'block', 200);
                 } else {
                     manualInput.style.display = 'block';
                     manualInput.focus();
                     rejectBtn.innerText = " 锁定旧字！进入重塑台 ➔";
-                    setTimeout(() => rejectBtn.style.display = 'block', 500);
+                    setTimeout(() => rejectBtn.style.display = 'block', 200);
                 }
             });
         }
     });
 }
 
+// 改动2：卷轴展开 — 内容瞬间填入，容器从顶端徐徐拉下（替代旧的逐字打字机）
+function unfurlScroll(text, element, callback) {
+    // 把换行转成<br>，一次性注入
+    element.innerHTML = text.replace(/\n/g, '<br>');
+    // 重置可能残留的动画状态
+    element.classList.remove('unfurling');
+    // 强制reflow，让动画能重新触发
+    void element.offsetWidth;
+    element.classList.add('unfurling');
+    // 监听动画结束，触发后续按钮显示等回调
+    const onEnd = () => {
+        element.removeEventListener('animationend', onEnd);
+        if (callback) callback();
+    };
+    element.addEventListener('animationend', onEnd);
+}
+// 暴露到window供bridge.js覆盖逻辑使用
+window.unfurlScroll = unfurlScroll;
+
+// 旧的逐字打字机（保留备用，目前不再被调用）
 function typeWriterLab(text, element, index, callback) {
     if (index < text.length) {
         let char = text.charAt(index);
