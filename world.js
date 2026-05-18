@@ -58,10 +58,10 @@
         new p5(function(p) {
             p5Instance = p;
             let particles = []; let targetPoints = []; let phase = 0;
-            // 🐛 移动端触摸点比鼠标光标"胖"，180px 半径太粗暴；改成 100px 更精准
+            // 🐛 移动端触摸点比鼠标光标"胖"，180px 半径太粗暴；改成 80px 更精准
             // 桌面端保持 180px 不变
             const _isMobile = window.innerWidth < 768;
-            let mouse = { x: -1000, y: -1000, radius: _isMobile ? 100 : 180 }; let totalMouseDist = 0;
+            let mouse = { x: -1000, y: -1000, radius: _isMobile ? 80 : 180 }; let totalMouseDist = 0;
             let lastMousePos = { x: -1000, y: -1000 }; let autoTriggerTimer; let stageTimers = [];
             const redWords = ['嫉','妒','嫖','婊','媚','娇','媛','妖','姒','妇','奸','娼','奴','娱','妨','妄','姿','嫌','婪','佞','婢','娘','娣','妓'];
             const greyWords = ['嫌','妨','妯','娌','媳','妇','妈','奶','姑','嫂','婶','姐','妹','婆','姻','媒','孕','嫁','娶','委','妥','妄','如','始','姑','姓'];
@@ -200,9 +200,9 @@
                 const startScreen = document.getElementById('start-screen'); startScreen.style.opacity = 0; setTimeout(() => startScreen.remove(), 1000);
                 const skipBtn = document.getElementById('skip-btn'); skipBtn.style.opacity = 1; skipBtn.style.pointerEvents = 'auto';
                 initAudio(); targetPoints = generateTargetPoints();
-                // 🐛 移动端粒子数减半防卡顿（800→400 红 / 1000→500 灰），桌面端保持原数量
-                const _redCount   = _isMobile ? 400 : 800;
-                const _greyCount  = _isMobile ? 500 : 1000;
+                // 🐛 移动端粒子数大幅减少防卡顿（800→300 红 / 1000→300 灰，总数 1800→600），桌面端保持原数量
+                const _redCount   = _isMobile ? 300 : 800;
+                const _greyCount  = _isMobile ? 300 : 1000;
                 for (let i = 0; i < _redCount; i++) { particles.push(new Particle(true, targetPoints[i % targetPoints.length])); }
                 for (let i = 0; i < _greyCount; i++) particles.push(new Particle(false));
                 p.loop();

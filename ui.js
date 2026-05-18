@@ -816,38 +816,48 @@ document.addEventListener('DOMContentLoaded', () => {
     initPullToRefreshGuard();
 });
 
-// 🐛 Bug A 加强版：JS 主动拦截 body 层的 touchmove，把"在 body 上拽"识别为
-// 越界滑动并阻止默认行为，避免 iOS Safari 的下拉刷新（即便 CSS overscroll-behavior 失效也能兜底）
+// 🐛 Bug A 加强版：JS 主动拦截滑动越界，避免 iOS Safari 的下拉刷新
+// 关键点：用 document + capture 相，确保比浏览器手势识别器先一步介入
 function initPullToRefreshGuard() {
     let startY = 0;
-    document.body.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) startY = e.touches[0].clientY;
-    }, { passive: true });
+    let startX = 0;
 
-    document.body.addEventListener('touchmove', (e) => {
+    document.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            startY = e.touches[0].clientY;
+            startX = e.touches[0].clientX;
+        }
+    }, { passive: true, capture: true });
+
+    document.addEventListener('touchmove', (e) => {
         if (e.touches.length !== 1) return;
         const currentY = e.touches[0].clientY;
-        const deltaY  = currentY - startY;
-        // 找到事件目标向上最近的"可滚动容器"
+        const currentX = e.touches[0].clientX;
+        const deltaY = currentY - startY;
+        const deltaX = currentX - startX;
+        // 横向滑动占主导（>15px 且超过纵向位移）→ 不管，让正常处理
+        if (Math.abs(deltaX) > 15 && Math.abs(deltaX) > Math.abs(deltaY)) return;
+
+        // 沿 DOM 树向上找最近的可滚容器
         let el = e.target;
         let scrollable = null;
-        while (el && el !== document.body) {
-            const cs = getComputedStyle(el);
-            if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+        while (el && el !== document.body && el !== document.documentElement) {
+            const cs = el instanceof Element ? getComputedStyle(el) : null;
+            if (cs && (cs.overflowY === 'auto' || cs.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
                 scrollable = el; break;
             }
             el = el.parentElement;
         }
         if (!scrollable) {
-            // 没有可滚容器（如启示录、星图、3D页面），直接阻止默认避免下拉
+            // 没找到可滚容器 → 整页都不应该滚，强制阻止
             e.preventDefault();
             return;
         }
-        // 在容器顶部继续下拉 / 底部继续上滑 → 阻止默认避免冒泡到 body 触发下拉刷新
+        // 容器到顶继续下拉 / 到底继续上滑 → 阻止避免触发系统下拉刷新
         const atTop = scrollable.scrollTop <= 0;
         const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
         if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
             e.preventDefault();
         }
-    }, { passive: false });
+    }, { passive: false, capture: true });
 }
