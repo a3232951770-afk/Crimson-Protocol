@@ -29,12 +29,11 @@
                 style="opacity:0; pointer-events:none; transition: opacity 2s ease; font-size:0.9rem; padding: 8px 16px; letter-spacing:2px;">
                 <span class="btn-signal-text"><span style="font-size:1rem;">📡</span> 频段(3)</span>
             </button>
+            <!-- EN 按钮内嵌到顶栏右侧（移动端 & 桌面端都在此） -->
+            <button id="btn-lang-global" onclick="window.toggleLang?.()" title="中文 / English">EN</button>
         </div>
     </nav>
     <button id="global-chisel-btn" onclick="openLabModal()">[+] 凿字 / 发帖</button>
-
-    <!-- 全局语言切换（始终可见，右上角） -->
-    <button id="btn-lang-global" onclick="window.toggleLang?.()" title="中文 / English">EN</button>
 
 
     <!-- ==========================================
@@ -188,8 +187,8 @@
             <nav class="mire-nav">
                 <div class="mire-tab active" onclick="switchMireTab('tab-glyphs', this)">凿字库 <span class="count" id="count-glyphs">0</span></div>
                 <div class="mire-tab" onclick="switchMireTab('tab-parchments', this)">羊皮卷 <span class="count" id="count-parchments">0</span></div>
-                <div class="mire-tab" onclick="switchMireTab('tab-terracotta', this)">赤陶刻痕 <span class="count" id="count-terracotta">0</span></div>
-                <div class="mire-tab" onclick="switchMireTab('tab-bonfire', this)">篝火阵 <span class="count">🔥</span></div>
+                <div class="mire-tab" onclick="switchMireTab('tab-terracotta', this)">赤陶痕 <span class="count" id="count-terracotta">0</span></div>
+                <div class="mire-tab" onclick="switchMireTab('tab-bonfire', this)">篝火阵 <span class="count" id="count-bonfire">0</span></div>
             </nav>
 
             <main id="tab-glyphs" class="tab-content active waterfall-container">
@@ -221,8 +220,8 @@
             <main id="tab-terracotta" class="tab-content waterfall-container">
                 <div class="post-card card-terracotta pinned-post" data-pinned="true" data-pinned-id="pinned-terracotta" onclick="window.openPinnedPost('pinned-terracotta')">
                     <div class="pinned-badge">📌 置顶</div>
-                    <h3>🏺 [ 刻痕守则 ] 赤陶刻痕：承载你的柔软与刺</h3>
-                    <div class="card-content"><strong style="color:var(--amber);">摘要：</strong> 把沉重的宏大叙事卸下吧，这里只关心你今天开不开心。<br><br>宏大的造字和考据交给了前面的房间，而"赤陶刻痕"，是我们留给日常生活的自留地。</div>
+                    <h3>🏺 [ 刻痕守则 ] 赤陶痕：承载你的柔软与刺</h3>
+                    <div class="card-content"><strong style="color:var(--amber);">摘要：</strong> 把沉重的宏大叙事卸下吧，这里只关心你今天开不开心。<br><br>宏大的造字和考据交给了前面的房间，而"赤陶痕"，是我们留给日常生活的自留地。</div>
                     <div class="card-actions" onclick="event.stopPropagation()">
                         <button class="action-btn like" onclick="window.fbLikePinned('pinned-terracotta',this)">❤ 共鸣 <span>0</span></button>
                         <button class="action-btn comment" onclick="window.openPinnedPost('pinned-terracotta')">💬 响应 <span>0</span></button>
@@ -430,14 +429,14 @@
                 <div class="folder-wrapper folder-lab" onclick="goToTerminal(event)">
                     <div class="folder-tab-top">01 / GENESIS</div>
                     <div class="folder-body">
-                        <h2>凿字实验室</h2>
+                        <h2>凿字实验</h2>
                         <p>解构旧字基因，重写定义。<br>将改造新词刻入母星轨道。</p>
                     </div>
                 </div>
                 <div class="folder-wrapper folder-post" onclick="goToNormalPost(event)">
                     <div class="folder-tab-top">02 / ARCHIVE</div>
                     <div class="folder-body">
-                        <h2>篆刻泥板档案</h2>
+                        <h2>篆刻泥板</h2>
                         <p>记录日常刻痕，重构羊皮卷历史。<br>或向母星发起求助。</p>
                     </div>
                 </div>
@@ -588,7 +587,7 @@
                             <label class="fbi-label">归属板块</label>
                             <select class="fbi-select" id="post-type-select" onchange="toggleDimensionSelect()">
                                 <option value="parchment">羊皮卷 (解构历史)</option>
-                                <option value="terracotta">赤陶刻痕 (日常倾诉)</option>
+                                <option value="terracotta">赤陶痕 (日常倾诉)</option>
                                 <option value="bonfire">篝火阵 (互帮互助)</option>
                             </select>
                         </div>

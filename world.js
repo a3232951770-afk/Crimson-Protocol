@@ -127,8 +127,12 @@
             p.windowResized = function() { p.resizeCanvas(p.windowWidth, p.windowHeight); targetPoints = generateTargetPoints(); };
 
             window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
-            window.addEventListener('touchmove', (e) => { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; });
+            window.addEventListener('touchmove', (e) => { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }, { passive: true });
             window.addEventListener('mouseout', () => { mouse.x = -1000; mouse.y = -1000; });
+            // 🐛 Bug B 修复：手机端没有 mouseout，需要 touchend/touchcancel 重置鼠标位置
+            // 否则手指抬起后 mouse 还停在最后位置，粒子被"看不见的手指"持续推开
+            window.addEventListener('touchend', () => { mouse.x = -1000; mouse.y = -1000; });
+            window.addEventListener('touchcancel', () => { mouse.x = -1000; mouse.y = -1000; });
 
             function generateTargetPoints() {
                 const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
@@ -203,15 +207,16 @@
                 if (phase !== 1) return; phase = 1.5; clearTimeout(autoTriggerTimer);
                 const promptUI = document.getElementById('interact-prompt'); if (promptUI) { promptUI.style.opacity = 0; setTimeout(() => { promptUI.style.display = 'none'; }, 300); }
                 particles.forEach(pt => { if (pt.isRed) { pt.isGrounded = false; pt.y -= 5; pt.vy = p.random(-30, -50); pt.vx = p.random(-15, 15); pt.readyToGather = true; } });
-                stageTimers.push(setTimeout(() => { phase = 2; stopGlitchAudio(); particles.forEach(pt => { if (pt.isRed) { pt.vx = (Math.random() - 0.5) * 60; pt.vy = (Math.random() - 0.5) * 60; } }); }, 5000));
-                stageTimers.push(setTimeout(() => { phase = 3; speakSystemVoice(); const textUI = document.getElementById('protocol-text'); textUI.style.opacity = 1; textUI.classList.add('glitch'); }, 8500));
-                stageTimers.push(setTimeout(() => { phase = 3.5; const textUI = document.getElementById('protocol-text'); textUI.classList.remove('glitch'); textUI.classList.add('mega-glitch'); }, 10000));
+                // ⏱️ 启示录时序 — 想再调"女"字停留时长，改 7500 那个数即可（之后 4 个 timer 会跟着这个值往后挪）
+                stageTimers.push(setTimeout(() => { phase = 2; stopGlitchAudio(); particles.forEach(pt => { if (pt.isRed) { pt.vx = (Math.random() - 0.5) * 60; pt.vy = (Math.random() - 0.5) * 60; } }); }, 7500));   // 女字开始散（原 5000）
+                stageTimers.push(setTimeout(() => { phase = 3; speakSystemVoice(); const textUI = document.getElementById('protocol-text'); textUI.style.opacity = 1; textUI.classList.add('glitch'); }, 11000));    // 协议文字出现+故障（原 8500）
+                stageTimers.push(setTimeout(() => { phase = 3.5; const textUI = document.getElementById('protocol-text'); textUI.classList.remove('glitch'); textUI.classList.add('mega-glitch'); }, 12500));      // 巨型故障（原 10000）
                 stageTimers.push(setTimeout(() => {
                     const textUI = document.getElementById('protocol-text'); if (textUI) { textUI.style.opacity = 0; textUI.classList.remove('mega-glitch'); setTimeout(() => { textUI.style.display = 'none'; }, 500); }
                     const canvasContainer = document.getElementById('p5-canvas-container'); if (canvasContainer) { canvasContainer.style.transition = 'opacity 1.5s ease-in-out'; canvasContainer.style.opacity = 0; }
                     setTimeout(() => { phase = 4; }, 1500);
-                }, 12000));
-                stageTimers.push(setTimeout(() => { startHomeTerminal(); }, 13500));
+                }, 14500));    // 协议文字消散（原 12000）
+                stageTimers.push(setTimeout(() => { startHomeTerminal(); }, 16000));    // 终端打字机启动（原 13500）
             }
 
             function startHomeTerminal() {

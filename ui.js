@@ -619,17 +619,20 @@ function initDrawCanvas() {
     const drawCanvas = document.getElementById('freehand-canvas');
     if (!drawCanvas) return;
     const dCtx = drawCanvas.getContext('2d');
-    drawCanvas.addEventListener('mousedown', (e) => {
+    // 🐛 Bug D 修复：用 pointer 事件统一支持鼠标 + 触摸 + 触控笔
+    drawCanvas.addEventListener('pointerdown', (e) => {
         if(currentSurgeryTool !== 'draw') return;
+        drawCanvas.setPointerCapture(e.pointerId);
         isDrawing = true; dCtx.beginPath(); dCtx.moveTo(e.offsetX, e.offsetY);
         dCtx.strokeStyle = '#cc4e3c'; dCtx.lineWidth = 14; dCtx.lineCap = 'round'; dCtx.lineJoin = 'round';
     });
-    drawCanvas.addEventListener('mousemove', (e) => {
+    drawCanvas.addEventListener('pointermove', (e) => {
         if(!isDrawing || currentSurgeryTool !== 'draw') return;
         dCtx.lineTo(e.offsetX, e.offsetY); dCtx.stroke();
     });
-    drawCanvas.addEventListener('mouseup', () => isDrawing = false);
-    drawCanvas.addEventListener('mouseleave', () => isDrawing = false);
+    drawCanvas.addEventListener('pointerup', () => isDrawing = false);
+    drawCanvas.addEventListener('pointercancel', () => isDrawing = false);
+    drawCanvas.addEventListener('pointerleave', () => isDrawing = false);
 }
 
 function resizeDrawCanvas() {
@@ -648,10 +651,11 @@ let dState = { mode: null, startX: 0, startY: 0, initLeft: 0, initTop: 0, initSc
 function initSurgeryCanvasEvents() {
     const container = document.getElementById('surgery-canvas-container');
     if (!container) return;
-    container.addEventListener('mousedown', (e) => {
+    // 🐛 Bug D 修复：所有 mouse 事件改为 pointer 事件以支持手机触摸
+    container.addEventListener('pointerdown', (e) => {
         if (e.target.id === 'surgery-canvas-container' || e.target.id === 'freehand-canvas') clearTransformSelection();
     });
-    document.addEventListener('mousemove', (e) => {
+    document.addEventListener('pointermove', (e) => {
         if (!activeRadical || !dState.mode) return;
         const dx = e.clientX - dState.startX; const dy = e.clientY - dState.startY;
         if (dState.mode === 'move') {
@@ -672,7 +676,8 @@ function initSurgeryCanvasEvents() {
             activeRadical.style.transform = `translate(-50%, -50%) scale(${dState.initScaleX}, ${newScaleY})`;
         }
     });
-    document.addEventListener('mouseup', () => { dState.mode = null; });
+    document.addEventListener('pointerup', () => { dState.mode = null; });
+    document.addEventListener('pointercancel', () => { dState.mode = null; });
 }
 
 function clearTransformSelection() {
@@ -703,7 +708,8 @@ function bindRadicalEvents(el) {
     const resXY = el.querySelector('.control-resize-xy');
     const resX = el.querySelector('.control-resize-x');
     const resY = el.querySelector('.control-resize-y');
-    el.addEventListener('mousedown', (e) => {
+    // 🐛 Bug D 修复：mousedown → pointerdown 兼容手机触摸
+    el.addEventListener('pointerdown', (e) => {
         if(currentSurgeryTool !== 'drag') return;
         e.stopPropagation(); clearTransformSelection(); el.classList.add('selected-transform'); activeRadical = el;
         if (e.target !== delBtn && e.target !== resXY && e.target !== resX && e.target !== resY) {
@@ -711,10 +717,10 @@ function bindRadicalEvents(el) {
             dState.initLeft = el.offsetLeft; dState.initTop = el.offsetTop;
         }
     });
-    delBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); el.remove(); activeRadical = null; });
-    resXY.addEventListener('mousedown', (e) => { e.stopPropagation(); dState.mode = 'resize-xy'; initResizeState(e, el); });
-    resX.addEventListener('mousedown', (e) => { e.stopPropagation(); dState.mode = 'resize-x'; initResizeState(e, el); });
-    resY.addEventListener('mousedown', (e) => { e.stopPropagation(); dState.mode = 'resize-y'; initResizeState(e, el); });
+    delBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); el.remove(); activeRadical = null; });
+    resXY.addEventListener('pointerdown', (e) => { e.stopPropagation(); dState.mode = 'resize-xy'; initResizeState(e, el); });
+    resX.addEventListener('pointerdown', (e) => { e.stopPropagation(); dState.mode = 'resize-x'; initResizeState(e, el); });
+    resY.addEventListener('pointerdown', (e) => { e.stopPropagation(); dState.mode = 'resize-y'; initResizeState(e, el); });
 }
 
 function initResizeState(e, el) {

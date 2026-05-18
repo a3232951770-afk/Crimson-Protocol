@@ -36,6 +36,16 @@ body, html {
     font-family: var(--font-serif);
     overflow: hidden; /* 核心：禁止 Body 滚动，由各房间接管 */
     user-select: none;
+    /* 🐛 Bug A 修复：禁用浏览器原生的下拉刷新和过滚动行为
+       否则手机端在滚动容器到顶/到底再继续滑，会触发页面 reload 回启示录 */
+    overscroll-behavior: none;
+    -webkit-overscroll-behavior: none;
+}
+/* 所有可滚动的内容容器也都加上，防止子容器漏出 */
+.mire-container, .chronicle-container, #timeline-scroll-area,
+.waterfall-container, .profile-container, .lab-view,
+#lab-modal, .modal-container, .word-list, .char-list {
+    overscroll-behavior: contain;
 }
 
 ::-webkit-scrollbar { width: 6px; }
@@ -775,7 +785,7 @@ body, html {
     overflow: hidden;
 }
 .term-output-area.unfurling {
-    animation: scrollUnfurl 1.3s cubic-bezier(0.2, 0, 0.6, 0) both;
+    animation: scrollUnfurl 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes scrollUnfurl {
     0%   { clip-path: inset(0 0 100% 0); max-height: 0;    opacity: 0.4; transform: rotate(-0.5deg) scaleY(0.85); }
@@ -1119,11 +1129,12 @@ body, html {
 }
 /* 让canvas-area在偏旁手术tab下高度收缩，给释义区让位 */
 #tab-radical-surgery .canvas-area { max-height: 52vh; min-height: 280px; }
-#freehand-canvas { position: absolute; top: 0; left: 0; z-index: 5; width: 100%; height: 100%; }
+#freehand-canvas { position: absolute; top: 0; left: 0; z-index: 5; width: 100%; height: 100%; touch-action: none; }
 
 .dropped-radical {
     position: absolute; color: #1a1a1a; cursor: move; z-index: 10; user-select: none;
     transform-origin: center center; border: 2px dashed transparent; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;
+    touch-action: none; /* 🐛 Bug D 修复：让手机能拖偏旁而不是把触摸当滚动 */
 }
 .dropped-radical span.radical-text { font-family: var(--font-serif); font-weight: 900; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .dropped-radical.selected-transform { border: 2px dashed var(--neon-red); background: rgba(255, 42, 10, 0.05); z-index: 100 !important; }
@@ -1479,39 +1490,30 @@ body, html {
 #btn-lang:hover { border-color: var(--amber); color: var(--amber); }
 
 /* ==========================================
-   🌐 Global Language Toggle (always visible)
+   🌐 Global Language Toggle (in nav top-right)
    ========================================== */
 #btn-lang-global {
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    z-index: 99999;
-    background: rgba(11, 11, 10, 0.7);
+    background: rgba(11, 11, 10, 0.5);
     border: 1px solid rgba(255,255,255,0.2);
     color: var(--bone);
     font-family: var(--font-mono);
     font-size: 0.75rem;
-    padding: 5px 12px;
+    padding: 6px 12px;
     cursor: pointer;
     transition: all 0.3s;
     letter-spacing: 1px;
     backdrop-filter: blur(6px);
+    height: 34px;
+    align-self: center;
+    flex-shrink: 0;
 }
 #btn-lang-global:hover {
     border-color: var(--amber);
     color: var(--amber);
     background: rgba(11, 11, 10, 0.9);
 }
-/* When nav is visible, shift right of nav */
-#global-nav[style*="opacity: 1"] ~ #btn-lang-global,
-#global-nav[style*="opacity:1"] ~ #btn-lang-global {
-    top: 18px;
-    right: auto;
-    left: 50%;
-    transform: translateX(calc(50vw - 40px));
-}
-/* Actually just keep it fixed top-right always */
-#btn-lang-global { right: 12px !important; left: auto !important; transform: none !important; }
+/* nav-right-controls 内的 EN 自动跟随 flex 布局，紧贴频段按钮 */
+.nav-right-controls { display: flex; align-items: center; gap: 10px; }
 
 /* ==========================================
    🔴 Enlarged target char in glyph posts
@@ -2179,7 +2181,7 @@ body, html {
     flex-direction: column !important;
     gap: 6px !important;
     align-items: center !important;
-    overflow: hidden !important;
+    overflow: visible !important;  /* 🐛 Bug C 修复：让字列表能浮出 wrapper，原本 hidden 会裁切 */
     max-height: 36px;
     transition: max-height 0.3s;
   }
@@ -2197,13 +2199,32 @@ body, html {
     margin-bottom: 4px;
     pointer-events: auto;
   }
+  /* 内部按钮区在折叠时隐藏 */
+  #star-filter-wrapper > #star-filter-bar,
+  #star-filter-wrapper > #star-filter-count { display: none; }
   /* 展开状态 */
   #star-filter-wrapper.mobile-expanded {
-    max-height: 280px !important;
-    overflow-y: auto !important;
+    max-height: 320px !important;
   }
+  #star-filter-wrapper.mobile-expanded > #star-filter-bar,
+  #star-filter-wrapper.mobile-expanded > #star-filter-count { display: flex; }
   #star-filter-wrapper.mobile-expanded::before {
     content: '★ 星域分类 ▲';
+  }
+  /* 🐛 Bug C 修复：字列表浮在 wrapper 下方，绝对定位不受 wrapper 高度约束 */
+  #star-filter-wrapper #star-char-expand.active {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: calc(100vw - 24px) !important;
+    max-width: 480px !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    background: rgba(11, 11, 10, 0.96) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--terracotta);
+    z-index: 51;
   }
   .star-filter-btn {
     flex: 0 0 auto !important;

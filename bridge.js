@@ -227,12 +227,18 @@ function injectStarFilter() {
       filterDiv.classList.toggle('mobile-expanded');
     }
   });
-  // 选了某个分类后自动收起
+  // 选了某个分类后的处理：选"全部"时收起；选具体分类时保持展开以便看字列表
   filterDiv.addEventListener('click', (e) => {
     if (window.innerWidth > 768) return;
-    if (e.target.closest('.star-filter-btn')) {
-      setTimeout(() => filterDiv.classList.remove('mobile-expanded'), 100);
-    }
+    const btn = e.target.closest('.star-filter-btn');
+    if (!btn) return;
+    const cat = btn.getAttribute('data-cat');
+    setTimeout(() => {
+      if (cat === 'all') {
+        filterDiv.classList.remove('mobile-expanded');
+      }
+      // 非 all 分类：wrapper 保持展开，字列表会浮在下方（绝对定位）
+    }, 100);
   });
 
   let _activeFilterCat = 'all';
@@ -1324,9 +1330,9 @@ const UI_EN = {
   '[ ↶ 返回星云节点 ]':'[ ↶ Back to network ]',
   '旧世释义卷宗：':'Legacy definition archive:',
   // 泥潭
-  '凿字库':'Glyphs', '羊皮卷':'Parchments', '赤陶刻痕':'Inscriptions', '篝火阵':'Bonfire',
+  '凿字库':'Glyphs', '羊皮卷':'Parchments', '赤陶痕':'Inscriptions', '篝火阵':'Bonfire',
   // 造字实验室
-  '凿字实验室':'Genesis Lab', '篆刻泥板档案':'Archive Post',
+  '凿字实验':'Genesis Lab', '篆刻泥板':'Archive Post',
   '>> 检索待解构的旧字_':'>> Search character to deconstruct_',
   '拒绝接受！进入重塑台 ➔':'Reject! Enter workbench ➔',
   '🔒 锁定旧字！进入重塑台 ➔':'🔒 Lock character! Enter workbench ➔',
@@ -1337,7 +1343,7 @@ const UI_EN = {
   '刻录并封卷 ➔':'Inscribe & Seal ➔',
   '归属板块':'Category', '档案标题':'Title', '视觉拓片':'Visual Rubbing', '正文刻痕 :':'Content:',
   '羊皮卷 (解构历史)':'Parchment (Deconstruct History)',
-  '赤陶刻痕 (日常倾诉)':'Inscription (Daily Thoughts)',
+  '赤陶痕 (日常倾诉)':'Inscription (Daily Thoughts)',
   '篝火阵 (互帮互助)':'Bonfire (Mutual Aid)',
   // 分类
   '全部星域':'All Stars', '「贬义」字':'Derogatory', '制度字':'Institutional',
@@ -1536,16 +1542,16 @@ const PINNED_POSTS = {
   },
   'pinned-terracotta': {
     id: 'pinned-terracotta', type: 'terracotta', authorName: '@赤字协议·官方',
-    title: '🏺 [ 刻痕守则 ] 赤陶刻痕：承载你的柔软与刺',
+    title: '🏺 [ 刻痕守则 ] 赤陶痕：承载你的柔软与刺',
     summary: '把沉重的宏大叙事卸下吧，这里只关心你今天开不开心。',
-    content: `宏大的造字和考据交给了前面的房间，而"赤陶刻痕"，是我们留给日常生活的自留地。
+    content: `宏大的造字和考据交给了前面的房间，而"赤陶痕"，是我们留给日常生活的自留地。
 
 【在这里发什么？】
 今天吃到的美味蛋糕、路边的一朵野花。
 工作上的吐槽、生活里的小确幸。
 突如其来的无力感、或者一句无厘头的碎碎念。
 
-【赤陶刻痕的柔软底线】
+【赤陶痕的柔软底线】
 情绪绝对合法： 允许抱怨、允许脆弱、允许不完美。不要用"独立大女主"的标准要求这里的每一个人。
 Peace & Love： 看到开心的刻痕，请不吝啬你的 [❤ 注入共鸣]；看到悲伤的刻痕，留下一句温暖的 [💬 响应召唤]。
 免于指导的自由： 除非发帖人明确求助，否则我们只倾听、只拥抱，不说教，不指点。
