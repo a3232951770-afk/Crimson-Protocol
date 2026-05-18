@@ -44,13 +44,17 @@ body, html {
     position: fixed;
     top: 0;
     left: 0;
-    touch-action: pan-x pan-y;
+    /* body 本身完全禁触发任何手势；滚动只允许在容器内（容器自己声明 touch-action: pan-y） */
+    touch-action: none;
 }
-/* 所有可滚动的内容容器也都加上，防止子容器漏出 */
+/* 所有可滚容器允许纵向 pan 手势，但禁止浏览器接管 */
 .mire-container, .chronicle-container, #timeline-scroll-area,
 .waterfall-container, .profile-container, .lab-view,
-#lab-modal, .modal-container, .word-list, .char-list {
+#lab-modal, .modal-container, .word-list, .char-list,
+.mire-tab-content, .post-feed, .post-modal-content {
+    touch-action: pan-y;
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 ::-webkit-scrollbar { width: 6px; }

@@ -58,10 +58,13 @@
         new p5(function(p) {
             p5Instance = p;
             let particles = []; let targetPoints = []; let phase = 0;
-            // 🐛 移动端触摸点比鼠标光标"胖"，180px 半径太粗暴；改成 80px 更精准
+            // 🐛 移动端触摸点比鼠标光标"胖"，180px 半径太粗暴；改成 100px 更精准
             // 桌面端保持 180px 不变
             const _isMobile = window.innerWidth < 768;
-            let mouse = { x: -1000, y: -1000, radius: _isMobile ? 80 : 180 }; let totalMouseDist = 0;
+            let mouse = { x: -1000, y: -1000, radius: _isMobile ? 100 : 180 }; let totalMouseDist = 0;
+            // 🐛 启示录"点火"保护：第一次点击屏幕后的短暂窗口内不更新粒子推力位置
+            // 否则那一下点击/触摸会立刻在屏幕中央炸开一个洞
+            let _particleIgnitionGuard = true;
             let lastMousePos = { x: -1000, y: -1000 }; let autoTriggerTimer; let stageTimers = [];
             const redWords = ['嫉','妒','嫖','婊','媚','娇','媛','妖','姒','妇','奸','娼','奴','娱','妨','妄','姿','嫌','婪','佞','婢','娘','娣','妓'];
             const greyWords = ['嫌','妨','妯','娌','媳','妇','妈','奶','姑','嫂','婶','姐','妹','婆','姻','媒','孕','嫁','娶','委','妥','妄','如','始','姑','姓'];
@@ -129,8 +132,8 @@
             p.setup = function() { let cnv = p.createCanvas(p.windowWidth, p.windowHeight); cnv.parent('p5-canvas-container'); p.colorMode(p.RGB, 255, 255, 255, 1); p.textFont('"Noto Sans SC", sans-serif'); p.textStyle(p.BOLD); p.textAlign(p.CENTER, p.CENTER); p.noLoop(); };
             p.windowResized = function() { p.resizeCanvas(p.windowWidth, p.windowHeight); targetPoints = generateTargetPoints(); };
 
-            window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
-            window.addEventListener('touchmove', (e) => { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }, { passive: true });
+            window.addEventListener('mousemove', (e) => { if (_particleIgnitionGuard) return; mouse.x = e.clientX; mouse.y = e.clientY; });
+            window.addEventListener('touchmove', (e) => { if (_particleIgnitionGuard) return; mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }, { passive: true });
             window.addEventListener('mouseout', () => { mouse.x = -1000; mouse.y = -1000; });
             // 🐛 Bug B 修复：手机端没有 mouseout，需要 touchend/touchcancel 重置鼠标位置
             // 否则手指抬起后 mouse 还停在最后位置，粒子被"看不见的手指"持续推开
@@ -200,13 +203,17 @@
                 const startScreen = document.getElementById('start-screen'); startScreen.style.opacity = 0; setTimeout(() => startScreen.remove(), 1000);
                 const skipBtn = document.getElementById('skip-btn'); skipBtn.style.opacity = 1; skipBtn.style.pointerEvents = 'auto';
                 initAudio(); targetPoints = generateTargetPoints();
-                // 🐛 移动端粒子数大幅减少防卡顿（800→300 红 / 1000→300 灰，总数 1800→600），桌面端保持原数量
-                const _redCount   = _isMobile ? 300 : 800;
-                const _greyCount  = _isMobile ? 300 : 1000;
+                // 🐛 移动端粒子数（380红 + 500灰 = 880），桌面端保持 1800 不变
+                const _redCount   = _isMobile ? 380 : 800;
+                const _greyCount  = _isMobile ? 500 : 1000;
                 for (let i = 0; i < _redCount; i++) { particles.push(new Particle(true, targetPoints[i % targetPoints.length])); }
                 for (let i = 0; i < _greyCount; i++) particles.push(new Particle(false));
                 p.loop();
                 stageTimers.push(setTimeout(() => { if (phase === 0) { phase = 1; triggerGlitchAudio(); document.getElementById('interact-prompt').style.opacity = 1; autoTriggerTimer = setTimeout(() => { if (phase === 1) startGathering(); }, 20000); } }, 7000));
+                // 🐛 点火保护：动画启动后 800ms 内忽略所有 mouse/touch 移动，避免第一次点击的位置炸开一个洞
+                // 800ms 后才允许用户用手指/鼠标推动粒子（"拖拽以环顾"阶段）
+                mouse.x = -1000; mouse.y = -1000;
+                setTimeout(() => { _particleIgnitionGuard = false; }, 800);
             };
 
             function startGathering() {

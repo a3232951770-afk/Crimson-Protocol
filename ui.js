@@ -816,16 +816,29 @@ document.addEventListener('DOMContentLoaded', () => {
     initPullToRefreshGuard();
 });
 
-// 🐛 Bug A 加强版：JS 主动拦截滑动越界，避免 iOS Safari 的下拉刷新
-// 关键点：用 document + capture 相，确保比浏览器手势识别器先一步介入
+// 🐛 Bug A 加强版 v2：JS 主动拦截滑动越界 + 在 touchstart 锁定目标容器，
+// 整个手势过程都用同一个容器引用判断边界（避免 touchmove 时 e.target 跳到其他元素导致误判）
 function initPullToRefreshGuard() {
     let startY = 0;
     let startX = 0;
+    let lockedScrollable = null;  // 整个手势期间锁定的可滚容器
 
+    // 在 touch 开始时一次性确定本次手势归哪个容器管
     document.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) {
-            startY = e.touches[0].clientY;
-            startX = e.touches[0].clientX;
+        if (e.touches.length !== 1) { lockedScrollable = null; return; }
+        startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
+        // 向上找最近的可滚容器
+        let el = e.target;
+        lockedScrollable = null;
+        while (el && el !== document.body && el !== document.documentElement) {
+            if (el instanceof Element) {
+                const cs = getComputedStyle(el);
+                if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+                    lockedScrollable = el; break;
+                }
+            }
+            el = el.parentElement;
         }
     }, { passive: true, capture: true });
 
@@ -835,29 +848,21 @@ function initPullToRefreshGuard() {
         const currentX = e.touches[0].clientX;
         const deltaY = currentY - startY;
         const deltaX = currentX - startX;
-        // 横向滑动占主导（>15px 且超过纵向位移）→ 不管，让正常处理
+        // 横向滑动占主导 → 不管
         if (Math.abs(deltaX) > 15 && Math.abs(deltaX) > Math.abs(deltaY)) return;
 
-        // 沿 DOM 树向上找最近的可滚容器
-        let el = e.target;
-        let scrollable = null;
-        while (el && el !== document.body && el !== document.documentElement) {
-            const cs = el instanceof Element ? getComputedStyle(el) : null;
-            if (cs && (cs.overflowY === 'auto' || cs.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
-                scrollable = el; break;
-            }
-            el = el.parentElement;
-        }
-        if (!scrollable) {
-            // 没找到可滚容器 → 整页都不应该滚，强制阻止
-            e.preventDefault();
+        if (!lockedScrollable) {
+            // 本次手势压根不在任何可滚容器里（如启示录、星图）→ 整页都不该滚，强制阻止
+            if (e.cancelable) e.preventDefault();
             return;
         }
-        // 容器到顶继续下拉 / 到底继续上滑 → 阻止避免触发系统下拉刷新
-        const atTop = scrollable.scrollTop <= 0;
-        const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
+        // 锁定容器到顶继续下拉 / 到底继续上滑 → 阻止避免触发系统下拉刷新
+        const atTop = lockedScrollable.scrollTop <= 0;
+        const atBottom = lockedScrollable.scrollTop + lockedScrollable.clientHeight >= lockedScrollable.scrollHeight - 1;
         if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
-            e.preventDefault();
+            if (e.cancelable) e.preventDefault();
         }
     }, { passive: false, capture: true });
+
+    document.addEventListener('touchend', () => { lockedScrollable = null; }, { passive: true, capture: true });
 }
