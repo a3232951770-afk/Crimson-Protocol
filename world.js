@@ -154,7 +154,7 @@
                     this.isRed = isRed; this.char = isRed ? redWords[Math.floor(Math.random() * redWords.length)] : greyWords[Math.floor(Math.random() * greyWords.length)];
                     let w = p.width > 0 ? p.width : window.innerWidth; let h = p.height > 0 ? p.height : window.innerHeight;
                     this.x = Math.random() * w; this.y = -Math.random() * (h * 2.8 + 2500) - 50;
-                    this.vx = 0; this.vy = isRed ? p.random(10, 16) : p.random(13, 20);
+                    this.vx = 0; this.vy = isRed ? (_isMobile ? p.random(15, 24) : p.random(10, 16)) : (_isMobile ? p.random(20, 30) : p.random(13, 20));
                     this.originalSize = isRed ? p.random(12, 18) : p.random(10, 20); this.size = this.originalSize;
                     this.target = targetPoint; this.friction = 0.92; this.bounceCount = 0; this.isGrounded = false; this.redAlpha = 1; this.readyToGather = false;
                     this.noiseOffsetX = p.random(10000); this.noiseOffsetY = p.random(10000, 20000);
@@ -170,12 +170,12 @@
                     }
                     let dx = this.x - mouse.x; let dy = this.y - mouse.y;
                     if (Math.abs(dx) < mouse.radius && Math.abs(dy) < mouse.radius && phase < 1.5) { let distance = Math.sqrt(dx * dx + dy * dy); if (distance < mouse.radius) { let force = (mouse.radius - distance) / mouse.radius; let pushPower = (this.isRed) ? 5 : 8; this.vx += (dx / distance) * force * pushPower; this.vy += (dy / distance) * force * pushPower; if (this.isGrounded) this.isGrounded = false; } }
-                    if (!this.isGrounded && phase < 2) { let timeFlow = p.millis() * 0.002; let windX = Math.sin(this.x * 0.01 + timeFlow + this.noiseOffsetX) * 1.5; let windLift = Math.cos(this.y * 0.01 + timeFlow + this.noiseOffsetY) * 0.2; this.vx += windX * 0.15; this.vy += 0.5 + windLift * 0.15; }
+                    if (!this.isGrounded && phase < 2) { let timeFlow = p.millis() * 0.002; let windX = Math.sin(this.x * 0.01 + timeFlow + this.noiseOffsetX) * 1.5; let windLift = Math.cos(this.y * 0.01 + timeFlow + this.noiseOffsetY) * 0.2; this.vx += windX * 0.15; this.vy += (_isMobile ? 0.8 : 0.5) + windLift * 0.15; }
                     if (phase <= 1) {
                         if (!this.isGrounded) { if (this.y > h - 20) { if (this.isRed) { this.vy *= -0.5; this.y = h - 20; this.vx += p.random(-2, 2); this.bounceCount++; if (this.bounceCount > 2) { this.isGrounded = true; this.vx *= 0.1; this.vy = 0; } } else { this.vy *= -0.8; this.y = h - 20; this.vx += p.random(-3, 3); } } }
                         if (!this.isRed && this.y > h + 50) { this.y = -20 - p.random(100); this.x = p.random(w); this.vy = p.random(13, 20); this.vx = 0; }
                     } else if (phase >= 2) {
-                        if (this.isRed) { this.redAlpha -= 0.015; this.vx *= 0.98; this.vy *= 0.98; this.x += this.vx; this.y += this.vy; return; } else { this.vy += 0.5; if (this.y > h - 20) { this.vy *= -0.8; this.y = h - 20; } if (this.y > h + 50) { this.y = -20; this.x = p.random(w); this.vy = p.random(13, 20); } }
+                        if (this.isRed) { this.redAlpha -= 0.015; this.vx *= 0.98; this.vy *= 0.98; this.x += this.vx; this.y += this.vy; return; } else { this.vy += (_isMobile ? 0.8 : 0.5); if (this.y > h - 20) { this.vy *= -0.8; this.y = h - 20; } if (this.y > h + 50) { this.y = -20; this.x = p.random(w); this.vy = _isMobile ? p.random(20, 30) : p.random(13, 20); } }
                     }
                     this.vx *= this.friction; this.vy *= this.friction; this.x += this.vx; this.y += this.vy;
                 }
@@ -203,9 +203,9 @@
                 const startScreen = document.getElementById('start-screen'); startScreen.style.opacity = 0; setTimeout(() => startScreen.remove(), 1000);
                 const skipBtn = document.getElementById('skip-btn'); skipBtn.style.opacity = 1; skipBtn.style.pointerEvents = 'auto';
                 initAudio(); targetPoints = generateTargetPoints();
-                // 🐛 移动端粒子数（380红 + 500灰 = 880），桌面端保持 1800 不变
-                const _redCount   = _isMobile ? 380 : 800;
-                const _greyCount  = _isMobile ? 500 : 1000;
+                // 🐛 移动端粒子数（300红 + 350灰 = 650），桌面端保持 1800 不变
+                const _redCount   = _isMobile ? 300 : 800;
+                const _greyCount  = _isMobile ? 350 : 1000;
                 for (let i = 0; i < _redCount; i++) { particles.push(new Particle(true, targetPoints[i % targetPoints.length])); }
                 for (let i = 0; i < _greyCount; i++) particles.push(new Particle(false));
                 p.loop();
@@ -352,9 +352,10 @@
                 li.onclick = () => openWord(word); sidebarContainer.appendChild(li);
             });
         }
-        function backToNetwork() { loadNetwork(currentSelectedLetter); }
+        function backToNetwork() { document.body.classList.remove('word-detail-open'); loadNetwork(currentSelectedLetter); }
 
         function openWord(wordKey) {
+            document.body.classList.add('word-detail-open');
             currentSelectedWord = wordKey; const data = lexiconData[wordKey]; currentSelectedLetter = data.letter;
             if (networkAnimationId) cancelAnimationFrame(networkAnimationId);
             document.getElementById('network-view').style.display = 'none'; document.getElementById('detail-view').style.display = 'flex';
