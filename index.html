@@ -29,11 +29,12 @@
                 style="opacity:0; pointer-events:none; transition: opacity 2s ease; font-size:0.9rem; padding: 8px 16px; letter-spacing:2px;">
                 <span class="btn-signal-text"><span style="font-size:1rem;">📡</span> 频段(3)</span>
             </button>
-            <!-- EN 按钮内嵌到顶栏右侧（移动端 & 桌面端都在此） -->
-            <button id="btn-lang-global" onclick="window.toggleLang?.()" title="中文 / English">EN</button>
         </div>
     </nav>
     <button id="global-chisel-btn" onclick="openLabModal()">[+] 凿字 / 发帖</button>
+
+    <!-- 全局语言切换（始终可见，包括启示录动画期间，故放在 nav 外） -->
+    <button id="btn-lang-global" onclick="window.toggleLang?.()" title="中文 / English">EN</button>
 
 
     <!-- ==========================================

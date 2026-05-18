@@ -74,6 +74,9 @@ window.addEventListener('click', (event) => {
     if (!interactionsEnabled || document.getElementById('page-mother-star').classList.contains('active') === false) return;
     if (event.target.classList.contains('close-btn')) { document.getElementById('detail-card').classList.remove('active'); controls.autoRotate = true; return; }
     if (event.target.closest('#detail-card')) return;
+    // 🐛 修复：星域分类按钮 / 字列表 / 公告 / 顶栏 等 UI 元素的点击不应触发星星详情
+    // 只有真正点在 Three.js canvas 上的空白处时才走星星 raycaster 逻辑
+    if (event.target.closest('#star-filter-wrapper, #star-char-expand, #global-nav, #announcement-banner, #mobile-bottom-tabs, #ui-layer, #btn-lang-global, #global-chisel-btn, #btn-signal-nav')) return;
     if (hoveredStarId !== null) openCard(starsData[hoveredStarId]);
 });
 

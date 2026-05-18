@@ -715,12 +715,22 @@ function bindRadicalEvents(el) {
         if (e.target !== delBtn && e.target !== resXY && e.target !== resX && e.target !== resY) {
             dState.mode = 'move'; dState.startX = e.clientX; dState.startY = e.clientY;
             dState.initLeft = el.offsetLeft; dState.initTop = el.offsetTop;
+            try { el.setPointerCapture?.(e.pointerId); } catch(_) {}
         }
     });
     delBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); el.remove(); activeRadical = null; });
-    resXY.addEventListener('pointerdown', (e) => { e.stopPropagation(); dState.mode = 'resize-xy'; initResizeState(e, el); });
-    resX.addEventListener('pointerdown', (e) => { e.stopPropagation(); dState.mode = 'resize-x'; initResizeState(e, el); });
-    resY.addEventListener('pointerdown', (e) => { e.stopPropagation(); dState.mode = 'resize-y'; initResizeState(e, el); });
+    // 🐛 缩放手柄：setPointerCapture 让手指滑出小圆点也能继续缩放（不会因离开 handle 就中断）
+    const grabHandle = (handleEl, mode) => {
+        handleEl.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            dState.mode = mode;
+            initResizeState(e, el);
+            try { handleEl.setPointerCapture?.(e.pointerId); } catch(_) {}
+        });
+    };
+    grabHandle(resXY, 'resize-xy');
+    grabHandle(resX,  'resize-x');
+    grabHandle(resY,  'resize-y');
 }
 
 function initResizeState(e, el) {
@@ -803,4 +813,41 @@ document.addEventListener('DOMContentLoaded', () => {
     initDrawCanvas();
     initSurgeryCanvasEvents();
     initTerminalSearch();
+    initPullToRefreshGuard();
 });
+
+// 🐛 Bug A 加强版：JS 主动拦截 body 层的 touchmove，把"在 body 上拽"识别为
+// 越界滑动并阻止默认行为，避免 iOS Safari 的下拉刷新（即便 CSS overscroll-behavior 失效也能兜底）
+function initPullToRefreshGuard() {
+    let startY = 0;
+    document.body.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.body.addEventListener('touchmove', (e) => {
+        if (e.touches.length !== 1) return;
+        const currentY = e.touches[0].clientY;
+        const deltaY  = currentY - startY;
+        // 找到事件目标向上最近的"可滚动容器"
+        let el = e.target;
+        let scrollable = null;
+        while (el && el !== document.body) {
+            const cs = getComputedStyle(el);
+            if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+                scrollable = el; break;
+            }
+            el = el.parentElement;
+        }
+        if (!scrollable) {
+            // 没有可滚容器（如启示录、星图、3D页面），直接阻止默认避免下拉
+            e.preventDefault();
+            return;
+        }
+        // 在容器顶部继续下拉 / 底部继续上滑 → 阻止默认避免冒泡到 body 触发下拉刷新
+        const atTop = scrollable.scrollTop <= 0;
+        const atBottom = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
+        if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+}

@@ -470,8 +470,11 @@ function setupCommunityTabs() {
       const type = tabTypeMap[tabId];
       if (type) loadTabPosts(tabId, type);
     };
-    // 初始加载当前可见tab
+    // 🐛 修复计数监听：所有4个tab启动时都监听，否则未点击的tab数字永远是0
     loadTabPosts('tab-glyphs','glyph');
+    loadTabPosts('tab-parchments','parchment');
+    loadTabPosts('tab-terracotta','terracotta');
+    loadTabPosts('tab-bonfire','bonfire');
   }, 800);
 }
 
