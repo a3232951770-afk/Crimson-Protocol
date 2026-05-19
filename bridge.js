@@ -904,9 +904,13 @@ async function handleNormalPost() {
   
   const postData = { type, title, content };
   if (type === 'parchment' && dimSelect) postData.dimension = dimSelect.value;
-  // 附带上传的图片
-  if (window._pendingPostImage && window._pendingPostImage.length < 900000) {
-    postData.postImage = window._pendingPostImage;
+  // 附带上传的图片（压缩后通常 100-400KB，Firestore 单字段限 1MB）
+  if (window._pendingPostImage) {
+    if (window._pendingPostImage.length < 950000) {
+      postData.postImage = window._pendingPostImage;
+    } else {
+      window.showSysToast?.('>> ⚠️ 图片仍过大无法上传（请用更小的图）。其他内容会正常发布。');
+    }
   }
   
   try {

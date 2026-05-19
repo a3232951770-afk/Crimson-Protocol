@@ -578,21 +578,63 @@ function handleArchiveImageUpload(e) {
     const file = e.target.files[0];
     const displayInput = document.getElementById('archive-img-display');
     if(file) {
-        displayInput.value = "[+] 已加载视觉拓片: " + file.name;
+        displayInput.value = "[+] 加载中...";
         displayInput.style.color = "var(--bone)";
         displayInput.style.borderColor = "var(--terracotta)";
-        // 转base64存到全局
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            window._pendingPostImage = ev.target.result;
-        };
-        reader.readAsDataURL(file);
+        // 🐛 修复：原代码直接读取原文件 base64，>900KB 会在 createPost 时被静默丢弃
+        // 现改为客户端压缩：长边 ≤1200px + JPEG 0.8 质量，输出通常 100-400KB
+        compressImage(file, 1200, 0.8).then(compressedDataUrl => {
+            window._pendingPostImage = compressedDataUrl;
+            displayInput.value = "[+] 已加载视觉拓片: " + file.name + " (" + Math.round(compressedDataUrl.length/1024) + "KB)";
+        }).catch(err => {
+            console.error('Image compression failed:', err);
+            displayInput.value = "[!] 图片处理失败，请换一张";
+            displayInput.style.color = "var(--neon-red)";
+            window._pendingPostImage = null;
+        });
     } else {
         displayInput.value = "";
         displayInput.style.color = "#666";
         displayInput.style.borderColor = "#333";
         window._pendingPostImage = null;
     }
+}
+
+// 客户端图片压缩：把任意大小图压成 base64 dataURL，限长边 1200px + JPEG 0.8 质量
+// 输入：File 对象  输出：Promise<dataURL string>
+function compressImage(file, maxSide = 1200, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    let { width, height } = img;
+                    // 长边超过 maxSide 才缩放
+                    if (Math.max(width, height) > maxSide) {
+                        if (width > height) {
+                            height = Math.round(height * (maxSide / width));
+                            width = maxSide;
+                        } else {
+                            width = Math.round(width * (maxSide / height));
+                            height = maxSide;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // 输出 JPEG（比 PNG 小很多）
+                    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    resolve(dataUrl);
+                } catch (err) { reject(err); }
+            };
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = ev.target.result;
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+    });
 }
 
 function addImageToCanvas(src) {
