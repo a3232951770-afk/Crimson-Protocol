@@ -69,8 +69,8 @@ body, html {
     z-index: 9000; display: flex; justify-content: space-between; align-items: center;
     padding: 0 40px; border-bottom: 1px solid rgba(139, 90, 43, 0.4);
     opacity: 0; pointer-events: none; transition: opacity 2s ease;
-    background: rgba(11, 11, 10, 0.55);
-    backdrop-filter: blur(16px) saturate(150%); -webkit-backdrop-filter: blur(16px) saturate(150%);
+    background: rgba(11, 11, 10, 0.4);
+    backdrop-filter: blur(22px) saturate(160%); -webkit-backdrop-filter: blur(22px) saturate(160%);
 }
 
 .nav-logo {
@@ -135,7 +135,7 @@ body, html {
 #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--obsidian); z-index: 55; display: flex; align-items: center; justify-content: center; color: var(--terracotta); font-size: 1.2rem; letter-spacing: 0.2rem; cursor: pointer; transition: opacity 1s ease; font-weight: 700; font-family: var(--font-sans); }
 .pulse-text { animation: pulse 2s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-#skip-btn { position: absolute; top: 20px; right: 20px; color: #4a4a4a; font-size: 0.9rem; letter-spacing: 0.1rem; cursor: pointer; z-index: 60; opacity: 0; pointer-events: none; transition: color 0.3s ease, opacity 0.5s ease; font-family: var(--font-sans); }
+#skip-btn { position: absolute; top: 16px; left: 40px; right: auto; height: 40px; padding: 0 14px; display: inline-flex; align-items: center; color: #4a4a4a; font-size: 0.9rem; letter-spacing: 0.1rem; cursor: pointer; z-index: 99999; opacity: 0; pointer-events: none; transition: color 0.3s ease, opacity 0.5s ease; font-family: var(--font-sans); }
 #skip-btn:hover { color: var(--terracotta); }
 #interact-prompt { position: absolute; top: 75%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 800px; color: var(--terracotta); font-size: 1.1rem; letter-spacing: 0.2rem; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 15; text-align: center; text-shadow: 0 0 10px var(--terracotta); animation: pulse 1.5s infinite; font-weight: 700; font-family: var(--font-sans); }
 .scanlines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; z-index: 2; pointer-events: none; opacity: 0.4; }
@@ -2027,10 +2027,14 @@ body, html {
     letter-spacing: 0.1rem !important;
     padding: 0 16px;
   }
-  /* 跳过按钮缩小 */
+  /* 跳过按钮：左上角，跟右上 EN 同高(34px) + 同水平线(top:8px) */
   #skip-btn {
     font-size: 0.7rem !important;
-    padding: 4px 10px !important;
+    padding: 0 10px !important;
+    height: 34px !important;
+    top: 8px !important;
+    left: 10px !important;
+    right: auto !important;
   }
 
   /* ---- 顶部紧凑导航栏 ---- */
@@ -2038,8 +2042,9 @@ body, html {
     padding: 0.5rem 0.7rem !important;
     height: 48px !important;
     flex-wrap: nowrap !important;
-    background: rgba(11, 11, 10, 0.96) !important;
-    backdrop-filter: blur(10px);
+    background: rgba(11, 11, 10, 0.4) !important;
+    backdrop-filter: blur(22px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(160%) !important;
     border-bottom: 1px solid rgba(204, 78, 60, 0.3) !important;
     z-index: 1000;
   }
@@ -2121,9 +2126,9 @@ body, html {
     left: 0;
     right: 0;
     height: 56px;
-    background: rgba(11, 11, 10, 0.55);
-    backdrop-filter: blur(16px) saturate(150%);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    background: rgba(11, 11, 10, 0.4);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
     border-top: 1px solid rgba(204, 78, 60, 0.4);
     z-index: 9000;
     padding: 0;
@@ -2192,13 +2197,7 @@ body, html {
   .announcement-icon { font-size: 0.65rem !important; }
 
   /* ---- 第一母星：星域分类折叠按钮 ---- */
-  #ui-layer {
-    font-size: 0.65rem !important;
-    padding: 0.5rem 0.7rem !important;
-    bottom: 70px !important;
-    max-width: 60%;
-    z-index: 40;
-  }
+  /* ui-layer 公告位置规则已在下方 ROUND 2 重构块中定义 */
   /* 改成顶部"星域分类 ▼"折叠按钮 */
   #star-filter-wrapper {
     position: fixed !important;
@@ -2279,23 +2278,23 @@ body, html {
     left: 50% !important;
     right: auto !important;
     bottom: auto !important;
-    /* translateY: -50% 居中 + 减 90px 上移 = 整体往上推让出底部分类栏 */
-    transform: translate(-50%, calc(-50% - 90px)) scale(0.9) !important;
+    /* 顶栏 ~50 + 分类栏 ~114 (bottom 64 + height 50)，中间空间中点偏移 ≈ -30px */
+    transform: translate(-50%, calc(-50% - 30px)) scale(0.9) !important;
     width: calc(100% - 24px) !important;
     max-width: 420px !important;
-    max-height: 70vh !important;
+    max-height: calc(100vh - 220px) !important;  /* 留出顶栏 ~50 + 分类栏 ~114 + 上下 padding 各 28 */
     overflow-y: auto !important;
     border-radius: 12px !important;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s, transform 0.3s !important;
-    padding: 0.8rem 1rem 1rem !important;  /* 顶部从 1.2rem 减到 0.8rem，字更靠上 */
+    padding: 0.8rem 1rem 1rem !important;
     z-index: 100;
   }
   #detail-card.glass-panel.active {
     opacity: 1 !important;
     pointer-events: auto !important;
-    transform: translate(-50%, calc(-50% - 90px)) scale(1) !important;
+    transform: translate(-50%, calc(-50% - 30px)) scale(1) !important;
   }
   /* 详情卡内左右箭头紧贴卡片边 */
   .star-nav-arrow {
@@ -2601,20 +2600,27 @@ body, html {
   }
   #footprints-container .post-target-char { font-size: 2.6rem !important; }
 
-  /* ---- 帖子详情弹窗 ---- */
+  /* ---- 帖子详情弹窗：拉宽内容区，左右仅留 14px 呼吸感 ---- */
   .modal-overlay .modal-container {
-    width: calc(100% - 1rem) !important;
+    width: calc(100% - 12px) !important;
     max-width: none !important;
-    max-height: 88vh !important;
-    margin: 0.5rem !important;
-    padding: 1rem !important;
+    max-height: 92vh !important;
+    margin: 0.3rem !important;
+    padding: 0.8rem 0.9rem calc(env(safe-area-inset-bottom, 0px) + 70px) 0.9rem !important;
+    overflow-y: auto !important;
   }
+  /* modal 内部所有元素 box-sizing + 不要在外面套额外 padding */
+  .modal-container > * { box-sizing: border-box; }
   .modal-overlay h3 { font-size: 1.1rem !important; }
   .modal-close {
     font-size: 0.75rem !important;
     padding: 6px 10px !important;
   }
   .modal-overlay .post-target-char { font-size: 4rem !important; }
+  /* 正文区域：拉宽，让阅读体验接近全屏 */
+  .modal-container .card-modal-content,
+  .modal-container .full-article,
+  .modal-container .modal-body { padding: 0 2px !important; }
   .comment-section { padding: 0.6rem 0 !important; }
   .comment-input-area textarea { min-height: 60px !important; }
 
@@ -2732,7 +2738,19 @@ body, html {
 
   /* 公告说明文字简化：移动端隐藏第1行和"悬浮以探知"提示 */
   .ui-layer-line-1, .ui-layer-hover-hint { display: none !important; }
-  #ui-layer { font-size: 0.7rem !important; line-height: 1.6 !important; bottom: 135px !important; max-width: calc(100% - 24px) !important; }
+  /* 位置：左对齐到分类框（left:6px），底部紧贴分类框上方留 12px 间距
+     分类框 bottom:64 高 ~50 → 顶边 vh-114，所以 ui-layer 用 bottom:126 留 12px 间距 */
+  #ui-layer {
+    font-size: 0.7rem !important;
+    line-height: 1.6 !important;
+    bottom: 126px !important;
+    left: 6px !important;
+    right: auto !important;
+    text-align: left !important;
+    padding: 0 !important;
+    max-width: calc(100% - 12px) !important;
+    z-index: 40;
+  }
 
   /* 整个 wrapper 重定位到底部，不再折叠 */
   #star-filter-wrapper {
@@ -2769,11 +2787,16 @@ body, html {
     display: none !important;
   }
   .star-filter-btn {
-    font-size: 0.66rem !important;
-    padding: 7px 2px !important;
-    text-align: center;
-    letter-spacing: 0 !important;
+    font-size: 0.6rem !important;
+    padding: 7px 0 !important;
+    text-align: center !important;
+    letter-spacing: -0.3px !important;
     line-height: 1.1 !important;
+    /* 让"「贬义」字" 这种 5 字宽内容能在 6 等分窄按钮里居中且不溢出 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    min-width: 0;
   }
   /* 字列表向上展开（位于按钮上方） */
   #star-filter-wrapper #star-char-expand.active {
@@ -2883,15 +2906,15 @@ body, html {
     width: 100vw !important;
     height: 100vh !important;
     z-index: 9500 !important;
-    background-color: rgba(11, 11, 10, 0.98) !important;
-    /* 用用户提供的背景图：图片中线对准屏幕右边缘，显示左半边，opacity 0.5 通过 ::before 实现 */
+    /* 🐛 修复：默认就透明，让背景图透过来；不再用 rgba(11,11,10,0.98) 遮黑 */
+    background-color: transparent !important;
     background-image: none !important;
     overflow-y: auto !important;
     padding: 60px 16px 100px !important;
     box-sizing: border-box;
     flex-direction: column !important;
   }
-  /* 背景图层：用 ::before 单独 fixed 一层，opacity 0.5 不影响内容字的清晰度 */
+  /* 背景图层：用 ::before 单独 fixed 一层，opacity 0.25 让字清晰主导 */
   body.word-detail-open::before,
   body:has(#detail-view[style*="flex"])::before {
     content: '';
@@ -2902,13 +2925,14 @@ body, html {
     background-size: 200% auto;  /* 图片宽度 = 2× 屏宽，配合 position 0 让中线对准屏幕右 */
     background-position: 0 center;  /* 图片左边贴屏幕左，右边超出屏幕一半 = 图片中线在屏幕右 */
     background-repeat: no-repeat;
-    opacity: 0.5;  /* 透明度让字清晰可读 */
+    background-color: var(--obsidian);  /* 图片下方的底色 */
+    opacity: 0.25;  /* 从 0.5 降到 0.25 让字更清晰 */
     pointer-events: none;
   }
-  /* 当背景图层存在时，detail-view 本体变透明 background 让背景图透过来 */
-  body.word-detail-open #detail-view,
-  body:has(#detail-view[style*="flex"]) #detail-view {
-    background-color: transparent !important;
+  /* detail-view 父容器 archive-card-wrapper 全屏时也要透明 */
+  body.word-detail-open .archive-card-wrapper,
+  body:has(#detail-view[style*="flex"]) .archive-card-wrapper {
+    background-color: rgba(11, 11, 10, 0.85) !important;  /* 半透明底色让背景图能透出来 */
   }
   /* 返回按钮独占顶部一行，不浮动覆盖字 */
   .btn-back-network {
@@ -2946,7 +2970,26 @@ body, html {
   }
   .chron-tab { font-size: 0.88rem !important; padding-bottom: 4px !important; letter-spacing: 1px !important; }
   .chron-tab-hint { font-size: 0.6rem !important; margin-left: 2px !important; }
-  /* 史记内容容器内边距 */
+  /* 史记 era-header 装饰横线在移动端隐藏（看起来像 bug 实际是装饰）*/
+  .era-header {
+    border-bottom: none !important;
+    font-size: 1.1rem !important;
+    padding-bottom: 0.4rem !important;
+  }
+  .era-header::after {
+    font-size: 0.65rem !important;
+  }
+  .era-section {
+    margin-bottom: 1rem !important;
+  }
+  /* 帖子详情 modal 内可能出现的分隔线统一处理 */
+  #post-modal .modal-interaction-bar {
+    border-top: none !important;
+    border-bottom: none !important;
+    padding: 0.8rem 0 !important;
+    margin: 1rem 0 !important;
+  }
+  #post-modal .img-placeholder { display: none !important; }  /* 占位图也是灰线来源 */
   .chronicle-content { padding: 0 !important; gap: 0 !important; flex-direction: column !important; }
   .timeline-axis { display: none !important; } /* 移动端不显示左侧 DNA 时间轴 */
   #timeline-scroll-area { width: 100% !important; padding: 0 8px !important; }
@@ -3007,18 +3050,34 @@ body, html {
     flex-direction: row !important;
     column-count: unset !important;
   }
-  .waterfall-container > .post-card,
-  .waterfall-container > * {
+  /* 🐛 关键修复：fb-posts 是 JS 动态创建的中间容器，14 个 post-card 在它里面
+     之前 .waterfall-container > * 把 fb-posts 也当 post-card 限制了 max-height: 280px
+     导致只露出最上面 2 行帖子，下面全被 overflow:hidden 砍掉 */
+  .tab-content.active.waterfall-container > .fb-posts {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.3rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex: 0 0 100% !important;
+    /* 不能加 max-height 和 overflow:hidden 否则会砍掉子帖子 */
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  /* 置顶帖（waterfall 直接子元素）和普通帖（fb-posts 子元素）共用 50% 宽 280px 高 */
+  .tab-content.active.waterfall-container > .pinned-post,
+  .tab-content.active.waterfall-container > .fb-posts > .post-card {
     width: calc(50% - 3px) !important;
     flex: 0 0 calc(50% - 3px) !important;
     min-width: 0 !important;
     max-width: none !important;
-    max-height: 280px !important;  /* 强制统一高度，超长截断 */
+    max-height: 280px !important;
     padding: 0.55rem !important;
     margin: 0 !important;
     box-sizing: border-box !important;
     break-inside: avoid;
-    overflow: hidden !important;  /* 超出截断 */
+    overflow: hidden !important;
     position: relative;
   }
   /* 帖子内的图片：限高 90px，露图片中线上下，不全露不顶部露 */
@@ -3027,7 +3086,7 @@ body, html {
     height: 90px !important;
     width: 100% !important;
     object-fit: cover !important;
-    object-position: center center !important;  /* 露中线上下，不是顶部 */
+    object-position: center center !important;
     margin: 0.3rem 0 !important;
     border-radius: 2px;
   }

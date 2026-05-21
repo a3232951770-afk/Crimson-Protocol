@@ -397,14 +397,35 @@ function overrideTerminalSearch() {
 function overrideTimelineSwitch() {
   setTimeout(() => {
     // 强制覆盖world.js的switchDimension
+    // 🐛 优化：加缓存，切换时立刻显示缓存（毫秒级），后台再 fresh fetch 更新
+    const _timelineCache = {};
     window.switchDimension = async function(dimKey, btnEl) {
       document.querySelectorAll('.chron-tab').forEach(b=>b.classList.remove('active'));
       btnEl?.classList.add('active');
       const cont = document.getElementById('timeline-scroll-area');
       if (!cont) return;
-      cont.style.opacity = 0;
-      const posts = await getTimelinePosts(dimKey);
-      setTimeout(() => { renderTimeline(cont, posts); cont.style.opacity=1; cont.scrollTop=0; }, 300);
+      // 1) 如果有缓存，立刻显示，无需等待网络
+      if (_timelineCache[dimKey]) {
+        renderTimeline(cont, _timelineCache[dimKey]);
+        cont.style.opacity = 1;
+        cont.scrollTop = 0;
+      } else {
+        cont.style.opacity = 0;
+      }
+      // 2) 后台拉新数据，拉到了再更新（如果跟缓存不同）
+      try {
+        const posts = await getTimelinePosts(dimKey);
+        _timelineCache[dimKey] = posts;
+        renderTimeline(cont, posts);
+        cont.style.opacity = 1;
+        if (!_timelineCache[dimKey + '_visited']) {
+          cont.scrollTop = 0;
+          _timelineCache[dimKey + '_visited'] = true;
+        }
+      } catch (e) {
+        console.error('Failed to load timeline posts:', e);
+        cont.style.opacity = 1;
+      }
     };
     // 触发初始加载
     const activeBtn = document.querySelector('.chron-tab.active');
