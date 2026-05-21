@@ -2196,6 +2196,23 @@ body, html {
   #announcement-banner-track { padding: 0 30px 0 22px !important; }
   .announcement-icon { font-size: 0.65rem !important; }
 
+  /* ---- 拓片馆 id-stats 共鸣频段单行不折行 ---- */
+  .id-stats {
+    gap: 1.2rem !important;
+    font-size: 0.78rem !important;
+    flex-wrap: nowrap !important;
+    margin-bottom: 1.5rem !important;
+  }
+  .id-stats > div {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .id-stats .stat-value {
+    font-size: 0.95rem !important;
+    margin-left: 6px !important;
+  }
+  .id-stats .edit-hint { display: none !important; }  /* 编辑提示移动端隐藏省空间 */
+
   /* ---- 第一母星：星域分类折叠按钮 ---- */
   /* ui-layer 公告位置规则已在下方 ROUND 2 重构块中定义 */
   /* 改成顶部"星域分类 ▼"折叠按钮 */
@@ -2520,7 +2537,10 @@ body, html {
   /* ---- 拓片馆 ---- */
   .profile-container, .profile-layout {
     flex-direction: column !important;
-    padding: 1rem !important;
+    padding: 1rem 1rem 120px 1rem !important;  /* 底部 120 让内容能完整滑出底栏 */
+    overflow-y: auto !important;
+    height: 100vh !important;
+    box-sizing: border-box !important;
   }
   .profile-left {
     width: 100% !important;
@@ -2600,27 +2620,43 @@ body, html {
   }
   #footprints-container .post-target-char { font-size: 2.6rem !important; }
 
-  /* ---- 帖子详情弹窗：拉宽内容区，左右仅留 14px 呼吸感 ---- */
+  /* ---- 帖子详情弹窗：拉宽内容区，左右仅留 6px 呼吸感 ---- */
   .modal-overlay .modal-container {
-    width: calc(100% - 12px) !important;
+    width: calc(100% - 8px) !important;
     max-width: none !important;
     max-height: 92vh !important;
-    margin: 0.3rem !important;
-    padding: 0.8rem 0.9rem calc(env(safe-area-inset-bottom, 0px) + 70px) 0.9rem !important;
+    margin: 0.25rem !important;
+    padding: 0.6rem 0.4rem calc(env(safe-area-inset-bottom, 0px) + 70px) 0.4rem !important;
     overflow-y: auto !important;
   }
-  /* modal 内部所有元素 box-sizing + 不要在外面套额外 padding */
-  .modal-container > * { box-sizing: border-box; }
+  /* modal 内部所有元素 box-sizing + 拉满 */
+  .modal-container > * { box-sizing: border-box; max-width: 100%; }
   .modal-overlay h3 { font-size: 1.1rem !important; }
   .modal-close {
     font-size: 0.75rem !important;
     padding: 6px 10px !important;
   }
   .modal-overlay .post-target-char { font-size: 4rem !important; }
-  /* 正文区域：拉宽，让阅读体验接近全屏 */
+  /* 所有可能的内层文字容器：归零 padding，让文字拉到 modal-container 的 0.4rem 边距 */
   .modal-container .card-modal-content,
   .modal-container .full-article,
-  .modal-container .modal-body { padding: 0 2px !important; }
+  .modal-container .modal-body,
+  .modal-container .announcement-content,
+  .modal-container .post-content-wrapper,
+  .modal-container .post-modal-content {
+    padding: 0 4px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  /* 公告抽屉内的详情正文也要拉宽 */
+  #announcements-drawer .announcement-detail,
+  #announcements-drawer .announcement-content,
+  #notif-drawer .announcement-detail,
+  #notif-drawer .announcement-content {
+    padding: 0 4px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
   .comment-section { padding: 0.6rem 0 !important; }
   .comment-input-area textarea { min-height: 60px !important; }
 
@@ -2826,9 +2862,15 @@ body, html {
      B. 编年史 — 字典/史记 顶部 sticky + 条件维度 + 字典字 modal
      ───────────────────────────────────── */
   #page-chronicle.active .chronicle-container {
-    padding: 0 0 64px 0 !important;
+    padding: 0 0 120px 0 !important;  /* 底部 120 让史记/字典内容能完整滑出底栏 */
     overflow-y: auto !important;
     height: 100vh !important;
+  }
+  /* 字典词条列表和史记列表的最后内容补底 */
+  #timeline-scroll-area,
+  .timeline-feed,
+  .dictionary-grid {
+    padding-bottom: 100px !important;
   }
   /* 字典/史记 切换键 — sticky 在顶栏下方 */
   .dna-toggle-container {
@@ -2899,14 +2941,13 @@ body, html {
     cursor: pointer;
   }
 
-  /* 字典点字 → detail-view 变全屏 modal */
+  /* 字典点字 → detail-view 变全屏 modal，本身透明，靠 wrapper 提供背景 */
   #detail-view {
     position: fixed !important;
     top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    z-index: 9500 !important;
-    /* 🐛 修复：默认就透明，让背景图透过来；不再用 rgba(11,11,10,0.98) 遮黑 */
+    z-index: 9501 !important;
     background-color: transparent !important;
     background-image: none !important;
     overflow-y: auto !important;
@@ -2914,25 +2955,33 @@ body, html {
     box-sizing: border-box;
     flex-direction: column !important;
   }
-  /* 背景图层：用 ::before 单独 fixed 一层，opacity 0.25 让字清晰主导 */
-  body.word-detail-open::before,
-  body:has(#detail-view[style*="flex"])::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 9499;  /* 比 detail-view (9500) 低一层，作为衬底 */
-    background-image: url('https://i.postimg.cc/t40FkNNq/IMG-2836.jpg');
-    background-size: 200% auto;  /* 图片宽度 = 2× 屏宽，配合 position 0 让中线对准屏幕右 */
-    background-position: 0 center;  /* 图片左边贴屏幕左，右边超出屏幕一半 = 图片中线在屏幕右 */
-    background-repeat: no-repeat;
-    background-color: var(--obsidian);  /* 图片下方的底色 */
-    opacity: 0.25;  /* 从 0.5 降到 0.25 让字更清晰 */
-    pointer-events: none;
-  }
-  /* detail-view 父容器 archive-card-wrapper 全屏时也要透明 */
+  /* archive-card-wrapper 全屏 modal 容器：z-index 9500，自带 bg-detail 的暗化+图片 */
   body.word-detail-open .archive-card-wrapper,
   body:has(#detail-view[style*="flex"]) .archive-card-wrapper {
-    background-color: rgba(11, 11, 10, 0.85) !important;  /* 半透明底色让背景图能透出来 */
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9500 !important;
+    /* 关键：用 background 复合属性强制覆盖，让 bg-detail 的 linear-gradient+图片完整生效 */
+    background:
+      linear-gradient(rgba(11, 11, 10, 0.78), rgba(8, 8, 8, 0.86)),
+      url('https://i.postimg.cc/t40FkNNq/IMG-2836.jpg') !important;
+    background-color: var(--obsidian) !important;
+    background-size: cover, 200% auto !important;
+    background-position: center, 0 center !important;
+    background-repeat: no-repeat !important;
+    /* 去掉 wrapper 外框装饰避免占额外空间 */
+    border: none !important;
+    padding: 0 !important;
+  }
+  /* 隐藏 wrapper 角标装饰，移动端没空间 */
+  body.word-detail-open .archive-card-wrapper::before,
+  body.word-detail-open .archive-card-wrapper::after,
+  body:has(#detail-view[style*="flex"]) .archive-card-wrapper::before,
+  body:has(#detail-view[style*="flex"]) .archive-card-wrapper::after {
+    display: none !important;
   }
   /* 返回按钮独占顶部一行，不浮动覆盖字 */
   .btn-back-network {
@@ -3002,9 +3051,13 @@ body, html {
      C. 女娲泥潭 — 4 tab 等宽一行 + 帖子紧凑化
      ───────────────────────────────────── */
   .mire-container {
-    padding: 50px 0 64px 0 !important;
+    padding: 50px 0 120px 0 !important;  /* 底部 120px 让最后帖子能完整滑出底栏(56px tabs) */
     height: 100vh !important;
     overflow-y: auto !important;
+  }
+  /* tab 内容也额外补底部 padding，确保最后一行帖子有底栏让位 */
+  .tab-content.active.waterfall-container {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px) !important;
   }
   .mire-nav {
     display: flex !important;
@@ -3050,22 +3103,15 @@ body, html {
     flex-direction: row !important;
     column-count: unset !important;
   }
-  /* 🐛 关键修复：fb-posts 是 JS 动态创建的中间容器，14 个 post-card 在它里面
-     之前 .waterfall-container > * 把 fb-posts 也当 post-card 限制了 max-height: 280px
-     导致只露出最上面 2 行帖子，下面全被 overflow:hidden 砍掉 */
+  /* 🐛 关键修复：fb-posts 用 display: contents 让其子帖直接参与外层 waterfall 的 flex 排版
+     这样置顶帖和 fb-posts 内的第一个帖子能并排在同一行 */
   .tab-content.active.waterfall-container > .fb-posts {
-    width: 100% !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0.3rem !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    flex: 0 0 100% !important;
-    /* 不能加 max-height 和 overflow:hidden 否则会砍掉子帖子 */
+    /* display: contents 在下方与置顶帖统一定义 */
     max-height: none !important;
     overflow: visible !important;
   }
-  /* 置顶帖（waterfall 直接子元素）和普通帖（fb-posts 子元素）共用 50% 宽 280px 高 */
+  /* 置顶帖和普通帖统一 50% 宽双列。
+     注意：置顶帖在 waterfall 里是直接子元素，普通帖在 fb-posts 容器里 */
   .tab-content.active.waterfall-container > .pinned-post,
   .tab-content.active.waterfall-container > .fb-posts > .post-card {
     width: calc(50% - 3px) !important;
@@ -3079,6 +3125,11 @@ body, html {
     break-inside: avoid;
     overflow: hidden !important;
     position: relative;
+  }
+  /* 重要：让置顶帖和 fb-posts 同处在一个 flex 行里，让 fb-posts 的第一个普通帖
+     能填到置顶帖右边的空缺位置 */
+  .tab-content.active.waterfall-container > .fb-posts {
+    display: contents !important;  /* 关键：fb-posts 自身不形成 flex item，让里面的 post-card 直接参与外层 flex 排版 */
   }
   /* 帖子内的图片：限高 90px，露图片中线上下，不全露不顶部露 */
   .post-card img {
@@ -3203,21 +3254,32 @@ body, html {
   .fbi-input-group { flex-direction: column !important; align-items: stretch !important; gap: 6px !important; }
   .fbi-label { width: 100% !important; font-size: 0.95rem !important; }
   .fbi-textarea { min-height: 180px !important; font-size: 1rem !important; }
-  /* 提交按钮 sticky 在容器底部 */
+  /* 提交按钮：去掉 sticky,正常 flow 在 textarea 下方,加上 margin 间距,避免视觉错位 */
   .fbi-footer-bar {
-    position: sticky !important;
-    bottom: 0 !important;
-    margin: 0 -14px !important;
-    padding: 14px !important;
-    background: linear-gradient(180deg, rgba(11,11,10,0) 0%, rgba(11,11,10,0.98) 30%) !important;
-    z-index: 10;
+    position: static !important;  /* 不再 sticky,避开"按钮浮在 textarea 上"的视觉 bug */
+    margin: 1.5rem 0 0 0 !important;  /* textarea 与按钮之间留 24px 间距 */
+    padding: 1rem 0 !important;
+    background: transparent !important;
     flex-direction: column !important;
-    gap: 8px !important;
+    gap: 0.6rem !important;
+    border-top: 1px dashed rgba(139, 90, 43, 0.4) !important;
+  }
+  .fbi-footer-text {
+    font-size: 0.55rem !important;
+    letter-spacing: 1.5px !important;
+    text-align: center !important;
+    opacity: 0.6;
   }
   .btn-fbi-submit {
     width: 100% !important;
     padding: 14px !important;
     font-size: 1.05rem !important;
+    margin-top: 4px !important;
+  }
+  /* form 内整体补底 padding 让按钮不贴边 */
+  .fbi-form-container,
+  .fbi-content {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 30px) !important;
   }
 
   /* 凿字实验台分屏头部 [01/GENESIS] 标签：已在上方 folder-tab-top 综合规则中处理，此处保留备注 */
