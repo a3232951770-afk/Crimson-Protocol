@@ -1737,6 +1737,16 @@ body, html {
     cursor: pointer;
     display: none;
     box-shadow: inset 0 0 30px rgba(255,42,42,0.05), 0 2px 12px rgba(255,42,42,0.15);
+    /* 默认 = 已读：整条暗下来、不闪（仍在、仍滚动） */
+    opacity: 0.42;
+    transition: opacity 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+}
+/* 未读 = 整条高亮 + 红光晕（红点闪烁见 .has-unread::after） */
+#announcement-banner.has-unread {
+    opacity: 1;
+    border-top-color: rgba(255,42,42,0.75);
+    border-bottom-color: rgba(255,42,42,0.75);
+    box-shadow: inset 0 0 30px rgba(255,42,42,0.10), 0 2px 18px rgba(255,42,42,0.35);
 }
 /* 故障扫描线效果 */
 #announcement-banner::before {
@@ -1753,8 +1763,8 @@ body, html {
     pointer-events: none;
     z-index: 1;
 }
-/* 闪烁的红点 */
-#announcement-banner::after {
+/* 闪烁的红点：仅未读(.has-unread)时出现，已读则消失 */
+#announcement-banner.has-unread::after {
     content: '';
     position: absolute;
     left: 8px; top: 50%;
@@ -1776,6 +1786,7 @@ body, html {
 }
 #page-mother-star #announcement-banner { display: block; }
 #announcement-banner:hover {
+    opacity: 1;
     background: rgba(204,78,60,0.1);
     border-top-color: var(--neon-red);
     border-bottom-color: var(--neon-red);
@@ -3285,3 +3296,58 @@ body, html {
   /* 凿字实验台分屏头部 [01/GENESIS] 标签：已在上方 folder-tab-top 综合规则中处理，此处保留备注 */
 }
 
+
+/* ============================================================
+   ROUND 3 修复
+   [2] 详情卡/弹窗白线  [3] 三页底部留白  [4] 弹窗两侧padding+字号
+   ============================================================ */
+
+/* ---- [2] 帖子详情卡的"白线"真相 ----
+   白线不是边框，而是 --parchment-texture 这张羊皮纸 SVG 噪点贴图：
+   它没有设 background-size，iOS Safari(WebKit) 会按默认尺寸平铺，
+   于是卡片内部出现平铺接缝 = 那条去不掉的白线（Chromium 是拉伸填充，所以看不到）。
+   解决：换成干净纯色底，贴图去掉，白线根除。 */
+.modal-container {
+  background-image: none !important;
+  background-color: var(--obsidian) !important;
+}
+.hist-card,
+.card-parchment {
+  background-image: none !important;
+  background-color: #15120e !important;
+}
+/* 史记展开卡顶部那条 1px 虚线分隔也去掉，保持干净底 */
+.hist-card.expanded .card-full-content {
+  border-top: none !important;
+}
+
+@media (max-width: 768px) {
+  /* ---- [3] 史记/字典/女娲泥潭：底部留足空，最后内容不被底栏(56px)挡住 ----
+     直接打在真正承载最后内容的滚动列表上，无论外层谁滚动都生效 */
+  #timeline-scroll-area {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
+  }
+  .term-list-container,
+  #word-list-container {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
+  }
+  .tab-content.active.waterfall-container {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px) !important;
+  }
+
+  /* ---- [4] 弹窗正文太窄的真凶 ----
+     .modal-scroll-area 桌面规则 padding:3rem 4rem(两侧64px) 在手机端从没被覆盖过，
+     之前只改 .modal-container 的 padding 一直没效果。这里把两侧收到≈图5的留白。 */
+  .modal-scroll-area {
+    padding: 2.8rem 0.8rem 1.4rem !important;
+  }
+  /* 正文字号略大一丢丢 */
+  .modal-overlay .modal-container .card-content {
+    font-size: 0.92rem !important;
+    line-height: 1.75 !important;
+  }
+  .modal-container .full-article {
+    font-size: 1.16rem !important;
+    line-height: 1.9 !important;
+  }
+}

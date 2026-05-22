@@ -1841,76 +1841,51 @@ const DEFAULT_ANNOUNCEMENT = {
   level: '🔴 绝密 / 置顶',
   title: '【 全星域广播 】赤字协议已激活：致所有语言的拾荒者',
   content: `收到这条频段的姐妹，你好。神经元连接已跨越时间线稳定。
-
 这里是「第一母星」——一个来自未来、已彻底摆脱性别规训的高维母系文明。
 
-━━━━━━━━━━━━━━━━━━━━━━━
-
 ▌信号溯源
-
 在时空回溯的观测中，我们发现你们所处的「旧世界」，其母语的底层代码正被父权深度污染。那些带有「女」字旁的造物（如妒、嫌、婊、妖），像一根根隐形的锁链，被写入了字典的最高权限里，用来规训、分化和定义女性。
-
 我们拒绝坐视这种逻辑在时间长河里闭环。
-
 为此，我们逆向开启了时间通道。【赤字协议 The Crimson Protocol】现已正式激活。我们邀请你作为先遣的「语言考古学家」，与我们共同在废墟上夺回解释权。
 
-━━━━━━━━━━━━━━━━━━━━━━━
-
 ▌跨维行动指南
-
 ▽ [第一母星] — 你的星图主控台
-
 每一颗悬浮在母星轨道上的红星，都是一个被污染的字。
-
 · 点击星辰 → 调出该字的旧世释义档案
 · 拖拽屏幕 → 在三维星云中自由航行
 · 底部分类器 → 按「贬义」「制度字」「母系遗存」「褒义」「中性」五大星域筛选
 · 右下 [+] 按钮 → 如果你想破译的字还没被收录，亲手把它送进星图
 
 ▽ [凿字实验] — 跨时空基因手术台
-
 如果你感到愤怒，把旧词带进来。这里你可以：
-
 · 物理拆解任何字的偏旁
 · 为它注入未被父权污染的新释义
 · 直接在画板上手绘你心中的新字形
-· 为新字命名，提交至【凿字库】等待共鸣
+· 上传已绘制好的新字，向母星提交重构提案
 
 ▽ [女娲的泥潭] — 无审查的姐妹广场
-
 这里没有算法、没有审核、没有限流：
-
 · 凿字库 → 浏览全社区的字源重构提案
 · 羊皮卷 → 撰写长篇考据，解构历史叙事
 · 赤陶痕 → 写下日常生活的悲喜与碎片
 · 篝火阵 → 紧急互助 / 情绪求救频段
-
-你可以发表造字提案、撰写考据、留下日常，也可以为他人留下共鸣与回声。我们允许一切。
+你可以发表造字提案、撰写考据、留下日常，也可以为他人留下共鸣与回声。
 
 ▽ [编年史] — 星轨刻录庭
-
 在女娲的泥潭中，任何获得超过 200 次共鸣的造字或长文，都将触发【星轨刻录】。它们会被永久铭刻进未来官方的【编年史】，分三个维度归档：
-
 · 华夏纪元（中国）
 · 寰宇纪元（世界）
 · 灵境空间（虚拟）
-
 同时，在你的头顶——那片浩瀚的【第一母星】三维星云中，会点亮一颗属于你的创世红星。
 
 ▽ [拓片馆] — 你的私人指挥舱
-
-这里记录着你的每一次刻痕、每一段足迹，以及与其他先遣者之间的脑波私密直连。
-
-━━━━━━━━━━━━━━━━━━━━━━━
+这里记录着你的每一次刻痕、每一段足迹，以及与其他先遣者之间的脑波私密直连(私聊功能)。
 
 忘掉旧字典里的规训吧。
 在这里，所有的定义权交还给你。
-
 拿起你的凿子。
-
 未来，从重命名开始。
-
-[ 信号发射完毕。愿篝火长明。 ]`
+[信号发射完毕。愿篝火长明。]`
 };
 
 let _allAnnouncements = [DEFAULT_ANNOUNCEMENT];
@@ -1949,18 +1924,22 @@ function updateAnnouncementBanner() {
   const text = document.getElementById('announcement-banner-text');
   if (!banner || !text) return;
   
-  // 找到第一条未读的公告
-  const readIds = JSON.parse(localStorage.getItem('crimson_read_announcements') || '[]');
-  const unread = _allAnnouncements.find(a => !readIds.includes(a.id));
-  
-  if (!unread) {
+  // 没有任何公告才隐藏；只要有公告，横幅就常驻、一直滚动
+  if (!_allAnnouncements.length) {
     banner.style.display = 'none';
     return;
   }
-  
+
+  const readIds = JSON.parse(localStorage.getItem('crimson_read_announcements') || '[]');
+  const unread = _allAnnouncements.find(a => !readIds.includes(a.id));
+  // 优先展示未读那条；若全部已读，则展示最新一条（仍在、仍滚动，只是暗下来）
+  const current = unread || _allAnnouncements[0];
+
   banner.style.display = 'block';
-  banner.dataset.currentId = unread.id;
-  text.textContent = `${unread.sender} · ${unread.title} · 点击查看详情`;
+  banner.dataset.currentId = current.id;
+  // 未读 = 高亮闪烁(.has-unread)；已读 = 去掉该 class → 整条变暗、红点消失、不闪
+  banner.classList.toggle('has-unread', !!unread);
+  text.textContent = `${current.sender} · ${current.title} · 点击查看详情`;
 }
 
 window.openLatestAnnouncement = function() {
