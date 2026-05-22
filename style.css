@@ -3351,3 +3351,54 @@ body, html {
     line-height: 1.9 !important;
   }
 }
+
+/* ============================================================
+   ROUND 4 修复
+   [2] 羊皮卷/赤陶痕/篝火阵 卡片：标题完整显示 + 正文只留一行
+   （凿字库 card-glyph 维持原样不动）
+   ============================================================ */
+@media (max-width: 768px) {
+  /* 这三类文字卡：不再按 280px 裁切，避免标题被切 */
+  .tab-content.active.waterfall-container > .fb-posts > .post-card.card-parchment,
+  .tab-content.active.waterfall-container > .fb-posts > .post-card.card-terracotta,
+  .tab-content.active.waterfall-container > .fb-posts > .post-card.card-bonfire,
+  .tab-content.active.waterfall-container > .post-card.card-parchment.pinned-post,
+  .tab-content.active.waterfall-container > .post-card.card-terracotta.pinned-post,
+  .tab-content.active.waterfall-container > .post-card.card-bonfire.pinned-post {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  /* 标题完整：取消行数截断，允许换行铺满 */
+  .post-card.card-parchment h3,
+  .post-card.card-terracotta h3,
+  .post-card.card-bonfire h3 {
+    display: block !important;
+    -webkit-line-clamp: unset !important;
+    overflow: visible !important;
+    max-height: none !important;
+    white-space: normal !important;
+  }
+  /* 正文只显示一行 */
+  .post-card.card-parchment .card-content,
+  .post-card.card-terracotta .card-content,
+  .post-card.card-bonfire .card-content {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+  /* 置顶卡：标题往下挪，别被左上角"📌置顶"角标压住第一行
+     注意：必须带上 .waterfall-container 祖先链，否则被 (>.pinned-post{padding:0.55rem}) 压过 */
+  .tab-content.active.waterfall-container > .pinned-post.card-parchment,
+  .tab-content.active.waterfall-container > .pinned-post.card-terracotta,
+  .tab-content.active.waterfall-container > .pinned-post.card-bonfire {
+    padding-top: 2.4rem !important;
+  }
+  /* 角标本身收紧，避免 emoji 撑高把标题压住 */
+  .pinned-post.card-parchment .pinned-badge,
+  .pinned-post.card-terracotta .pinned-badge,
+  .pinned-post.card-bonfire .pinned-badge {
+    line-height: 1.1 !important;
+    top: 8px !important;
+  }
+}

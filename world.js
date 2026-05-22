@@ -61,7 +61,9 @@
             // 🐛 移动端触摸点比鼠标光标"胖"，180px 半径太粗暴；改成 100px 更精准
             // 桌面端保持 180px 不变
             const _isMobile = window.innerWidth < 768;
-            let mouse = { x: -1000, y: -1000, radius: _isMobile ? 100 : 180 }; let totalMouseDist = 0;
+            // 🐛 顺滑修复：除当前点外，再记录上一帧触点，update() 里按"扫过的线段"推力，
+            //    快速滑动时不再漏掉两点之间的字。半径回调到 130（100 太小显得不灵敏）。
+            let mouse = { x: -1000, y: -1000, prevX: -1000, prevY: -1000, radius: _isMobile ? 130 : 180 }; let totalMouseDist = 0;
             // 🐛 启示录"点火"保护：第一次点击屏幕后的短暂窗口内不更新粒子推力位置
             // 否则那一下点击/触摸会立刻在屏幕中央炸开一个洞
             let _particleIgnitionGuard = true;
@@ -134,11 +136,21 @@
 
             window.addEventListener('mousemove', (e) => { if (_particleIgnitionGuard) return; mouse.x = e.clientX; mouse.y = e.clientY; });
             window.addEventListener('touchmove', (e) => { if (_particleIgnitionGuard) return; mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }, { passive: true });
-            window.addEventListener('mouseout', () => { mouse.x = -1000; mouse.y = -1000; });
+            window.addEventListener('mouseout', () => { mouse.x = -1000; mouse.y = -1000; mouse.prevX = -1000; mouse.prevY = -1000; });
             // 🐛 Bug B 修复：手机端没有 mouseout，需要 touchend/touchcancel 重置鼠标位置
             // 否则手指抬起后 mouse 还停在最后位置，粒子被"看不见的手指"持续推开
-            window.addEventListener('touchend', () => { mouse.x = -1000; mouse.y = -1000; });
-            window.addEventListener('touchcancel', () => { mouse.x = -1000; mouse.y = -1000; });
+            window.addEventListener('touchend', () => { mouse.x = -1000; mouse.y = -1000; mouse.prevX = -1000; mouse.prevY = -1000; });
+            window.addEventListener('touchcancel', () => { mouse.x = -1000; mouse.y = -1000; mouse.prevX = -1000; mouse.prevY = -1000; });
+
+            // 点到线段最近点 + 距离：用于"扫过的线段"推力，快速滑动也顺滑不漏字
+            function closestOnSegment(px, py, ax, ay, bx, by) {
+                const abx = bx - ax, aby = by - ay;
+                const ab2 = abx * abx + aby * aby;
+                let t = ab2 > 0 ? ((px - ax) * abx + (py - ay) * aby) / ab2 : 0;
+                t = t < 0 ? 0 : (t > 1 ? 1 : t);
+                const cx = ax + t * abx, cy = ay + t * aby;
+                return { cx, cy, dist: Math.sqrt((px - cx) ** 2 + (py - cy) ** 2) };
+            }
 
             function generateTargetPoints() {
                 const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
@@ -168,8 +180,21 @@
                         if (dMouse < 15) { this.size = p.lerp(this.size, this.originalSize * 6.0, 0.4); this.x += p.random(-3, 3); this.y += p.random(-3, 3); playHeartbeat(); } else { this.size = p.lerp(this.size, this.originalSize, 0.15); }
                         return;
                     }
-                    let dx = this.x - mouse.x; let dy = this.y - mouse.y;
-                    if (Math.abs(dx) < mouse.radius && Math.abs(dy) < mouse.radius && phase < 1.5) { let distance = Math.sqrt(dx * dx + dy * dy); if (distance < mouse.radius) { let force = (mouse.radius - distance) / mouse.radius; let pushPower = (this.isRed) ? 5 : 8; this.vx += (dx / distance) * force * pushPower; this.vy += (dy / distance) * force * pushPower; if (this.isGrounded) this.isGrounded = false; } }
+                    if (phase < 1.5 && mouse.x > -999) {
+                        // 用上一帧→当前帧的线段做推力，快速滑动时整条路径上的字都被顺滑弹开
+                        let ax = (mouse.prevX > -999) ? mouse.prevX : mouse.x;
+                        let ay = (mouse.prevY > -999) ? mouse.prevY : mouse.y;
+                        let seg = closestOnSegment(this.x, this.y, ax, ay, mouse.x, mouse.y);
+                        if (seg.dist < mouse.radius) {
+                            let distance = seg.dist || 0.0001;
+                            let dx = this.x - seg.cx, dy = this.y - seg.cy;
+                            let force = (mouse.radius - distance) / mouse.radius;
+                            let pushPower = (this.isRed) ? 5 : 8;
+                            this.vx += (dx / distance) * force * pushPower;
+                            this.vy += (dy / distance) * force * pushPower;
+                            if (this.isGrounded) this.isGrounded = false;
+                        }
+                    }
                     if (!this.isGrounded && phase < 2) { let timeFlow = p.millis() * 0.002; let windX = Math.sin(this.x * 0.01 + timeFlow + this.noiseOffsetX) * 1.5; let windLift = Math.cos(this.y * 0.01 + timeFlow + this.noiseOffsetY) * 0.2; this.vx += windX * 0.15; this.vy += (_isMobile ? 0.8 : 0.5) + windLift * 0.15; }
                     if (phase <= 1) {
                         if (!this.isGrounded) { if (this.y > h - 20) { if (this.isRed) { this.vy *= -0.5; this.y = h - 20; this.vx += p.random(-2, 2); this.bounceCount++; if (this.bounceCount > 2) { this.isGrounded = true; this.vx *= 0.1; this.vy = 0; } } else { this.vy *= -0.8; this.y = h - 20; this.vx += p.random(-3, 3); } } }
@@ -184,7 +209,7 @@
 
             p.draw = function() {
                 if (phase === 4) { p.background(11, 11, 10, 1); }
-                else { p.background(11, 11, 10, 0.4); particles.forEach(pt => { pt.update(); pt.draw(); });
+                else { p.background(11, 11, 10, 0.4); particles.forEach(pt => { pt.update(); pt.draw(); }); mouse.prevX = mouse.x; mouse.prevY = mouse.y;
                     if (phase === 3.5) { p.fill(255, 42, 42, 0.8); p.textFont('monospace'); p.textSize(16); p.drawingContext.shadowBlur = 0; const chars = '0123456789ABCDEF!@#$%%^&*()_+-=~`[];,./<>?污释义染警告系统崩'; for (let i = 0; i < 40; i++) p.text(chars[Math.floor(p.random(chars.length))], p.random(p.width * 0.2), p.random(p.height)); for (let i = 0; i < 40; i++) p.text(chars[Math.floor(p.random(chars.length))], p.width * 0.8 + p.random(p.width * 0.2), p.random(p.height)); p.textFont('"Noto Sans SC", sans-serif'); p.textStyle(p.BOLD); }
                     if (phase === 1 && mouse.x > -1000) { if (lastMousePos.x > -1000) { let d = p.dist(mouse.x, mouse.y, lastMousePos.x, lastMousePos.y); totalMouseDist += d; } lastMousePos.x = mouse.x; lastMousePos.y = mouse.y; if (totalMouseDist > 1400) { startGathering(); } } else { lastMousePos.x = -1000; }
                 }
