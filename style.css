@@ -3414,3 +3414,14 @@ html[lang="en"] .redacted-text::after { content: '[ ⚠ SEALED · TAP TO DECODE 
 html[lang="en"] .term-output-area.confidential::after { content: 'CONFIDENTIAL\A [ CONTAMINATED ]'; }
 /* 4) 实验室方法 tab：英文较长，缩小字号/字距让 "Assign New Meaning" 等收成两行 */
 html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1rem 1.5rem; line-height: 1.25; }
+
+/* Phase 2B — 帖子翻译按钮（详情弹窗 + 史记卡片通用） */
+.post-trans-btn {
+    display: inline-block; margin: 0.2rem 0 0.6rem; padding: 4px 12px;
+    background: rgba(204,78,60,0.08); border: 1px solid rgba(204,78,60,0.5);
+    color: var(--terracotta); font-family: var(--font-mono); font-size: 0.72rem;
+    letter-spacing: 0.5px; cursor: pointer; border-radius: 3px; transition: all 0.2s;
+}
+.post-trans-btn:hover { background: rgba(204,78,60,0.2); color: var(--bone); }
+.post-trans-btn:disabled { opacity: 0.6; cursor: wait; }
+.hist-card .post-trans-btn { margin-left: 0.5rem; }

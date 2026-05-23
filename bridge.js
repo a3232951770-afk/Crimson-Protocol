@@ -448,6 +448,7 @@ function renderTimeline(cont, posts) {
     cont.innerHTML = `<div class="placeholder-box">[ 暂无档案记录 / AWAITING_RECORDS ]</div>`;
     return;
   }
+  posts.forEach(s => { window._chronSrc[s.id] = { title: s.title||'', summary: s.summary||'', content: s.content||'' }; });
   cont.innerHTML = Object.entries(eraMap).map(([era,stories])=>`
     <div class="era-section">
       <div class="era-header" onclick="this.parentElement.classList.toggle('collapsed')">${era}</div>
@@ -463,11 +464,12 @@ function renderTimeline(cont, posts) {
               <span class="timeline-votes">▵ ${s.votes||0}</span>
             </div>
             <h3>${s.title}</h3>
-            <div class="card-summary">${s.summary} <span class="read-more-btn">[ 点击阅览 ]</span></div>
+            <div class="card-summary"><span class="tr-summary">${s.summary}</span> <span class="read-more-btn">[ 点击阅览 ]</span></div>
             <div class="card-full-content">
               <div class="full-article">${s.content}</div>
               <div style="margin-top:1rem">
                 <button class="tl-action-btn" onclick="event.stopPropagation();tlVote('${s.id}',this)">▵ 收录投票 <span>${s.votes||0}</span></button>
+                <button class="post-trans-btn" data-sid="${s.id}" data-st="zh" onclick="window.toggleChronTrans(event,this)">🌐 Translate</button>
               </div>
             </div>
           </article>`).join('')}
@@ -700,6 +702,11 @@ window.openFbPostDetail = function(postId) {
   // 作者+时间
   const t = p.createdAt ? fmtTime(p.createdAt.toDate?.() || new Date(p.createdAt.seconds*1000)) : '';
   html += `<div class="card-meta" style="margin-bottom:1rem;"><span class="card-author" data-author-id="${esc(p.authorId||'')}" data-author-name="${esc(p.authorName||'')}">${esc(p.authorName||'')}</span><span class="card-stats">${t}</span></div>`;
+
+  // 🌐 翻译按钮（按需机翻帖子标题/正文/论证；目标字不翻）
+  if (p.title || p.content) {
+    html += `<button class="post-trans-btn" data-pid="${esc(postId)}" data-st="zh" onclick="window.togglePostTrans(this)">🌐 Translate</button>`;
+  }
   
   // 目标字（大字展示）
   if (p.targetChar) {
@@ -715,10 +722,10 @@ window.openFbPostDetail = function(postId) {
   }
   
   // 标题
-  if (p.title) html += `<h3 style="color:var(--amber);margin:0.8rem 0 0.5rem;">${esc(p.title)}</h3>`;
+  if (p.title) html += `<h3 class="tr-title" style="color:var(--amber);margin:0.8rem 0 0.5rem;">${esc(p.title)}</h3>`;
   
   // 正文
-  if (p.content) html += `<div class="card-content" style="margin:1rem 0;line-height:1.8;color:var(--bone);font-size:0.95rem;">${escBr(p.content)}</div>`;
+  if (p.content) html += `<div class="card-content tr-body" style="margin:1rem 0;line-height:1.8;color:var(--bone);font-size:0.95rem;">${escBr(p.content)}</div>`;
   
   // 上传的图片
   if (p.postImage) {
@@ -728,7 +735,7 @@ window.openFbPostDetail = function(postId) {
   }
   
   // 论证
-  if (p.reasoning) html += `<div style="margin:1rem 0;padding:0.8rem;border-left:2px solid var(--terracotta);color:var(--ash);font-size:0.85rem;"><strong style="color:var(--terracotta);">${isEn?'Reasoning':'论证'}：</strong>${escBr(p.reasoning)}</div>`;
+  if (p.reasoning) html += `<div style="margin:1rem 0;padding:0.8rem;border-left:2px solid var(--terracotta);color:var(--ash);font-size:0.85rem;"><strong style="color:var(--terracotta);">${isEn?'Reasoning':'论证'}：</strong><span class="tr-reason">${escBr(p.reasoning)}</span></div>`;
   
   // 画板截图（偏旁手术）
   if (p.canvasImage) {
@@ -1481,6 +1488,7 @@ const UI_EN = {
   '[ ↶ 返回列表 ]':'[ ↶ Back to list ]', '[ 发射信号 ]':'[ Transmit ]',
   '[ 暂无私信 · 在泥潭里悬浮其他用户名可发起脑波直连 ]':'[ No messages yet · hover a username in the Mire to start a Brainwave Link ]',
   '> _ 输入发射指令... (Enter 发送，Shift+Enter 换行)':'> _ Type a transmission... (Enter to send, Shift+Enter for newline)',
+  '[ 点击阅览 ]':'[ Read more ]', '▵ 收录投票':'▵ Vote to canonize',
 };
 
 // 字典字段英文翻译（关键字段）
@@ -1600,6 +1608,8 @@ function applyLang() {
   try { renderPinnedPreviews(); } catch(e) {}
   // 4b. 脑波直连抽屉里的公告列表
   try { renderAnnouncementsList(); } catch(e) {}
+  // 4c. 频段按钮（中英来回切都刷新）
+  try { updateSignalBadge(window._signalCount || 0); } catch(e) {}
   // 5. 动态内容（帖子列表 / 打开中的弹窗）随语言重渲染
   relocalizeDynamic();
 }
@@ -2324,6 +2334,7 @@ function setupDmListener() {
 
 // 更新频段按钮上的未读数
 function updateSignalBadge(count) {
+  window._signalCount = count;
   const navBtn = document.getElementById('btn-signal-nav');
   if (!navBtn) return;
   if (count > 0) {
@@ -2632,3 +2643,96 @@ onAuthChange(user => {
     setTimeout(() => setupDmListener(), 500);
   }
 });
+
+// ============================================================
+// 🌐 Phase 2B — 用户帖子按需机翻（免费 MyMemory 接口 + 缓存 + 失败重试）
+//   只翻帖子标题/正文/论证；被研究的目标字单独展示、不送翻。
+// ============================================================
+window._postTransCache = window._postTransCache || {}; // 缓存 id -> {field: enText}
+window._chronSrc = window._chronSrc || {};             // 史记原文 storyId -> {title,summary,content}
+
+// 单段翻译：分块（MyMemory 单次约 500 字节）后拼回
+async function _mmTranslateOne(text) {
+  const t = (text || '').trim();
+  if (!t) return text || '';
+  const chunks = []; let buf = '';
+  for (const seg of (text || '').split(/(\n)/)) {
+    if ((buf + seg).length > 450 && buf) { chunks.push(buf); buf = ''; }
+    buf += seg;
+  }
+  if (buf) chunks.push(buf);
+  const out = [];
+  for (const c of chunks) {
+    if (!c.trim()) { out.push(c); continue; }
+    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(c) + '&langpair=zh-CN|en';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('translate http ' + res.status);
+    const data = await res.json();
+    out.push((data && data.responseData && data.responseData.translatedText) || c);
+  }
+  return out.join('');
+}
+
+// 翻译一组字段并缓存
+async function _translateFields(cacheId, src) {
+  if (window._postTransCache[cacheId]) return window._postTransCache[cacheId];
+  const result = {};
+  for (const k of Object.keys(src)) result[k] = await _mmTranslateOne(src[k]);
+  window._postTransCache[cacheId] = result;
+  return result;
+}
+
+// 帖子详情弹窗：翻译 / 还原
+window.togglePostTrans = async function(btn) {
+  const id = btn.dataset.pid;
+  const p = window._fbPostsCache && window._fbPostsCache[id];
+  const scope = document.getElementById('modal-content-area');
+  if (!p || !scope) return;
+  const titleEl = scope.querySelector('.tr-title');
+  const bodyEl  = scope.querySelector('.tr-body');
+  const reasonEl= scope.querySelector('.tr-reason');
+  if ((btn.dataset.st || 'zh') === 'zh') {
+    btn.disabled = true; btn.textContent = '🌐 翻译中… / Translating…';
+    try {
+      const en = await _translateFields(id, { title: p.title || '', content: p.content || '', reasoning: p.reasoning || '' });
+      if (titleEl && p.title) titleEl.textContent = en.title;
+      if (bodyEl && p.content) bodyEl.innerHTML = escBr(en.content);
+      if (reasonEl && p.reasoning) reasonEl.innerHTML = escBr(en.reasoning);
+      btn.dataset.st = 'en'; btn.textContent = '🌐 Show original';
+    } catch (e) { btn.textContent = '🌐 翻译失败，点此重试 / Retry'; }
+    finally { btn.disabled = false; }
+  } else {
+    if (titleEl && p.title) titleEl.textContent = p.title;
+    if (bodyEl && p.content) bodyEl.innerHTML = escBr(p.content);
+    if (reasonEl && p.reasoning) reasonEl.innerHTML = escBr(p.reasoning);
+    btn.dataset.st = 'zh'; btn.textContent = '🌐 Translate';
+  }
+};
+
+// 史记卡片：翻译 / 还原
+window.toggleChronTrans = async function(ev, btn) {
+  if (ev) ev.stopPropagation();
+  const id = btn.dataset.sid;
+  const src = window._chronSrc && window._chronSrc[id];
+  const card = btn.closest('.hist-card');
+  if (!src || !card) return;
+  const titleEl = card.querySelector('h3');
+  const sumEl   = card.querySelector('.tr-summary');
+  const artEl   = card.querySelector('.full-article');
+  if ((btn.dataset.st || 'zh') === 'zh') {
+    btn.disabled = true; btn.textContent = '🌐 翻译中…';
+    try {
+      const en = await _translateFields('chron_' + id, { title: src.title || '', summary: src.summary || '', content: src.content || '' });
+      if (titleEl) titleEl.textContent = en.title;
+      if (sumEl) sumEl.textContent = en.summary;
+      if (artEl) artEl.innerHTML = escBr(en.content);
+      btn.dataset.st = 'en'; btn.textContent = '🌐 Show original';
+    } catch (e) { btn.textContent = '🌐 Retry'; }
+    finally { btn.disabled = false; }
+  } else {
+    if (titleEl) titleEl.textContent = src.title;
+    if (sumEl) sumEl.textContent = src.summary;
+    if (artEl) artEl.innerHTML = escBr(src.content);
+    btn.dataset.st = 'zh'; btn.textContent = '🌐 Translate';
+  }
+};

@@ -271,8 +271,8 @@
                             if (charIndex < lines[lineIndex].length) {
                                 let char = lines[lineIndex].charAt(charIndex); content.innerHTML += char;
                                 if (char !== ' ') { playTypewriterTick(); }
-                                charIndex++; setTimeout(typeWriter, window._lang==='en' ? (40 + Math.random()*35) : (120 + Math.random() * 100));
-                            } else { content.innerHTML += "<br>"; lineIndex++; charIndex = 0; setTimeout(typeWriter, window._lang==='en' ? 220 : 400); }
+                                charIndex++; setTimeout(typeWriter, window._lang==='en' ? (40 + Math.random()*35) : (80 + Math.random() * 55));
+                            } else { content.innerHTML += "<br>"; lineIndex++; charIndex = 0; setTimeout(typeWriter, window._lang==='en' ? 220 : 330); }
                         } else {
                             setTimeout(() => { terminal.style.transition = "opacity 2s ease"; terminal.style.opacity = 0; setTimeout(() => { if (window.enterMotherStar) window.enterMotherStar(); }, 1500); }, window._lang==='en' ? 1600 : 3000);
                         }
