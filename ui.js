@@ -460,12 +460,12 @@ function initTerminalSearch() {
             unfurlScroll(textToType, outputArea, () => {
                 if (isHit) {
                     outputArea.classList.add('confidential');
-                    rejectBtn.innerText = " 拒绝接受！进入重塑台 ➔";
+                    rejectBtn.innerText = window._lang==='en' ? " Reject! Enter the Workbench ➔" : " 拒绝接受！进入重塑台 ➔";
                     setTimeout(() => rejectBtn.style.display = 'block', 200);
                 } else {
                     manualInput.style.display = 'block';
                     manualInput.focus();
-                    rejectBtn.innerText = " 锁定旧字！进入重塑台 ➔";
+                    rejectBtn.innerText = window._lang==='en' ? " Lock the old word! Enter the Workbench ➔" : " 锁定旧字！进入重塑台 ➔";
                     setTimeout(() => rejectBtn.style.display = 'block', 200);
                 }
             });

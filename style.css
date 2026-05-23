@@ -3402,3 +3402,13 @@ body, html {
     top: 8px !important;
   }
 }
+
+/* ============================================================
+   i18n — 英文版排版微调（仅 html[lang="en"] 生效，中文版不动）
+   ============================================================ */
+/* 1) 开屏协议文字：英文较长，缩小字号 + 收紧字距，避免被裁切 */
+html[lang="en"] #protocol-text { font-size: clamp(0.85rem, 2.6vw, 1.85rem); letter-spacing: 0.12rem; }
+/* 2) 字卡封印提示（::after content 英文化） */
+html[lang="en"] .redacted-text::after { content: '[ ⚠ SEALED · TAP TO DECODE ]'; }
+/* 3) 档案"已污染"印章英文化（\A = 换行，配合 white-space:pre-line） */
+html[lang="en"] .term-output-area.confidential::after { content: 'CONFIDENTIAL\A [ CONTAMINATED ]'; }

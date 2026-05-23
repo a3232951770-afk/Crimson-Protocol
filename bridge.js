@@ -341,23 +341,31 @@ function overrideTerminalSearch() {
 
       const data = searchCharLocal(val);
       let text, isHit;
+      const isEn = window._lang === 'en';
 
       if (data) {
         isHit = true;
         const bars = data.pollutionLevel > 0 ? '▓'.repeat(data.pollutionLevel)+'░'.repeat(5-data.pollutionLevel) : '░░░░░';
-        const catNames = { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
+        const catNames = isEn
+          ? { stigma:'Derogatory', institution:'Institutional', matrilineal:'Matrilineal', reclaim:'Reclaimed', neutral:'Neutral' }
+          : { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
+        const enDef = (typeof CHAR_EN !== 'undefined') ? CHAR_EN[data.char] : null;
+        const swText = (isEn && enDef && enDef.s) ? enDef.s : data.shuowen;
+        const mdText = (isEn && enDef && enDef.m) ? enDef.m : data.modern;
         text = `THE CRIMSON PROTOCOL\nARCHIVE NO. ${Math.floor(Math.random()*90000+10000)}\n`
-             + `\n【 字符：${data.char} / ${data.pinyin} 】`
-             + `\n【 分类：${catNames[data.category]||data.category} 】`
-             + `\n【 污染等级：${bars} ${data.pollutionLevel}/5 】`
-             + `\n\n《说文解字》原文：\n${data.shuowen}`
-             + `\n\n现代字典义：\n${data.modern}`;
+             + `\n【 ${isEn?'Character':'字符'}：${data.char} / ${data.pinyin} 】`
+             + `\n【 ${isEn?'Category':'分类'}：${catNames[data.category]||data.category} 】`
+             + `\n【 ${isEn?'Pollution':'污染等级'}：${bars} ${data.pollutionLevel}/5 】`
+             + `\n\n${isEn?'Shuowen Jiezi (original):':'《说文解字》原文：'}\n${swText}`
+             + `\n\n${isEn?'Modern definition:':'现代字典义：'}\n${mdText}`;
         window._currentCharData = data;
         const catGroup = document.getElementById('new-word-category-group');
         if (catGroup) catGroup.style.display = 'none';
       } else {
         isHit = false;
-        text = `⚠️ WARNING: Archive Incomplete.\n> 检索失败：旧世档案库残缺。\n> 检测到词源含规训基因，请手动录入父权旧义。`;
+        text = isEn
+          ? `⚠️ WARNING: Archive Incomplete.\n> Retrieval failed: the old-world archive is corrupted.\n> Disciplinary genes detected in the etymology; please enter the patriarchal old meaning manually.`
+          : `⚠️ WARNING: Archive Incomplete.\n> 检索失败：旧世档案库残缺。\n> 检测到词源含规训基因，请手动录入父权旧义。`;
         window._currentCharData = null;
         const catGroup = document.getElementById('new-word-category-group');
         if (catGroup) catGroup.style.display = 'block';
@@ -367,10 +375,10 @@ function overrideTerminalSearch() {
         window.unfurlScroll(text, out, () => {
           if (isHit) {
             out.classList.add('confidential');
-            if (reject) { reject.innerText='🚫 拒绝接受！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',200); }
+            if (reject) { reject.innerText=isEn?'🚫 Reject! Enter the Workbench ➔':'🚫 拒绝接受！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',200); }
           } else {
             if (manual) manual.style.display='block';
-            if (reject) { reject.innerText='🔒 锁定旧字！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',200); }
+            if (reject) { reject.innerText=isEn?'🔒 Lock the old word! Enter the Workbench ➔':'🔒 锁定旧字！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',200); }
           }
         });
       } else if (window.typeWriterLab) {
@@ -378,10 +386,10 @@ function overrideTerminalSearch() {
         window.typeWriterLab(text, out, 0, () => {
           if (isHit) {
             out.classList.add('confidential');
-            if (reject) { reject.innerText='🚫 拒绝接受！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',500); }
+            if (reject) { reject.innerText=isEn?'🚫 Reject! Enter the Workbench ➔':'🚫 拒绝接受！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',500); }
           } else {
             if (manual) manual.style.display='block';
-            if (reject) { reject.innerText='🔒 锁定旧字！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',500); }
+            if (reject) { reject.innerText=isEn?'🔒 Lock the old word! Enter the Workbench ➔':'🔒 锁定旧字！进入重塑台 ➔'; setTimeout(()=>reject.style.display='block',500); }
           }
         });
       } else {
@@ -1382,7 +1390,7 @@ const UI_EN = {
   // 泥潭
   '凿字库':'Glyphs', '羊皮卷':'Parchments', '赤陶痕':'Inscriptions', '篝火阵':'Bonfire',
   // 造字实验室
-  '凿字实验':'Genesis Lab', '篆刻泥板':'Archive Post',
+  '凿字实验':'Genesis Lab', '篆刻泥板':'Archive',
   '>> 检索待解构的旧字_':'>> Search character to deconstruct_',
   '拒绝接受！进入重塑台 ➔':'Reject! Enter workbench ➔',
   '🔒 锁定旧字！进入重塑台 ➔':'🔒 Lock character! Enter workbench ➔',
@@ -1430,6 +1438,39 @@ const UI_EN = {
   '华夏纪元':'Huaxia Era', '寰宇纪元':'Universal Era', '灵境空间':'Liminal Space',
   '（中国）':' (China)', '（世界）':' (World)', '（虚拟）':' (Virtual)',
   '华夏纪元（中国）':'Huaxia Era (China)', '寰宇纪元（世界）':'Universal Era (World)', '灵境空间（虚拟）':'Liminal Space (Virtual)',
+  // —— 凿字实验室（方法/核心基因/笔画分类/注释/读音释义/手术台）——
+  '赋予新义':'Assign New Meaning', '字词替换':'Word Substitution', '偏旁手术':'Radical Surgery',
+  '核心基因':'Core Genes',
+  '一至三画':'1–3 strokes', '四画':'4 strokes', '五至六画':'5–6 strokes', '七至九画':'7–9 strokes', '十画及以上':'10+ strokes',
+  '新字读音':'Reading', '字义阐释':'Meaning', '【 手术台：':'【 Operating Table: ',
+  '例如：jié / 第二声 / 选填':'e.g. jié / 2nd tone / optional',
+  '为什么这样造？这个新字想表达什么？请用你自己的话写下它的灵魂。':'Why build it this way? What does this new character express? Write its soul in your own words.',
+  '* 【拖放重组】点击左侧偏旁，即可在画板内进行':'* [Drag & Drop] Tap a radical on the left, then on the canvas you can ',
+  '等比缩放 / 拉伸 / 移动 / 删除':'scale / stretch / move / delete',
+  '操作。':' it.',
+  '* 【手写刻痕】模式下，可直接使用鼠标/触控笔，自由刻画出你认为该有的新字形。':'* In [Freehand] mode, use your mouse/stylus to freely draw the new glyph you envision.',
+  // —— 选字工坊方法卡描述 ——
+  '解构旧字基因，重写定义。':'Deconstruct old characters, rewrite their meaning.',
+  '将改造新词刻入母星轨道。':"Inscribe the reforged words into the Motherstar's orbit.",
+  '记录日常刻痕，重构羊皮卷历史。':'Record daily marks, reconstruct parchment history.',
+  '或向母星发起求助。':'Or call on the Motherstar for help.',
+  // —— 发帖封卷表单 ——
+  '史记维度':'Chronicle Dimension', '(投票超200后将收录)':'(canonized after 200 votes)',
+  '正文刻痕':'Inscription Body',
+  '刻下核心主旨...':'Inscribe the core thesis...',
+  '[+] 点击上传图片附件 (选填)':'[+] Upload an image attachment (optional)',
+  '输入档案详尽内容...':'Enter the full archive content...',
+  '刻录并封卷 ➔':'Inscribe & Seal ➔',
+  // —— 拓片馆 / 个人页 ——
+  '觉醒日':'Awakening Day', '共鸣频段':'Resonance Band',
+  '创世字符':'Genesis Glyphs', '凿壁者勋章':'Wall-Chiseler Medal',
+  '成功解构并升入母星轨道的字':"Characters deconstructed and lifted into the Motherstar's orbit",
+  '被《编年史》正式收录的考据文献':'Research formally canonized into the Chronicles',
+  '泥潭足迹':'Mire Footprints', '[ ⎋ 退出协议 ]':'[ ⎋ Exit Protocol ]',
+  '我们可以改变这个世界！':'We can change this world!',
+  // —— 字卡详情按钮 / 提案轮播 ——
+  '拒绝接受！提交新提案 ➔':'Reject! Submit a New Proposal ➔',
+  '已收录的新提案':'Canonized Proposals',
 };
 
 // 字典字段英文翻译（关键字段）
@@ -1491,23 +1532,13 @@ window.toggleLang = function() {
 function applyLang() {
   const isEn = window._lang === 'en';
   
-  // 1. 固定 UI 标签（textContent 整体替换；含手机底栏 .mobile-tab-btn[data-page]）
+  // 1. 固定 UI 文字：按内容匹配的文本节点翻译器
+  //    只翻译"在 UI_EN 里有对应译文"的节点，其它（动态计数、用户内容、被研究的字）一律不碰；
+  //    保留前后空白，兼容带 <span> 的复合元素（如 [01] 赋予新义 / 凿字库<计数> / 史记维度<提示>）。
   const walker = (root) => {
     if (!root) return;
-    root.querySelectorAll('.nav-links a, .switch-option, .btn-close-lab, .modal-close, .btn-cast, .star-filter-btn, .fbi-label, .fbi-select option, .wb-tab, .mobile-accordion-header span:first-child, .btn-reject-huge, .auth-title, .auth-submit-btn, .auth-switch, h2, .sys-prompt, .folder-body p, .btn-confirm-medal, .comment-submit, #global-chisel-btn, #interact-prompt, #protocol-text, .pulse-text, .canvas-toolbar .surgery-title, .tool-btn, .canvas-footer-actions .btn-bottom-action, .mobile-tab-btn[data-page]').forEach(el => {
-      if (el.closest('.no-translate, [translate="no"]')) return;
-      const original = el.getAttribute('data-original');
-      const text = original || el.textContent.trim();
-      if (!original && text) el.setAttribute('data-original', text);
-      const storedOriginal = el.getAttribute('data-original');
-      if (isEn && UI_EN[storedOriginal]) {
-        el.textContent = UI_EN[storedOriginal];
-      } else if (!isEn && storedOriginal) {
-        el.textContent = storedOriginal;
-      }
-    });
-    
-    // 搜索框placeholders
+
+    // placeholder（输入框/文本域）
     root.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(el => {
       const origPh = el.getAttribute('data-original-ph');
       const ph = origPh || el.placeholder;
@@ -1517,29 +1548,26 @@ function applyLang() {
       else if (!isEn && stored) el.placeholder = stored;
     });
 
-    // 泥潭 tab：只翻标签那个文本节点，保留后面的计数 <span>
-    root.querySelectorAll('.mire-tab').forEach(el => {
-      const node = [...el.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim());
-      if (!node) return;
-      if (!el.dataset.origLabel) el.dataset.origLabel = node.nodeValue.trim();
-      const key = el.dataset.origLabel;
-      node.nodeValue = (isEn && UI_EN[key]) ? (UI_EN[key] + ' ') : (key + ' ');
+    // 文本节点翻译（跳过动态/受保护区域）
+    const SKIP = '.no-translate,[translate="no"],.fb-posts,.comment-list,#modal-comment-list,#modal-content-area,.term-output-area,#ui-layer,script,style,textarea';
+    const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        const pe = n.parentElement;
+        if (!pe || pe.closest(SKIP)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
     });
-
-    // 编年史维度 tab：翻文本节点 + 提示 span（保留结构）
-    root.querySelectorAll('.chron-tab').forEach(el => {
-      const node = [...el.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim());
-      if (node) {
-        if (!el.dataset.origLabel) el.dataset.origLabel = node.nodeValue.trim();
-        const key = el.dataset.origLabel;
-        node.nodeValue = (isEn && UI_EN[key]) ? UI_EN[key] : key;
-      }
-      const hint = el.querySelector('.chron-tab-hint');
-      if (hint) {
-        if (!hint.dataset.orig) hint.dataset.orig = hint.textContent.trim();
-        const hk = hint.dataset.orig;
-        hint.textContent = (isEn && UI_EN[hk]) ? UI_EN[hk] : hk;
-      }
+    const nodes = []; let cur;
+    while (cur = tw.nextNode()) nodes.push(cur);
+    nodes.forEach(n => {
+      // 以"中文原文"判断是否可翻译；不在词典里的节点完全不动（保护动态计数等）
+      const baseKey = (n.__zh !== undefined ? n.__zh : n.nodeValue).trim();
+      if (!UI_EN[baseKey]) return;
+      if (n.__zh === undefined) n.__zh = n.nodeValue;
+      const orig = n.__zh;
+      const lead = orig.match(/^\s*/)[0], trail = orig.match(/\s*$/)[0];
+      n.nodeValue = isEn ? (lead + UI_EN[orig.trim()] + trail) : orig;
     });
 
     // 第一母星星图开场提示（含动态计数 #star-total-count + 悬浮提示 span，整体按语言重建）
