@@ -3412,3 +3412,5 @@ html[lang="en"] #protocol-text { font-size: clamp(0.85rem, 2.6vw, 1.85rem); lett
 html[lang="en"] .redacted-text::after { content: '[ ⚠ SEALED · TAP TO DECODE ]'; }
 /* 3) 档案"已污染"印章英文化（\A = 换行，配合 white-space:pre-line） */
 html[lang="en"] .term-output-area.confidential::after { content: 'CONFIDENTIAL\A [ CONTAMINATED ]'; }
+/* 4) 实验室方法 tab：英文较长，缩小字号/字距让 "Assign New Meaning" 等收成两行 */
+html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1rem 1.5rem; line-height: 1.25; }

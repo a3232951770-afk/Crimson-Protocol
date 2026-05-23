@@ -1390,7 +1390,7 @@ const UI_EN = {
   // 泥潭
   '凿字库':'Glyphs', '羊皮卷':'Parchments', '赤陶痕':'Inscriptions', '篝火阵':'Bonfire',
   // 造字实验室
-  '凿字实验':'Genesis Lab', '篆刻泥板':'Archive',
+  '凿字实验':'Lab', '篆刻泥板':'Archive',
   '>> 检索待解构的旧字_':'>> Search character to deconstruct_',
   '拒绝接受！进入重塑台 ➔':'Reject! Enter workbench ➔',
   '🔒 锁定旧字！进入重塑台 ➔':'🔒 Lock character! Enter workbench ➔',
@@ -1407,7 +1407,7 @@ const UI_EN = {
   '全部星域':'All Stars', '「贬义」字':'Derogatory', '制度字':'Institutional',
   '母系遗存':'Matrilineal', '「褒义」字':'Reclaimed', '中性字':'Neutral',
   // 认证
-  '[ 赤字协议 ]':'[ CRIMSON PROTOCOL ]', '身份接入':'Identity Access', '创建节点':'Create Node',
+  '身份接入':'Identity Access', '创建节点':'Create Node',
   '> 检测到未授权节点。':'> Unauthorized node detected.',
   '> 正在初始化新考古学家档案...':'> Initializing new archaeologist profile...',
   '邮箱地址':'Email', '密码':'Password', '密码（至少6位）':'Password (min 6 chars)',
@@ -1471,6 +1471,16 @@ const UI_EN = {
   // —— 字卡详情按钮 / 提案轮播 ——
   '拒绝接受！提交新提案 ➔':'Reject! Submit a New Proposal ➔',
   '已收录的新提案':'Canonized Proposals',
+  // —— 实验室释义/替换提示（占位符）——
+  '在此注入不被父权污染的全新释义...':'Inject a new definition untainted by patriarchy...',
+  '请输入替代词...':'Enter a replacement word...',
+  '阐述替换该词的理由...':'Explain why this word should be replaced...',
+  '【 旧字：':'【 Old char: ',
+  // —— 脑波直连 / 频段 子系统 ——
+  '[ 宇宙公告 ]':'[ Cosmic Broadcast ]', '[ 脑波直连 ]':'[ Brainwave Link ]',
+  '[ ↶ 返回列表 ]':'[ ↶ Back to list ]', '[ 发射信号 ]':'[ Transmit ]',
+  '[ 暂无私信 · 在泥潭里悬浮其他用户名可发起脑波直连 ]':'[ No messages yet · hover a username in the Mire to start a Brainwave Link ]',
+  '> _ 输入发射指令... (Enter 发送，Shift+Enter 换行)':'> _ Type a transmission... (Enter to send, Shift+Enter for newline)',
 };
 
 // 字典字段英文翻译（关键字段）
@@ -1588,6 +1598,8 @@ function applyLang() {
   try { updateAnnouncementBanner(); } catch(e) {}
   // 4. 置顶卡预览
   try { renderPinnedPreviews(); } catch(e) {}
+  // 4b. 脑波直连抽屉里的公告列表
+  try { renderAnnouncementsList(); } catch(e) {}
   // 5. 动态内容（帖子列表 / 打开中的弹窗）随语言重渲染
   relocalizeDynamic();
 }
@@ -2170,16 +2182,17 @@ async function loadAnnouncements() {
 function renderAnnouncementsList() {
   const container = document.getElementById('announcements-list');
   if (!container) return;
+  const isEn = window._lang === 'en';
   if (_allAnnouncements.length === 0) {
-    container.innerHTML = '<div class="empty-state" style="padding:2rem;font-size:0.75rem;">[ 暂无系统公告 ]</div>';
+    container.innerHTML = `<div class="empty-state" style="padding:2rem;font-size:0.75rem;">${isEn?'[ No system broadcasts ]':'[ 暂无系统公告 ]'}</div>`;
     return;
   }
   container.innerHTML = _allAnnouncements.map(a => `
     <div class="dm-list-item" onclick="window.openAnnouncementDetail('${a.id}')">
       <div class="dm-list-avatar" style="background:rgba(255,42,42,0.15);border-color:rgba(255,42,42,0.5);color:var(--neon-red);">📡</div>
       <div class="dm-list-info">
-        <div class="dm-list-name" style="color:var(--neon-red);">${esc(a.title || '')}</div>
-        <div class="dm-list-preview">${esc(a.sender || '')} · ${esc(a.time || '')}</div>
+        <div class="dm-list-name" style="color:var(--neon-red);">${esc(pickLang(a,'title') || '')}</div>
+        <div class="dm-list-preview">${esc(pickLang(a,'sender') || '')} · ${esc(pickLang(a,'time') || '')}</div>
       </div>
     </div>
   `).join('');
@@ -2321,7 +2334,7 @@ function updateSignalBadge(count) {
   // 更新 .btn-signal-text 内的数字（桌面版显示，手机版CSS隐藏文字保留图标+徽章）
   const textEl = navBtn.querySelector('.btn-signal-text');
   if (textEl) {
-    textEl.innerHTML = `<span style="font-size:1rem;">📡</span> 频段(${count})`;
+    textEl.innerHTML = `<span style="font-size:1rem;">📡</span> ${window._lang==='en'?'Signals':'频段'}(${count})`;
     textEl.setAttribute('data-count', count); // 手机版CSS用这个属性显示数字徽章
     if (count > 0) {
       textEl.style.color = 'var(--neon-red)';
@@ -2518,7 +2531,7 @@ function showUserHoverCard(authorEl, authorName, authorId) {
   card.style.left = (rect.left + window.scrollX) + 'px';
   card.innerHTML = `
     <div class="uhc-name">${esc(authorName)}</div>
-    <button class="uhc-action" onclick="window.startDmFromHover('${authorId}','${authorName.replace(/'/g,'')}')">📡 发起脑波直连</button>
+    <button class="uhc-action" onclick="window.startDmFromHover('${authorId}','${authorName.replace(/'/g,'')}')">📡 ${window._lang==='en'?'Initiate Brainwave Link':'发起脑波直连'}</button>
   `;
   card.addEventListener('mouseenter', () => clearTimeout(_hoverCardTimer));
   card.addEventListener('mouseleave', () => hideUserHoverCard());
