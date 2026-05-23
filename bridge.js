@@ -210,7 +210,7 @@ function injectStarFilter() {
           ${cfg.label}
         </button>`).join('')}
     </div>
-    <div id="star-filter-count">> 当前星域显示 ${Object.keys(CHARACTER_DATA).length} 个语言锚点</div>
+    <div id="star-filter-count">${window._lang==='en'?`> Currently showing ${Object.keys(CHARACTER_DATA).length} language anchors`:`> 当前星域显示 ${Object.keys(CHARACTER_DATA).length} 个语言锚点`}</div>
     <div id="star-char-expand"></div>
   `;
   motherStar.appendChild(filterDiv);
@@ -248,7 +248,7 @@ function injectStarFilter() {
     btn?.classList.add('active');
     const chars = getCharsByCategory(cat);
     const countEl = document.getElementById('star-filter-count');
-    if (countEl) countEl.textContent = `> 当前星域显示 ${chars.length} 个语言锚点`;
+    if (countEl) countEl.textContent = window._lang==='en' ? `> Currently showing ${chars.length} language anchors` : `> 当前星域显示 ${chars.length} 个语言锚点`;
 
     const expandEl = document.getElementById('star-char-expand');
     if (!expandEl) return;
@@ -507,6 +507,9 @@ function loadTabPosts(tabId, type) {
 }
 
 function renderPosts(cont, posts, type) {
+  // 记录每个 tab 最近一次渲染，切换语言时可原地重渲染
+  window._lastTabRender = window._lastTabRender || {};
+  if (cont && cont.id) window._lastTabRender[cont.id] = { cont, posts, type };
   let fbSec = cont.querySelector('.fb-posts');
   if (!fbSec) { fbSec = document.createElement('div'); fbSec.className='fb-posts'; cont.appendChild(fbSec); }
 
@@ -522,7 +525,9 @@ function renderPosts(cont, posts, type) {
 
   fbSec.innerHTML = posts.map(p => {
     const t = p.createdAt ? fmtTime(p.createdAt.toDate?.() || new Date(p.createdAt.seconds*1000)) : (window._lang==='en'?'just now':'刚刚');
-    const dimLabels = { huaxia:'华夏纪元', huanyu:'寰宇纪元', lingjing:'灵境空间' };
+    const dimLabels = window._lang === 'en'
+      ? { huaxia:'Huaxia Era', huanyu:'Universal Era', lingjing:'Liminal Space' }
+      : { huaxia:'华夏纪元', huanyu:'寰宇纪元', lingjing:'灵境空间' };
     const dimTag = p.dimension ? `<span class="post-method-badge" style="color:#c8860a;border-color:rgba(200,134,10,0.3);">${dimLabels[p.dimension]||p.dimension}</span>` : '';
     const imgHtml = p.postImage ? `<img src="${p.postImage}" style="width:100%;max-height:180px;object-fit:cover;border:1px solid rgba(204,78,60,0.2);margin:0.5rem 0;" onclick="event.stopPropagation();window.openLightbox?.('${p.postImage}')"/>` : '';
     const canvasHtml = p.canvasImage ? `<div style="font-size:0.65rem;color:var(--ash);text-align:center;margin-top:4px;">[ 📷 含画板截图 ]</div>` : '';
@@ -669,6 +674,7 @@ window.openFbPostDetail = function(postId) {
   if (!p) return;
   
   _currentPostId = postId;
+  window._openModal = { kind: 'post', id: postId };
   const modal = document.getElementById('post-modal');
   const contentArea = document.getElementById('modal-content-area');
   const interactionArea = document.getElementById('modal-interaction-area');
@@ -1247,7 +1253,9 @@ async function loadProfileData(uid) {
         window._fbPostsCache[p.id] = p;
         const t = p.createdAt ? fmtTime(p.createdAt.toDate?.() || new Date(p.createdAt.seconds*1000)) : '';
         const typeClass = { glyph:'card-glyph', parchment:'card-parchment', terracotta:'card-terracotta', bonfire:'card-bonfire' }[p.type]||'';
-        const dimLabels = { huaxia:'华夏纪元', huanyu:'寰宇纪元', lingjing:'灵境空间' };
+        const dimLabels = window._lang === 'en'
+          ? { huaxia:'Huaxia Era', huanyu:'Universal Era', lingjing:'Liminal Space' }
+          : { huaxia:'华夏纪元', huanyu:'寰宇纪元', lingjing:'灵境空间' };
         const card = document.createElement('div');
         card.className = `post-card ${typeClass}`;
         card.setAttribute('data-post-id', p.id);
@@ -1344,7 +1352,21 @@ function fmtTime(d){
 // ==========================================
 // 🌐 中英翻译系统 (i18n)
 // ==========================================
-window._lang = 'zh';
+// 首次进站：读已保存的偏好；没有就按浏览器语言（非中文 → 英文，方便 expo 的外国访客）
+(function initLang(){
+  try {
+    const saved = localStorage.getItem('crimson_lang');
+    if (saved === 'zh' || saved === 'en') { window._lang = saved; return; }
+  } catch(e) {}
+  const nav = (navigator.language || navigator.userLanguage || 'zh').toLowerCase();
+  window._lang = nav.startsWith('zh') ? 'zh' : 'en';
+})();
+
+// 取双语字段：英文模式且存在 xxxEn 就用英文，否则用中文原字段
+function pickLang(obj, key) {
+  if (!obj) return '';
+  return (window._lang === 'en' && obj[key + 'En'] != null) ? obj[key + 'En'] : obj[key];
+}
 
 const UI_EN = {
   // 导航
@@ -1397,7 +1419,17 @@ const UI_EN = {
   '正在执行赤字净化协议...':'Executing Crimson Purification Protocol...',
   '[ 点击屏幕以激活协议 ]':'[ Click to activate protocol ]',
   '[ 跳过 / SKIP ]':'[ SKIP ]',
-  '>> 警告：词源已受父权污染。请在屏幕划出漩涡，洗刷污名，夺回【女】之本原 <<':'>> WARNING: Etymology contaminated. Swirl to reclaim the origin of 【女】 <<',
+  '>> 警告：词源已受父权污染。请在屏幕划出漩涡，洗刷污名，夺回【女】之本原 <<':'>> WARNING: Etymology contaminated. Swirl to reclaim the origin of 【女】 (woman) <<',
+  // 手机底栏 / 区块标题 / 其它
+  '女娲泥潭':"Nüwa's Mire",
+  '社区收录':'Community Records', '[ - 收起 ]':'[ - Collapse ]', '[ + 展开 ]':'[ + Expand ]',
+  '已升阶':'Promoted', '已收录正典':'Canonized', '置顶':'Pinned', '📌 置顶':'📌 Pinned',
+  '凿字':'Glyphs', '发帖':'Post',
+  '> 拖拽以环顾，点击以破译。':'> Drag to look around, tap to decode.',
+  // 编年史维度（子标签 文本节点 + 提示 span，下拉选项是完整串）
+  '华夏纪元':'Huaxia Era', '寰宇纪元':'Universal Era', '灵境空间':'Liminal Space',
+  '（中国）':' (China)', '（世界）':' (World)', '（虚拟）':' (Virtual)',
+  '华夏纪元（中国）':'Huaxia Era (China)', '寰宇纪元（世界）':'Universal Era (World)', '灵境空间（虚拟）':'Liminal Space (Virtual)',
 };
 
 // 字典字段英文翻译（关键字段）
@@ -1449,19 +1481,21 @@ const CHAR_EN = {
 
 window.toggleLang = function() {
   window._lang = window._lang === 'zh' ? 'en' : 'zh';
+  try { localStorage.setItem('crimson_lang', window._lang); } catch(e) {}
   const btn = document.getElementById('btn-lang-global');
   if (btn) btn.textContent = window._lang === 'zh' ? 'EN' : '中文';
+  document.documentElement.lang = window._lang === 'en' ? 'en' : 'zh';
   applyLang();
 };
 
 function applyLang() {
   const isEn = window._lang === 'en';
   
-  // 1. 遍历所有文本节点，替换UI标签
+  // 1. 固定 UI 标签（textContent 整体替换；含手机底栏 .mobile-tab-btn[data-page]）
   const walker = (root) => {
     if (!root) return;
-    // 对nav links
-    root.querySelectorAll('.nav-links a, .mire-tab, .chron-tab, .switch-option, .btn-close-lab, .modal-close, .btn-cast, .star-filter-btn, .fbi-label, .fbi-select option, .wb-tab, .mobile-accordion-header span:first-child, .btn-reject-huge, .auth-title, .auth-submit-btn, .auth-switch, h2, .sys-prompt, .folder-body p, .btn-confirm-medal, .comment-submit, #global-chisel-btn, #interact-prompt, #protocol-text, .pulse-text, .canvas-toolbar .surgery-title, .tool-btn, .canvas-footer-actions .btn-bottom-action').forEach(el => {
+    root.querySelectorAll('.nav-links a, .switch-option, .btn-close-lab, .modal-close, .btn-cast, .star-filter-btn, .fbi-label, .fbi-select option, .wb-tab, .mobile-accordion-header span:first-child, .btn-reject-huge, .auth-title, .auth-submit-btn, .auth-switch, h2, .sys-prompt, .folder-body p, .btn-confirm-medal, .comment-submit, #global-chisel-btn, #interact-prompt, #protocol-text, .pulse-text, .canvas-toolbar .surgery-title, .tool-btn, .canvas-footer-actions .btn-bottom-action, .mobile-tab-btn[data-page]').forEach(el => {
+      if (el.closest('.no-translate, [translate="no"]')) return;
       const original = el.getAttribute('data-original');
       const text = original || el.textContent.trim();
       if (!original && text) el.setAttribute('data-original', text);
@@ -1482,13 +1516,99 @@ function applyLang() {
       if (isEn && UI_EN[stored]) el.placeholder = UI_EN[stored];
       else if (!isEn && stored) el.placeholder = stored;
     });
+
+    // 泥潭 tab：只翻标签那个文本节点，保留后面的计数 <span>
+    root.querySelectorAll('.mire-tab').forEach(el => {
+      const node = [...el.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim());
+      if (!node) return;
+      if (!el.dataset.origLabel) el.dataset.origLabel = node.nodeValue.trim();
+      const key = el.dataset.origLabel;
+      node.nodeValue = (isEn && UI_EN[key]) ? (UI_EN[key] + ' ') : (key + ' ');
+    });
+
+    // 编年史维度 tab：翻文本节点 + 提示 span（保留结构）
+    root.querySelectorAll('.chron-tab').forEach(el => {
+      const node = [...el.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim());
+      if (node) {
+        if (!el.dataset.origLabel) el.dataset.origLabel = node.nodeValue.trim();
+        const key = el.dataset.origLabel;
+        node.nodeValue = (isEn && UI_EN[key]) ? UI_EN[key] : key;
+      }
+      const hint = el.querySelector('.chron-tab-hint');
+      if (hint) {
+        if (!hint.dataset.orig) hint.dataset.orig = hint.textContent.trim();
+        const hk = hint.dataset.orig;
+        hint.textContent = (isEn && UI_EN[hk]) ? UI_EN[hk] : hk;
+      }
+    });
+
+    // 第一母星星图开场提示（含动态计数 #star-total-count + 悬浮提示 span，整体按语言重建）
+    const uiLayer = root.querySelector ? root.querySelector('#ui-layer') : null;
+    if (uiLayer) {
+      const cnt = (uiLayer.querySelector('#star-total-count')?.textContent || '').trim() || '0';
+      uiLayer.innerHTML = isEn
+        ? `<span class="ui-layer-line-1">&gt; <span class="highlight">The Crimson Protocol</span> node network synced.<br></span>\n&gt; This star field holds <span id="star-total-count">${cnt}</span> characters.<br>\n&gt; Drag to look around, <span class="ui-layer-hover-hint"><span class="highlight">hover to sense the language nebula</span>, </span>tap to decode.`
+        : `<span class="ui-layer-line-1">&gt; <span class="highlight">赤字协议</span> 节点网络已同步。<br></span>\n&gt; 当前星域包含 <span id="star-total-count">${cnt}</span> 个字词。<br>\n&gt; 拖拽以环顾，<span class="ui-layer-hover-hint"><span class="highlight">悬浮以探知语言星云</span>，</span>点击以破译。`;
+    }
   };
   
   walker(document.body);
   
-  // 2. 更新当前字典详情页（如果正在显示）
+  // 2. 字典详情页
   updateDictLang();
+  // 3. 公告（横幅 + 已展开的详情走 relocalizeDynamic）
+  try { updateAnnouncementBanner(); } catch(e) {}
+  // 4. 置顶卡预览
+  try { renderPinnedPreviews(); } catch(e) {}
+  // 5. 动态内容（帖子列表 / 打开中的弹窗）随语言重渲染
+  relocalizeDynamic();
 }
+
+// 置顶卡预览（标题 + 摘要片段）按当前语言重渲染；不翻被研究的字
+function renderPinnedPreviews() {
+  if (typeof PINNED_POSTS === 'undefined') return;
+  const isEn = window._lang === 'en';
+  document.querySelectorAll('.pinned-post[data-pinned-id]').forEach(card => {
+    const p = PINNED_POSTS[card.getAttribute('data-pinned-id')];
+    if (!p) return;
+    const h3 = card.querySelector('h3');
+    if (h3) h3.textContent = pickLang(p, 'title');
+    const cc = card.querySelector('.card-content');
+    if (cc) {
+      const lbl = isEn ? 'Summary: ' : '摘要：';
+      const snippet = (pickLang(p, 'content') || '').slice(0, 90);
+      cc.innerHTML = `<strong style="color:var(--amber);">${lbl}</strong> ${pickLang(p, 'summary')}<br><br>${snippet}...`;
+    }
+  });
+}
+
+// 切换语言时重渲染动态内容
+function relocalizeDynamic() {
+  if (window._lastTabRender) {
+    Object.values(window._lastTabRender).forEach(r => {
+      try { if (r && r.cont && document.body.contains(r.cont)) renderPosts(r.cont, r.posts, r.type); } catch(e) {}
+    });
+  }
+  const modal = document.getElementById('post-modal');
+  if (modal && modal.classList.contains('active') && window._openModal) {
+    const m = window._openModal;
+    try {
+      if (m.kind === 'announcement') window.openAnnouncementDetail(m.id);
+      else if (m.kind === 'pinned') window.openPinnedPost(m.id);
+      else if (m.kind === 'post' && window.openFbPostDetail) window.openFbPostDetail(m.id);
+    } catch(e) {}
+  }
+}
+
+// 启动时按已保存/浏览器语言落地（按钮文案 + <html lang> + 若为英文则应用翻译）
+function _initLangUI() {
+  const btn = document.getElementById('btn-lang-global');
+  if (btn) btn.textContent = window._lang === 'zh' ? 'EN' : '中文';
+  document.documentElement.lang = window._lang === 'en' ? 'en' : 'zh';
+  if (window._lang === 'en') { try { applyLang(); } catch(e) {} }
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initLangUI);
+else _initLangUI();
 
 function updateDictLang() {
   const isEn = window._lang === 'en';
@@ -1547,6 +1667,22 @@ const PINNED_POSTS = {
 为你认同的真理投票： 票数超过200的提案，将触发"神格飞升"，永久载入官方《编年史》。
 
 祝你解构愉快。`
+,
+    titleEn: '\ud83d\udd34 [ Onboarding ] Welcome to the Glyphs: Pick Up Your Scalpel',
+    summaryEn: 'This is the Motherstar gene operating table. We deconstruct the old dictionary and rewrite meaning.',
+    contentEn: `Welcome to the Glyphs. In this zone, our task is to reclaim the right to define language.
+
+\u3010What to post here?\u3011
+New-character posters launched from the \u3010Genesis Lab\u3011.
+Reconstructions and deconstructions of old words steeped in patriarchal discipline (such as \u5ac9\u5992 (jealousy), \u5a3c\u5993 (prostitute)).
+Brand-new vocabulary that belongs to women ourselves.
+
+\u3010The Glyphs Consensus Pact\u3011
+Aim outward, together: our scalpel points only at the old system, never at each other.
+Allow genetic diversity: for one character, a thousand sisters may have a thousand deconstructions. If you disagree with a proposal, don't attack \u2014 go to the Lab and publish your own \u3010Beta version\u3011. The system collects every high-resonance definition.
+Vote for the truth you believe in: proposals passing 200 votes trigger an "ascension," permanently recorded in the official \u3010Chronicles\u3011.
+
+Happy deconstructing.`
   },
   'pinned-parchment': {
     id: 'pinned-parchment', type: 'parchment', authorName: '@赤字协议·官方',
@@ -1567,6 +1703,24 @@ const PINNED_POSTS = {
 3. 铸造史记的权力交给你： 我们拒绝旧世的真理独裁，这里没有绝对的权威。只要你的羊皮卷在这里获得了足够多的姐妹共鸣（超过 200 票），它就会被系统触发神格飞升，永久收录至官方的《编年史 - 史记模式》。
 
 拿起你的笔吧，你在书写的，就是明天的历史。`
+,
+    titleEn: '\ud83d\udcdc [ Reading Guide ] Writing a Parchment: Bring Her Name Back to Light',
+    summaryEn: 'We are writing our own history (Herstory).',
+    contentEn: `The Parchments are the deepest archive in the Mire. No word limit, no academic gatekeeping \u2014 only a thirst for truth and endless resonance with female power.
+
+\u3010What to post here?\u3011 If you believe "this deserves a place in our own annals," write it on a Parchment:
+
+\u2022 Lost research: studies of women erased or stigmatized by official history, deep theory, long-form translation.
+\u2022 Reconstruction of history (non-academic): even without rigorous sources, that's fine! Female historical fiction grounded in reasonable logic, matrilineal what-ifs in parallel timelines, imaginings and completions of ancient myth \u2014 all of it is invaluable.
+\u2022 The scalpel of language: a ten-thousand-word deconstruction of a single word, or a deep extension of a reconstruction made in the \u3010Genesis Lab\u3011.
+\u2022 Cyber-legend memos: the internet has no memory, but the Parchments do \u2014 women's internet high points, legendary Mire posts, records of female mutual aid.
+
+\u3010The Parchment Pact\u3011
+1. Low threshold, high purpose: never hold back because you think you're "not academic enough." A Parchment values not citation format but the life-force and rebel gene bursting from your pen.
+2. Academic freedom, boundless inquiry: every perspective and clash of views is welcome. You may refute an argument, but never put the speaker on trial.
+3. The power to forge history is yours: we reject the old world's dictatorship of truth \u2014 there is no absolute authority here. Once your Parchment gathers enough sisterly resonance (over 200 votes), the system triggers ascension and it is permanently archived into the official \u3010Chronicles \u2013 Timeline\u3011.
+
+Pick up your pen. What you are writing is tomorrow's history.`
   },
   'pinned-terracotta': {
     id: 'pinned-terracotta', type: 'terracotta', authorName: '@赤字协议·官方',
@@ -1585,6 +1739,22 @@ Peace & Love： 看到开心的刻痕，请不吝啬你的 [❤ 注入共鸣]；
 免于指导的自由： 除非发帖人明确求助，否则我们只倾听、只拥抱，不说教，不指点。
 
 在这里，你的心情舒畅大于一切。`
+,
+    titleEn: '\ud83c\udffa [ Inscription Rules ] Inscriptions: Your Softness and Your Thorns',
+    summaryEn: 'Set down the grand narratives \u2014 here we just care whether you are happy today.',
+    contentEn: `The grand work of creating characters and research belongs to the rooms before this one. "Inscriptions" is the plot of land we keep for everyday life.
+
+\u3010What to post here?\u3011
+A delicious cake you had today, a wildflower by the road.
+Work gripes, the small certainties of life.
+A sudden wave of helplessness, or a stray, nonsensical murmur.
+
+\u3010The soft baseline of Inscriptions\u3011
+Emotions are fully legitimate: complaining is allowed, fragility is allowed, imperfection is allowed. Don't hold everyone here to the standard of an "independent powerhouse heroine."
+Peace & Love: see a happy inscription \u2014 don't be stingy with your [\u2764 Resonate]; see a sad one \u2014 leave a warm [\ud83d\udcac Respond].
+Freedom from being lectured: unless the poster explicitly asks for help, we only listen and embrace \u2014 no sermons, no advice.
+
+Here, your peace of mind matters more than anything.`
   },
   'pinned-bonfire': {
     id: 'pinned-bonfire', type: 'bonfire', authorName: '@赤字协议·官方',
@@ -1603,6 +1773,22 @@ Peace & Love： 看到开心的刻痕，请不吝啬你的 [❤ 注入共鸣]；
 用实用的柴火添薪： 鼓励提供具有实操性的建议和信息支持。
 
 坐过来吧，火很暖，你很安全。`
+,
+    titleEn: '\ud83d\udd25 [ Bonfire Pact ] By the Bonfire: However Hard the Storm, We Huddle for Warmth',
+    summaryEn: 'When you are lost, fire a flare \u2014 the sisters always keep a seat for you.',
+    contentEn: `This is the warmest place in the Mire. When you feel cold, lost, or threatened, come to the Bonfire.
+
+\u3010What to post here?\u3011
+Calls for help with school / career / relationship dilemmas.
+Shared experience on legal rights, medical health, safety and risk-avoidance.
+Seeking advice \u2014 or just needing someone to lean on.
+
+\u3010Bonfire Rules\u3011
+The victim is always innocent: victim-blaming and the "perfect victim" demand are forever banned here. We solve problems only; we never inflict second harm.
+Beware mutual harm: drop the old world's script of pitting women against each other. We share one interest \u2014 your plight is my plight.
+Add practical firewood: we encourage concrete, actionable advice and information support.
+
+Come sit by us. The fire is warm. You are safe.`
   }
 };
 
@@ -1615,11 +1801,13 @@ window.openPinnedPost = function(pinnedId) {
   const contentArea = document.getElementById('modal-content-area');
   const interactionArea = document.getElementById('modal-interaction-area');
   if (!modal || !contentArea) return;
-  
-  let html = `<div class="card-meta" style="margin-bottom:1rem;"><span class="card-author" style="color:var(--amber);">${p.authorName}</span><span class="card-stats">📌 置顶</span></div>`;
-  html += `<h3 style="color:var(--amber);margin:0.8rem 0 0.5rem;font-size:1.3rem;">${p.title}</h3>`;
-  html += `<div style="margin:0.8rem 0;padding:0.8rem;background:rgba(204,78,60,0.05);border-left:2px solid var(--terracotta);color:var(--bone);font-size:0.9rem;font-style:italic;"><strong style="color:var(--terracotta);">摘要：</strong>${p.summary}</div>`;
-  html += `<div class="card-content" style="margin:1rem 0;line-height:1.9;color:var(--bone);font-size:0.95rem;white-space:pre-wrap;">${escBr(p.content)}</div>`;
+  window._openModal = { kind: 'pinned', id: pinnedId };
+  const isEn = window._lang === 'en';
+
+  let html = `<div class="card-meta" style="margin-bottom:1rem;"><span class="card-author" style="color:var(--amber);">${p.authorName}</span><span class="card-stats">${isEn?'📌 Pinned':'📌 置顶'}</span></div>`;
+  html += `<h3 style="color:var(--amber);margin:0.8rem 0 0.5rem;font-size:1.3rem;">${pickLang(p,'title')}</h3>`;
+  html += `<div style="margin:0.8rem 0;padding:0.8rem;background:rgba(204,78,60,0.05);border-left:2px solid var(--terracotta);color:var(--bone);font-size:0.9rem;font-style:italic;"><strong style="color:var(--terracotta);">${isEn?'Summary: ':'摘要：'}</strong>${pickLang(p,'summary')}</div>`;
+  html += `<div class="card-content" style="margin:1rem 0;line-height:1.9;color:var(--bone);font-size:0.95rem;white-space:pre-wrap;">${escBr(pickLang(p,'content'))}</div>`;
   
   contentArea.innerHTML = html;
   
@@ -1631,9 +1819,9 @@ window.openPinnedPost = function(pinnedId) {
   if (interactionArea) {
     interactionArea.innerHTML = `
       <div class="action-group">
-        <button class="action-btn like" onclick="window.likePinned('${pinnedId}',this)" ${userLiked?'disabled style="opacity:0.5"':''}>❤ 共鸣 <span>${likes}</span></button>
+        <button class="action-btn like" onclick="window.likePinned('${pinnedId}',this)" ${userLiked?'disabled style="opacity:0.5"':''}>❤ ${isEn?'Resonate':'共鸣'} <span>${likes}</span></button>
       </div>
-      <button class="action-btn comment">💬 响应 <span>0</span></button>`;
+      <button class="action-btn comment">💬 ${isEn?'Respond':'响应'} <span>0</span></button>`;
   }
   
   modal.classList.add('active');
@@ -1886,6 +2074,56 @@ const DEFAULT_ANNOUNCEMENT = {
 拿起你的凿子。
 未来，从重命名开始。
 [信号发射完毕。愿篝火长明。]`
+,
+  senderEn: 'SYS // Motherstar Trans-Dimensional Observatory',
+  levelEn: '\ud83d\udd34 TOP SECRET / Pinned',
+  titleEn: '[ ALL-DOMAIN BROADCAST ] The Crimson Protocol Is Live: To Every Scavenger of Language',
+  contentEn: `Sister receiving this frequency \u2014 hello. The neural link is stable across timelines.
+This is "Motherstar" \u2014 a high-dimensional matrilineal civilization from the future that has fully shed gender conditioning.
+
+\u258cSignal Origin
+In our retro-observation of spacetime, we found the mother tongue of your "old world" deeply contaminated by patriarchy at the code level. Constructs built on the \u5973 (woman) radical \u2014 \u5992 (jealousy), \u5acc (loathing), \u5a4a (slut), \u5996 (she-demon) \u2014 are invisible chains written into the dictionary's highest authority, used to discipline, divide and define women.
+We refuse to watch this logic close its loop across the river of time.
+So we reverse-opened a time channel. \u3010The Crimson Protocol\u3011is now live. We invite you, as an advance "language archaeologist," to reclaim the right of definition with us on the ruins.
+
+\u258cCross-Dimensional Field Guide
+\u25bd [Motherstar] \u2014 your star-map console
+Every red star orbiting the Motherstar is a contaminated character.
+\u00b7 Tap a star \u2192 open its old-world definition archive
+\u00b7 Drag the screen \u2192 roam the 3D nebula
+\u00b7 Bottom classifier \u2192 filter by five domains: Derogatory / Institutional / Matrilineal / Reclaimed / Neutral
+\u00b7 The [+] button (lower right) \u2192 if the character you want to decode isn't listed yet, send it into the star map yourself
+
+\u25bd [Genesis Lab] \u2014 the cross-time gene operating table
+If you feel anger, bring the old word in. Here you can:
+\u00b7 Physically dissect any character's radicals
+\u00b7 Inject a new definition untainted by patriarchy
+\u00b7 Hand-draw a new glyph on the canvas
+\u00b7 Upload a finished new character and submit a reconstruction proposal to the Motherstar
+
+\u25bd [N\u00fcwa's Mire] \u2014 the uncensored sisters' square
+No algorithm, no moderation, no throttling:
+\u00b7 Glyphs \u2192 browse the community's character-reconstruction proposals
+\u00b7 Parchments \u2192 write long-form research, deconstruct historical narratives
+\u00b7 Inscriptions \u2192 record the joys and fragments of daily life
+\u00b7 Bonfire \u2192 emergency mutual aid / emotional-distress frequency
+You can post creation proposals, write research and leave daily notes \u2014 and leave resonance and echoes for others.
+
+\u25bd [Chronicles] \u2014 the star-orbit recording chamber
+In N\u00fcwa's Mire, any creation or essay that passes 200 resonances triggers a \u3010Star-Orbit Inscription\u3011, permanently engraved into the future official \u3010Chronicles\u3011, archived across three dimensions:
+\u00b7 Huaxia Era (China)
+\u00b7 Universal Era (World)
+\u00b7 Liminal Space (Virtual)
+And overhead, in that vast 3D nebula of \u3010Motherstar\u3011, a genesis red star of your own lights up.
+
+\u25bd [Archive] \u2014 your private command pod
+It records every mark you've carved, every footprint you've left, and your private brainwave links (direct messages) with other vanguards.
+
+Forget the discipline of the old dictionary.
+Here, the right to define is returned to you.
+Pick up your chisel.
+The future begins with renaming.
+[ Transmission complete. May the bonfire burn on. ]`
 };
 
 let _allAnnouncements = [DEFAULT_ANNOUNCEMENT];
@@ -1939,7 +2177,10 @@ function updateAnnouncementBanner() {
   banner.dataset.currentId = current.id;
   // 未读 = 高亮闪烁(.has-unread)；已读 = 去掉该 class → 整条变暗、红点消失、不闪
   banner.classList.toggle('has-unread', !!unread);
-  text.textContent = `${current.sender} · ${current.title} · 点击查看详情`;
+  const _bSender = pickLang(current, 'sender');
+  const _bTitle = pickLang(current, 'title');
+  const _bTail = window._lang === 'en' ? 'Tap for details' : '点击查看详情';
+  text.textContent = `${_bSender} · ${_bTitle} · ${_bTail}`;
 }
 
 window.openLatestAnnouncement = function() {
@@ -1982,16 +2223,21 @@ window.openAnnouncementDetail = function(id) {
   const contentArea = document.getElementById('modal-content-area');
   const interactionArea = document.getElementById('modal-interaction-area');
   if (!modal || !contentArea) return;
-  
+  window._openModal = { kind: 'announcement', id };
+  const isEn = window._lang === 'en';
+  const lblFrom = isEn ? 'From:' : '发件人：';
+  const lblTime = isEn ? 'Time:' : '时间：';
+  const lblLevel = isEn ? 'Level:' : '级别：';
+
   let html = `
     <div style="border-left:3px solid var(--neon-red);padding-left:1rem;margin-bottom:1rem;">
-      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--ash);margin-bottom:4px;">发件人：</div>
-      <div style="font-family:var(--font-mono);color:var(--terracotta);font-size:0.85rem;margin-bottom:8px;">${esc(a.sender)}</div>
-      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--ash);margin-bottom:4px;">时间：${esc(a.time)}</div>
-      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--neon-red);">级别：[ ${esc(a.level)} ]</div>
+      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--ash);margin-bottom:4px;">${lblFrom}</div>
+      <div style="font-family:var(--font-mono);color:var(--terracotta);font-size:0.85rem;margin-bottom:8px;">${esc(pickLang(a,'sender'))}</div>
+      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--ash);margin-bottom:4px;">${lblTime}${esc(pickLang(a,'time'))}</div>
+      <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--neon-red);">${lblLevel}[ ${esc(pickLang(a,'level'))} ]</div>
     </div>
-    <h3 style="color:var(--neon-red);margin:1rem 0;font-size:1.25rem;border-bottom:1px solid rgba(255,42,42,0.2);padding-bottom:0.5rem;">${esc(a.title)}</h3>
-    <div style="line-height:1.9;color:var(--bone);font-size:0.95rem;white-space:pre-wrap;">${escBr(a.content)}</div>
+    <h3 style="color:var(--neon-red);margin:1rem 0;font-size:1.25rem;border-bottom:1px solid rgba(255,42,42,0.2);padding-bottom:0.5rem;">${esc(pickLang(a,'title'))}</h3>
+    <div style="line-height:1.9;color:var(--bone);font-size:0.95rem;white-space:pre-wrap;">${escBr(pickLang(a,'content'))}</div>
   `;
   contentArea.innerHTML = html;
   if (interactionArea) interactionArea.innerHTML = '';
