@@ -3425,3 +3425,12 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
 .post-trans-btn:hover { background: rgba(204,78,60,0.2); color: var(--bone); }
 .post-trans-btn:disabled { opacity: 0.6; cursor: wait; }
 .hist-card .post-trans-btn { margin-left: 0.5rem; }
+
+/* 史记按钮容器：左对齐、可换行（手机版 vote 与 translate 不再错位） */
+.hist-card-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.hist-card .post-trans-btn { margin-left: 0; }
+
+/* 登录页"注册新节点"做显眼：加粗、赤陶色、下划线、可点区域更大 */
+.auth-switch { font-size: 0.85rem; margin-top: 0.7rem; color: var(--ash); }
+.auth-switch span { color: var(--terracotta); font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 3px 6px; border-radius: 3px; transition: all 0.18s; }
+.auth-switch span:hover { color: var(--bone); background: rgba(204,78,60,0.18); }

@@ -107,6 +107,14 @@ function showAuthPanel(name) {
   if (panel) panel.classList.add('active');
 }
 window.CrimsonAuth = window.CrimsonAuth || {};
+// 手机号/邮箱混合：含 @ 视为邮箱原样；否则视为手机号 → 转成仿邮箱存储（既能用手机号也能用邮箱登录）
+function _toAuthId(input) {
+  const v = (input || '').trim();
+  if (!v) return v;
+  if (v.includes('@')) return v;            // 邮箱：原样
+  const digits = v.replace(/[^\d]/g, '');   // 手机号：取数字转仿邮箱
+  return digits ? `${digits}@phone.crimson.local` : v;
+}
 // showPanel 由HTML按钮调用
 Object.assign(window.CrimsonAuth, {
   showPanel: showAuthPanel,
@@ -114,10 +122,10 @@ Object.assign(window.CrimsonAuth, {
     clearAuthErrors();
     const email = document.getElementById('login-email')?.value?.trim();
     const pass  = document.getElementById('login-pass')?.value;
-    if (!email || !pass) { showAuthError('login','请填写邮箱和密码'); return; }
+    if (!email || !pass) { showAuthError('login','请填写邮箱/手机号和密码'); return; }
     showAuthPanel('loading');
     try {
-      await loginUser(email, pass);
+      await loginUser(_toAuthId(email), pass);
       // onAuthChange 会处理后续
     } catch(e) {
       showAuthPanel('login');
@@ -130,12 +138,12 @@ Object.assign(window.CrimsonAuth, {
     const pass     = document.getElementById('reg-pass')?.value;
     const pass2    = document.getElementById('reg-pass2')?.value;
     const codename = document.getElementById('reg-codename')?.value?.trim();
-    if (!email || !pass) { showAuthError('reg','请填写邮箱和密码'); return; }
+    if (!email || !pass) { showAuthError('reg','请填写邮箱/手机号和密码'); return; }
     if (pass.length < 6)  { showAuthError('reg','密码至少6位'); return; }
     if (pass !== pass2)   { showAuthError('reg','两次密码不一致'); return; }
     showAuthPanel('loading');
     try {
-      const user = await registerUser(email, pass, codename);
+      const user = await registerUser(_toAuthId(email), pass, codename);
       // 注册后 displayName 已设置，但 onAuthChange 可能先触发了（那时还没设置）
       // 所以这里强制刷新一次
       _currentUser = user;
@@ -467,7 +475,7 @@ function renderTimeline(cont, posts) {
             <div class="card-summary"><span class="tr-summary">${s.summary}</span> <span class="read-more-btn">[ 点击阅览 ]</span></div>
             <div class="card-full-content">
               <div class="full-article">${s.content}</div>
-              <div style="margin-top:1rem">
+              <div class="hist-card-actions" style="margin-top:1rem">
                 <button class="tl-action-btn" onclick="event.stopPropagation();tlVote('${s.id}',this)">▵ 收录投票 <span>${s.votes||0}</span></button>
                 <button class="post-trans-btn" data-sid="${s.id}" data-st="zh" onclick="window.toggleChronTrans(event,this)">🌐 Translate</button>
               </div>
@@ -862,26 +870,40 @@ async function handleForge() {
           // 2. 画freehand笔画
           ctx.drawImage(fc, 0, 0, compCanvas.width, compCanvas.height);
           
-          // 3. 画所有拖入的偏旁部首
+          // 3. 画所有拖入的元素：上传图片按图片画，偏旁按文字画（排除删除按钮"×"等控件）
           const radicals = container.querySelectorAll('.dropped-radical');
           radicals.forEach(rad => {
-            const text = rad.querySelector('.radical-text')?.textContent || rad.textContent?.trim();
-            if (!text) return;
             const radRect = rad.getBoundingClientRect();
-            const x = radRect.left - rect.left + radRect.width / 2;
-            const y = radRect.top - rect.top + radRect.height / 2;
+            const x = radRect.left - rect.left;
+            const y = radRect.top - rect.top;
+            const w = radRect.width, h = radRect.height;
+            // 上传的图片 → 直接画图片本体
+            const imgEl = rad.querySelector('img');
+            if (imgEl) {
+              try { if (imgEl.complete && imgEl.naturalWidth) ctx.drawImage(imgEl, x, y, w, h); } catch(err) {}
+              return;
+            }
+            // 文字偏旁 → 只取偏旁本身（排除 ×、缩放手柄等控件）
+            let text = rad.querySelector('.radical-text')?.textContent?.trim();
+            if (!text) {
+              const clone = rad.cloneNode(true);
+              clone.querySelectorAll('.control-delete,.control-handle,img').forEach(n => n.remove());
+              text = clone.textContent.trim();
+            }
+            if (!text) return;
             const scaleX = parseFloat(rad.dataset.scaleX) || 1;
             const fontSize = Math.round(96 * scaleX);
             ctx.save();
             ctx.font = `900 ${fontSize}px "Noto Serif SC", serif`;
-            ctx.fillStyle = '#cc4e3c';  // 赤陶色，在深色背景上清晰可见
+            ctx.fillStyle = '#cc4e3c';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(text, x, y);
+            ctx.fillText(text, x + w / 2, y + h / 2);
             ctx.restore();
           });
           
-          canvasImage = compCanvas.toDataURL('image/png');
+          // JPEG 比 PNG 小很多，含照片也能压进 Firestore 字段上限
+          canvasImage = compCanvas.toDataURL('image/jpeg', 0.85);
         }
       } catch(e) { console.warn('画板截图失败:', e); }
       // 改动3：读取偏旁手术的新字读音 + 字义阐释，拼进 newDef 与 reason
@@ -1489,6 +1511,12 @@ const UI_EN = {
   '[ 暂无私信 · 在泥潭里悬浮其他用户名可发起脑波直连 ]':'[ No messages yet · hover a username in the Mire to start a Brainwave Link ]',
   '> _ 输入发射指令... (Enter 发送，Shift+Enter 换行)':'> _ Type a transmission... (Enter to send, Shift+Enter for newline)',
   '[ 点击阅览 ]':'[ Read more ]', '▵ 收录投票':'▵ Vote to canonize',
+  // —— 登录/注册面板 ——
+  '邮箱 / 手机号':'Email / Phone',
+  '你的代号（可选，如 @星火_042）':'Your codename (optional, e.g. @Spark_042)',
+  '> 检测到未授权节点。':'> Unauthorized node detected.',
+  '没有账号？':'No account? ', '注册新节点 →':'Register a new node →',
+  '已有账号？':'Have an account? ', '← 返回登录':'← Back to login',
 };
 
 // 字典字段英文翻译（关键字段）
@@ -2652,13 +2680,27 @@ window._postTransCache = window._postTransCache || {}; // 缓存 id -> {field: e
 window._chronSrc = window._chronSrc || {};             // 史记原文 storyId -> {title,summary,content}
 
 // 单段翻译：分块（MyMemory 单次约 500 字节）后拼回
+function _byteLen(s) { return new TextEncoder().encode(s).length; }
 async function _mmTranslateOne(text) {
   const t = (text || '').trim();
   if (!t) return text || '';
+  // MyMemory 免费接口单次上限约 500 字节；中文一个字 3 字节，所以按"字节"切，并尽量在句末断开
+  const MAX = 420;
+  // 先按句子/换行切成小片
+  const pieces = t.split(/(?<=[。！？!?\n；;])/);
   const chunks = []; let buf = '';
-  for (const seg of (text || '').split(/(\n)/)) {
-    if ((buf + seg).length > 450 && buf) { chunks.push(buf); buf = ''; }
-    buf += seg;
+  for (let piece of pieces) {
+    // 单片本身就超长（极少见的超长无标点段）→ 再按字节硬切
+    while (_byteLen(piece) > MAX) {
+      let cut = piece.length;
+      while (cut > 0 && _byteLen(piece.slice(0, cut)) > MAX) cut -= 5;
+      if (cut <= 0) cut = 1;
+      if (buf) { chunks.push(buf); buf = ''; }
+      chunks.push(piece.slice(0, cut));
+      piece = piece.slice(cut);
+    }
+    if (_byteLen(buf + piece) > MAX && buf) { chunks.push(buf); buf = ''; }
+    buf += piece;
   }
   if (buf) chunks.push(buf);
   const out = [];
@@ -2668,7 +2710,10 @@ async function _mmTranslateOne(text) {
     const res = await fetch(url);
     if (!res.ok) throw new Error('translate http ' + res.status);
     const data = await res.json();
-    out.push((data && data.responseData && data.responseData.translatedText) || c);
+    let tr = (data && data.responseData && data.responseData.translatedText) || c;
+    // 接口偶尔把错误信息塞进 translatedText，识别后回退原文，避免把报错画进正文
+    if (/QUERY LENGTH LIMIT|MYMEMORY WARNING|INVALID/i.test(tr)) tr = c;
+    out.push(tr);
   }
   return out.join('');
 }
@@ -2709,6 +2754,15 @@ window.togglePostTrans = async function(btn) {
   }
 };
 
+// 把富文本剥成纯文本（保留段落换行），用于送翻
+function _stripHtml(html) {
+  return (html || '')
+    .replace(/<\/(p|div|h[1-6])>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 // 史记卡片：翻译 / 还原
 window.toggleChronTrans = async function(ev, btn) {
   if (ev) ev.stopPropagation();
@@ -2722,7 +2776,10 @@ window.toggleChronTrans = async function(ev, btn) {
   if ((btn.dataset.st || 'zh') === 'zh') {
     btn.disabled = true; btn.textContent = '🌐 翻译中…';
     try {
-      const en = await _translateFields('chron_' + id, { title: src.title || '', summary: src.summary || '', content: src.content || '' });
+      // 正文先剥 HTML 标签再翻（否则把 <p> 当文字翻、还原时显示成乱码）
+      const en = await _translateFields('chron_' + id, {
+        title: src.title || '', summary: src.summary || '', content: _stripHtml(src.content)
+      });
       if (titleEl) titleEl.textContent = en.title;
       if (sumEl) sumEl.textContent = en.summary;
       if (artEl) artEl.innerHTML = escBr(en.content);
@@ -2732,7 +2789,7 @@ window.toggleChronTrans = async function(ev, btn) {
   } else {
     if (titleEl) titleEl.textContent = src.title;
     if (sumEl) sumEl.textContent = src.summary;
-    if (artEl) artEl.innerHTML = escBr(src.content);
+    if (artEl) artEl.innerHTML = src.content; // 还原成原始富文本（含 <p>），不转义
     btn.dataset.st = 'zh'; btn.textContent = '🌐 Translate';
   }
 };
