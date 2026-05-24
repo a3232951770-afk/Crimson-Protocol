@@ -3426,11 +3426,14 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
 .post-trans-btn:disabled { opacity: 0.6; cursor: wait; }
 .hist-card .post-trans-btn { margin-left: 0.5rem; }
 
-/* 史记按钮容器：左对齐、可换行（手机版 vote 与 translate 不再错位） */
+/* 史记按钮容器：左对齐、可换行；两个按钮清掉各自上下边距，横向居中对齐（中/英/桌面一致） */
 .hist-card-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-.hist-card .post-trans-btn { margin-left: 0; }
+.hist-card-actions .tl-action-btn,
+.hist-card-actions .post-trans-btn { margin: 0; vertical-align: middle; }
 
-/* 登录页"注册新节点"做显眼：加粗、赤陶色、下划线、可点区域更大 */
+/* 登录页"注册新节点"做显眼：黄色(amber)、加粗、下划线、放在顶部 */
 .auth-switch { font-size: 0.85rem; margin-top: 0.7rem; color: var(--ash); }
-.auth-switch span { color: var(--terracotta); font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 3px 6px; border-radius: 3px; transition: all 0.18s; }
-.auth-switch span:hover { color: var(--bone); background: rgba(204,78,60,0.18); }
+.auth-switch span { color: var(--amber); font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 3px 6px; border-radius: 3px; transition: all 0.18s; }
+.auth-switch span:hover { color: var(--bone); background: rgba(232,168,73,0.18); }
+.auth-switch-top { margin: 0.1rem 0 0.9rem; font-size: 0.92rem; }
+.auth-switch-top span { font-size: 0.98rem; }

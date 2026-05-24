@@ -877,10 +877,17 @@ async function handleForge() {
             const x = radRect.left - rect.left;
             const y = radRect.top - rect.top;
             const w = radRect.width, h = radRect.height;
-            // 上传的图片 → 直接画图片本体
+            // 上传的图片 → 等比完整画进框内（contain：不裁剪、不变形、显示全貌）
             const imgEl = rad.querySelector('img');
             if (imgEl) {
-              try { if (imgEl.complete && imgEl.naturalWidth) ctx.drawImage(imgEl, x, y, w, h); } catch(err) {}
+              try {
+                const iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;
+                if (iw && ih) {
+                  const sc = Math.min(w / iw, h / ih);
+                  const dw = iw * sc, dh = ih * sc;
+                  ctx.drawImage(imgEl, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+                }
+              } catch(err) {}
               return;
             }
             // 文字偏旁 → 只取偏旁本身（排除 ×、缩放手柄等控件）
