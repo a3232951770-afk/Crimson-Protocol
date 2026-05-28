@@ -128,11 +128,15 @@ function openCard(star) {
     const cd = window.CHARACTER_DATA_CACHE?.[star.text];
     const isEn = window._lang === 'en';
     const en = window.CHAR_EN?.[star.text];
+    const pyEl = document.getElementById('card-pinyin');
+    const _validPy = s => !!s && /[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/i.test(s) && !/[\u4e00-\u9fff]/.test(s);
     if(star.type === 'mother') {
+        if (pyEl) pyEl.innerText = 'nǚ';
         titleEl.style.color = 'var(--neon-red)';
         typeEl.innerText = isEn ? 'Mother Star · Root Protocol' : '母神星 · 根级协议';
         desc.innerText = isEn ? "女 (woman). Pictographic. Used as the root radical for derogatory and subordinate terms in patriarchal dictionaries. Root-level protocol overwrite in progress." : "女，妇人也。象形。父权字典中常作为附属、柔弱或贬义词汇的词根。正在进行根级协议覆写。";
     } else if (cd) {
+        if (pyEl) pyEl.innerText = _validPy(cd.pinyin) ? cd.pinyin : '';
         const CL = isEn ? {stigma:'Derogatory',institution:'Institutional',matrilineal:'Matrilineal',reclaim:'Reclaimed',neutral:'Neutral'} : {stigma:'贬义字',institution:'制度字',matrilineal:'母系遗存',reclaim:'褒义字',neutral:'中性字'};
         const CC = {stigma:'#ff6b6b',institution:'var(--terracotta)',matrilineal:'var(--amber)',reclaim:'#5a9e6f',neutral:'var(--bone)'};
         titleEl.style.color = CC[cd.category]||'var(--terracotta)';
@@ -141,6 +145,7 @@ function openCard(star) {
         const md = (isEn && en) ? en.m : (cd.modern||'');
         desc.innerText = `${sw}\n${md}`;
     } else {
+        if (pyEl) pyEl.innerText = '';
         titleEl.style.color = star.type==='amber'?'var(--amber)':'var(--terracotta)';
         typeEl.innerText = isEn ? 'Legacy Definition' : '旧世字典释义';
         desc.innerText = isEn ? `${star.text}, from 女. A language anchor in the star map.` : `${star.text}，从女。语言星图中的锚点。`;

@@ -3441,7 +3441,7 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
 /* ===== 第一批新增样式 ===== */
 
 /* 7) 泥潭频道排序栏 */
-.mire-sort-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0 0 1rem; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--ochre-dark); }
+.mire-sort-bar { column-span: all; -webkit-column-span: all; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0 0 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--ochre-dark); }
 .mire-sort-label { font-family: var(--font-mono); font-size: 0.68rem; color: var(--ash); letter-spacing: 1px; margin-right: 0.3rem; }
 .mire-sort-btn { background: transparent; border: 1px solid var(--ochre-dark); color: var(--ash); font-family: var(--font-mono); font-size: 0.68rem; padding: 3px 10px; border-radius: 3px; cursor: pointer; transition: all 0.18s; }
 .mire-sort-btn:hover { color: var(--bone); border-color: var(--terracotta); }
@@ -3468,4 +3468,36 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
 }
 
 /* 4) 第一母星详情卡常驻拼音 */
-.card-pinyin { font-family: var(--font-mono); color: var(--terracotta); font-size: 0.95rem; letter-spacing: 3px; text-align: center; margin-bottom: 0.1rem; text-transform: capitalize; opacity: 0.92; }
+.card-pinyin { font-family: var(--font-mono); color: var(--terracotta); font-size: 0.95rem; letter-spacing: 3px; text-align: left; margin-bottom: 0.1rem; opacity: 0.92; min-height: 1.1em; }
+
+/* 6) 登录/注册双 Tab（等权重） */
+.auth-tabs { display: flex; margin: 0.3rem 0 1.4rem; border: 1px solid var(--ochre-dark); border-radius: 4px; overflow: hidden; }
+.auth-tab { flex: 1 1 0; background: transparent; border: none; color: var(--ash); font-family: var(--font-mono); font-size: 0.82rem; padding: 12px 6px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; white-space: nowrap; }
+.auth-tab:first-child { border-right: 1px solid var(--ochre-dark); }
+.auth-tab:hover { color: var(--bone); background: rgba(204,78,60,0.08); }
+.auth-tab.active { background: var(--terracotta); color: #fff; font-weight: bold; }
+
+/* 3) 发帖后高亮脉冲 */
+@keyframes post-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(204,78,60,0); }
+  50% { box-shadow: 0 0 24px rgba(204,78,60,0.9); }
+}
+.post-card.post-highlight { animation: post-pulse 0.8s ease-in-out 3; border-color: var(--terracotta) !important; }
+
+/* 1) 首次访问公告蒙层 */
+#intro-overlay { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(5,4,4,0.88); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); padding: 4vh 4vw; }
+#intro-overlay .intro-panel { position: relative; width: 100%; max-width: 640px; max-height: 88vh; display: flex; flex-direction: column; background: #0f0d0c; border: 1px solid var(--terracotta); border-radius: 5px; box-shadow: 0 0 40px rgba(204,78,60,0.35), inset 0 0 60px rgba(0,0,0,0.6); padding: 2rem 1.8rem 1.4rem; }
+#intro-overlay .intro-level { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 1.5px; color: var(--amber); margin-bottom: 0.5rem; }
+#intro-overlay .intro-title { font-family: var(--font-serif); font-weight: 700; font-size: 1.18rem; line-height: 1.5; color: var(--terracotta); margin-bottom: 1rem; text-shadow: 0 0 12px rgba(204,78,60,0.4); }
+#intro-overlay .intro-body { overflow-y: auto; flex: 1; color: var(--bone); font-family: var(--font-serif); font-size: 0.9rem; line-height: 1.85; letter-spacing: 0.3px; padding-right: 0.6rem; white-space: normal; }
+#intro-overlay .intro-body::-webkit-scrollbar { width: 6px; }
+#intro-overlay .intro-body::-webkit-scrollbar-thumb { background: var(--ochre-dark); border-radius: 3px; }
+#intro-overlay .intro-enter-btn { flex-shrink: 0; margin-top: 1.3rem; align-self: center; background: var(--terracotta); color: #fff; border: none; border-radius: 4px; font-family: var(--font-mono); font-weight: bold; font-size: 0.92rem; letter-spacing: 1px; padding: 13px 36px; cursor: pointer; transition: all 0.25s; }
+#intro-overlay .intro-enter-btn:hover { background: var(--neon-red); box-shadow: 0 0 22px var(--neon-red); }
+@media (max-width: 600px) {
+  #intro-overlay { padding: 3vh 3vw; }
+  #intro-overlay .intro-panel { padding: 1.5rem 1.1rem 1.1rem; max-height: 90vh; }
+  #intro-overlay .intro-title { font-size: 1.05rem; }
+  #intro-overlay .intro-body { font-size: 0.85rem; line-height: 1.8; }
+  #intro-overlay .intro-enter-btn { width: 100%; padding: 14px; }
+}

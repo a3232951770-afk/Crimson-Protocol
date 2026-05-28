@@ -19,10 +19,10 @@
         <div class="nav-logo">[ 赤字协议 ]<br><span class="nav-subtitle" style="font-size: 0.7rem; letter-spacing: 5px; color:#666;">THE CRIMSON PROTOCOL</span></div>
         <button class="nav-mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('mobile-open')" style="display:none;">☰</button>
         <div class="nav-links" onclick="this.classList.remove('mobile-open')">
-            <a onclick="switchPage('page-mother-star', this)" class="active" data-tip="性别不公星辰，悬停探索，点击改造">第一母星</a>
-            <a onclick="switchPage('page-chronicle', this)" data-tip="获得超200次共鸣的字与历史，永久收录于此">编年史</a>
-            <a onclick="switchPage('page-mire', this)" data-tip="发帖、改字、录史、共鸣的社区广场">女娲的泥潭</a>
-            <a onclick="switchPage('page-rubbing-pavilion', this)" data-tip="你的个人档案与贡献记录">拓片馆</a>
+            <a onclick="switchPage('page-mother-star', this)" class="active" data-tip="性别不公星辰，悬停探索，点击改造" data-tip-en="Stars of gender injustice — hover to explore, click to reforge">第一母星</a>
+            <a onclick="switchPage('page-chronicle', this)" data-tip="获得超200次共鸣的字与历史，永久收录于此" data-tip-en="Words & histories with 200+ resonances, archived here forever">编年史</a>
+            <a onclick="switchPage('page-mire', this)" data-tip="发帖、改字、录史、共鸣的社区广场" data-tip-en="The community square — post, reforge, record, resonate">女娲的泥潭</a>
+            <a onclick="switchPage('page-rubbing-pavilion', this)" data-tip="你的个人档案与贡献记录" data-tip-en="Your personal archive & contribution log">拓片馆</a>
         </div>
         <div class="nav-right-controls">
             <button id="btn-signal-nav" class="btn-signal-recv unread" onclick="openDrawer()"
@@ -673,20 +673,23 @@
     <div id="auth-modal" class="modal-overlay" onclick="closeAuthModal(event)">
         <div class="modal-container auth-box" onclick="event.stopPropagation()" style="max-width:420px;">
             <button class="modal-close" onclick="closeAuthModal(event)">[ ESC 关闭 ]</button>
-            <div id="auth-panel-login" class="auth-panel active">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-panel="register" onclick="window.CrimsonAuth.showPanel('register')">注册新节点</button>
+                <button class="auth-tab" data-panel="login" onclick="window.CrimsonAuth.showPanel('login')">接入协议（登录）</button>
+            </div>
+            <div id="auth-panel-login" class="auth-panel">
                 <div class="auth-title">[ 赤字协议 ] <span>身份接入</span></div>
                 <div class="auth-terminal-lines">
                     <div>> 检测到未授权节点。</div>
                     <div id="auth-err-login" class="auth-err" style="display:none;"></div>
                 </div>
-                <div class="auth-switch auth-switch-top">没有账号？<span onclick="window.CrimsonAuth.showPanel('register')">注册新节点 →</span></div>
                 <div class="auth-fields">
                     <input id="login-email" type="text" class="auth-input" placeholder="邮箱 / 手机号" autocomplete="username"/>
                     <input id="login-pass"  type="password" class="auth-input" placeholder="密码" autocomplete="current-password"/>
                 </div>
                 <button class="auth-submit-btn" onclick="window.CrimsonAuth.login()">[ 接入协议 ]</button>
             </div>
-            <div id="auth-panel-register" class="auth-panel">
+            <div id="auth-panel-register" class="auth-panel active">
                 <div class="auth-title">[ 赤字协议 ] <span>创建节点</span></div>
                 <div class="auth-terminal-lines">
                     <div>> 正在初始化新考古学家档案...</div>
@@ -699,7 +702,6 @@
                     <input id="reg-codename" type="text"     class="auth-input" placeholder="你的代号（可选，如 @星火_042）" autocomplete="off"/>
                 </div>
                 <button class="auth-submit-btn" onclick="window.CrimsonAuth.register()">[ 创建档案并接入 ]</button>
-                <div class="auth-switch">已有账号？<span onclick="window.CrimsonAuth.showPanel('login')">← 返回登录</span></div>
             </div>
             <div id="auth-panel-loading" class="auth-panel" style="text-align:center;padding:3rem 1rem;">
                 <div class="auth-terminal-lines" style="justify-content:center;">

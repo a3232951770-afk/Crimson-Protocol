@@ -307,6 +307,9 @@
             if (btnSignalNav) { btnSignalNav.style.opacity = '1'; btnSignalNav.style.pointerEvents = 'auto'; }
 
             switchPage('page-mother-star', document.querySelector('.nav-links a.active'));
+
+            // 首次访问：进入主页后弹出公告蒙层（延时等导航/横幅淡入完成）
+            setTimeout(() => { if (window.showFirstVisitOverlay) window.showFirstVisitOverlay(); }, 1300);
         };
 
         /* -------------------------------------------
