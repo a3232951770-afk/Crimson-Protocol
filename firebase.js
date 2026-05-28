@@ -530,6 +530,12 @@ export async function deletePost(postId){
   await deleteDoc(doc(db,'community_posts',postId));
 }
 
+// 一次性拉取所有社区帖子（含文档 id），供管理员去重工具使用
+export async function fetchAllPosts(){
+  const s = await getDocs(collection(db,'community_posts'));
+  return s.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
 // 获取用户的所有帖子
 export async function getUserPosts(uid){
   try {
