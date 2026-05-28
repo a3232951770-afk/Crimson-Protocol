@@ -526,6 +526,15 @@ export async function reportPost(postId,reason=''){
   await updateDoc(doc(db,'community_posts',postId),{
     reported:true, reportReason:reason, reportedAt:serverTimestamp()});
 }
+
+// 标记被举报：累加 reportCount、记录时间，但不隐藏帖子（管理员可在库里筛 reportCount > 0）
+export async function flagPost(postId,reason=''){
+  await updateDoc(doc(db,'community_posts',postId),{
+    reportCount: increment(1),
+    lastReportedAt: serverTimestamp(),
+    lastReportReason: reason || ''
+  });
+}
 export async function deletePost(postId){
   await deleteDoc(doc(db,'community_posts',postId));
 }

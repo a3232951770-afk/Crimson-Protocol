@@ -3437,3 +3437,35 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
 .auth-switch span:hover { color: var(--bone); background: rgba(232,168,73,0.18); }
 .auth-switch-top { margin: 0.1rem 0 0.9rem; font-size: 0.92rem; }
 .auth-switch-top span { font-size: 0.98rem; }
+
+/* ===== 第一批新增样式 ===== */
+
+/* 7) 泥潭频道排序栏 */
+.mire-sort-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0 0 1rem; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--ochre-dark); }
+.mire-sort-label { font-family: var(--font-mono); font-size: 0.68rem; color: var(--ash); letter-spacing: 1px; margin-right: 0.3rem; }
+.mire-sort-btn { background: transparent; border: 1px solid var(--ochre-dark); color: var(--ash); font-family: var(--font-mono); font-size: 0.68rem; padding: 3px 10px; border-radius: 3px; cursor: pointer; transition: all 0.18s; }
+.mire-sort-btn:hover { color: var(--bone); border-color: var(--terracotta); }
+.mire-sort-btn.active { color: var(--terracotta); border-color: var(--terracotta); background: rgba(204,78,60,0.12); font-weight: bold; }
+
+/* 2) 桌面导航 hover 说明（手机端不显示） */
+.nav-links a[data-tip] { position: relative; }
+.nav-links a[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  margin-top: 9px; white-space: nowrap;
+  background: rgba(15,13,12,0.97); color: var(--bone);
+  border: 1px solid var(--ochre-dark); padding: 6px 12px;
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.5px;
+  border-radius: 3px; z-index: 9999; pointer-events: none;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.55);
+}
+.nav-links a[data-tip]:hover::before {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  margin-top: 3px; border: 5px solid transparent; border-bottom-color: var(--ochre-dark); z-index: 9999; pointer-events: none;
+}
+@media (max-width: 768px), (hover: none) {
+  .nav-links a[data-tip]:hover::after, .nav-links a[data-tip]:hover::before { display: none; }
+}
+
+/* 4) 第一母星详情卡常驻拼音 */
+.card-pinyin { font-family: var(--font-mono); color: var(--terracotta); font-size: 0.95rem; letter-spacing: 3px; text-align: center; margin-bottom: 0.1rem; text-transform: capitalize; opacity: 0.92; }

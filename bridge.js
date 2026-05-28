@@ -19,7 +19,7 @@ import {
   getTimelinePosts,
   createPost, listenToPosts,
   addComment, listenToComments,
-  votePost, reportPost, deletePost, fetchAllPosts,
+  votePost, reportPost, deletePost, fetchAllPosts, flagPost,
   getUserPosts, getPostById, getPromotedProposals, getCharProposals, getAllPromotedGlyphs,
   updateUserAvatar, getUserProfile,
   sendDirectMessage, listenToDmMessages, listenToUserChats, markChatAsRead,
@@ -305,6 +305,8 @@ function injectStarFilter() {
       : { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
     const catColors = { stigma:'#ff6b6b', institution:'var(--terracotta)', matrilineal:'var(--amber)', reclaim:'#5a9e6f', neutral:'var(--bone)' };
     if (titleEl) { titleEl.innerText = char; titleEl.style.color = catColors[data.category] || 'var(--terracotta)'; }
+    const pyEl = document.getElementById('card-pinyin');
+    if (pyEl) pyEl.innerText = data.pinyin || '';
     if (typeEl) typeEl.innerText = `${catLabels[data.category]||''} · ${isEn?'Pollution':'污染等级'} ${data.pollutionLevel}/5`;
     if (descEl) {
       descEl.classList.remove('revealed');
@@ -531,6 +533,28 @@ function renderPosts(cont, posts, type) {
   let fbSec = cont.querySelector('.fb-posts');
   if (!fbSec) { fbSec = document.createElement('div'); fbSec.className='fb-posts'; cont.appendChild(fbSec); }
 
+  // —— 排序栏（共鸣↓ / 评论↓ / 最新；默认最新）——
+  const isEnSort = window._lang === 'en';
+  window._mireSort = window._mireSort || {};
+  const sortKey = window._mireSort[cont.id] || 'newest';
+  let sortBar = cont.querySelector('.mire-sort-bar');
+  if (!sortBar) { sortBar = document.createElement('div'); sortBar.className = 'mire-sort-bar no-translate'; cont.insertBefore(sortBar, fbSec); }
+  const sortOpts = [
+    ['newest', isEnSort ? 'Newest' : '最新'],
+    ['resonance', (isEnSort ? 'Resonance' : '共鸣') + ' ↓'],
+    ['comments', (isEnSort ? 'Comments' : '评论') + ' ↓'],
+  ];
+  sortBar.innerHTML = `<span class="mire-sort-label">${isEnSort ? 'Sort' : '排序'}</span>` +
+    sortOpts.map(([k, label]) => `<button class="mire-sort-btn ${sortKey === k ? 'active' : ''}" onclick="window.setMireSort('${cont.id}','${k}')">${label}</button>`).join('');
+  sortBar.style.display = posts.length ? 'flex' : 'none';
+
+  const _ms = p => { const c = p.createdAt; if (!c) return 0; if (c.seconds != null) return c.seconds * 1000; if (c.toMillis) return c.toMillis(); const d = new Date(c); return isNaN(d) ? 0 : d.getTime(); };
+  const sorted = posts.slice().sort((a, b) => {
+    if (sortKey === 'resonance') return (b.votes || 0) - (a.votes || 0);
+    if (sortKey === 'comments') return (b.comments || 0) - (a.comments || 0);
+    return _ms(b) - _ms(a);
+  });
+
   const empty = cont.querySelector('.empty-state');
   if (empty) empty.style.display = posts.length ? 'none' : 'block';
 
@@ -541,7 +565,7 @@ function renderPosts(cont, posts, type) {
   window._fbPostsCache = window._fbPostsCache || {};
   posts.forEach(p => { window._fbPostsCache[p.id] = p; });
 
-  fbSec.innerHTML = posts.map(p => {
+  fbSec.innerHTML = sorted.map(p => {
     const t = p.createdAt ? fmtTime(p.createdAt.toDate?.() || new Date(p.createdAt.seconds*1000)) : (window._lang==='en'?'just now':'刚刚');
     const dimLabels = window._lang === 'en'
       ? { huaxia:'Huaxia Era', huanyu:'Universal Era', lingjing:'Liminal Space' }
@@ -577,6 +601,14 @@ function renderPosts(cont, posts, type) {
   const countEl = document.getElementById(countMap[type]);
   if (countEl) countEl.textContent = posts.length;
 }
+
+// 切换某频道的排序方式并原地重渲染
+window.setMireSort = function(contId, key) {
+  window._mireSort = window._mireSort || {};
+  window._mireSort[contId] = key;
+  const r = window._lastTabRender && window._lastTabRender[contId];
+  if (r) renderPosts(r.cont, r.posts, r.type);
+};
 
 // 投票 — 每人每帖只能一次（客户端localStorage + 按钮禁用）
 const _votedPosts = new Set(JSON.parse(localStorage.getItem('crimson_voted') || '[]'));
@@ -630,8 +662,8 @@ window.fbReport = function(postId) {
     : '确认举报该内容？管理员将进行审核。';
   if (!confirm(msg)) return;
   
-  // 不直接设置reported=true（那会立即隐藏帖子），而是记录举报
-  // 管理员可以在Firebase Console的community_posts里手动查看和删除
+  // 写入数据库可筛选字段（reportCount 累加），同时本地留一份备份
+  flagPost(postId).catch(e => console.warn('flagPost failed:', e && e.code));
   const reportData = { postId, reportedBy: _currentUser?.uid || 'anonymous', time: new Date().toISOString() };
   const existingReports = JSON.parse(localStorage.getItem('crimson_reports') || '[]');
   existingReports.push(reportData);
@@ -755,12 +787,10 @@ window.openFbPostDetail = function(postId) {
   
   contentArea.innerHTML = html;
   
-  // 交互栏（投票+点赞 — 使用Firebase实时函数）
+  // 交互栏（只保留"共鸣"——投票与共鸣本是同一动作，已合并）
   if (interactionArea) {
-    const voteLabel = p.type === 'glyph' ? (isEn?'▵ Vote':'▵ 投票') : (isEn?'▵ Archive':'▵ 收录');
     interactionArea.innerHTML = `
       <div class="action-group">
-        <button class="action-btn vote" onclick="fbLike('${postId}',this)">${voteLabel} <span>${p.votes||0}</span></button>
         <button class="action-btn like" onclick="fbLike('${postId}',this)">❤ ${isEn?'Resonate':'共鸣'} <span>${p.votes||0}</span></button>
       </div>
       <button class="action-btn comment">💬 ${isEn?'Responses':'响应'} <span>${p.comments||0}</span></button>`;
@@ -810,6 +840,7 @@ async function submitComment() {
     } catch(e){ window.showSysToast?.('>> 提交失败，请重试。'); }
   });
 }
+window.submitComment = submitComment;
 
 // ==========================================
 // 🚪 发帖/凿字 登录拦截
