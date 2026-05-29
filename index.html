@@ -670,9 +670,8 @@
     <!-- ==========================================
          🔐 登录弹窗（密码登录）
          ========================================== -->
-    <div id="auth-modal" class="modal-overlay" onclick="closeAuthModal(event)">
+    <div id="auth-modal" class="modal-overlay">
         <div class="modal-container auth-box" onclick="event.stopPropagation()" style="max-width:420px;">
-            <button class="modal-close" onclick="closeAuthModal(event)">[ ESC 关闭 ]</button>
             <div class="auth-tabs">
                 <button class="auth-tab active" data-panel="register" onclick="window.CrimsonAuth.showPanel('register')">注册新节点</button>
                 <button class="auth-tab" data-panel="login" onclick="window.CrimsonAuth.showPanel('login')">接入协议（登录）</button>

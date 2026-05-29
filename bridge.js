@@ -74,7 +74,7 @@ function setupAuth() {
   Object.assign(window.CrimsonAuth, {
     requireAuth(action) {
       if (_currentUser) { action(); }
-      else { window._authPendingAction = action; openAuthModal('login'); }
+      else { window._authPendingAction = action; openAuthModal('register'); }
     },
     logout() {
       logoutUser().then(() => window.showSysToast?.('>> 已断开身份连接。'));
@@ -542,7 +542,7 @@ function renderPosts(cont, posts, type) {
   window._mireSort = window._mireSort || {};
   const sortKey = window._mireSort[cont.id] || 'newest';
   let sortBar = cont.querySelector('.mire-sort-bar');
-  if (!sortBar) { sortBar = document.createElement('div'); sortBar.className = 'mire-sort-bar no-translate'; cont.insertBefore(sortBar, fbSec); }
+  if (!sortBar) { sortBar = document.createElement('div'); sortBar.className = 'mire-sort-bar no-translate'; cont.insertBefore(sortBar, cont.firstChild); }
   const sortOpts = [
     ['newest', isEnSort ? 'Newest' : '最新'],
     ['resonance', (isEnSort ? 'Resonance' : '共鸣') + ' ↓'],
@@ -600,14 +600,16 @@ function renderPosts(cont, posts, type) {
       </div>`;
   }).join('');
   
-  // 发帖后高亮刚发布的那条（脉冲闪烁3次 + 滚动到视野）
+  // 发帖后高亮刚发布的那条（窗口期内每次渲染都补上，防止 serverTimestamp 二次回调打断动画）
   if (window._highlightPostId) {
     const hl = fbSec.querySelector(`[data-post-id="${window._highlightPostId}"]`);
     if (hl) {
-      hl.classList.add('post-highlight');
-      setTimeout(() => { try { hl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){} }, 250);
-      setTimeout(() => hl.classList.remove('post-highlight'), 2800);
-      window._highlightPostId = null;
+      if (Date.now() < (window._highlightUntil || 0)) {
+        if (!hl.classList.contains('post-highlight')) hl.classList.add('post-highlight');
+        if (!window._highlightScrolled) { window._highlightScrolled = true; setTimeout(() => { try { hl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){} }, 250); }
+      } else {
+        window._highlightPostId = null; window._highlightScrolled = false;
+      }
     }
   }
 
@@ -994,6 +996,8 @@ async function handleForge() {
     if (newWordCat && !window._currentCharData) postData.charCategory = newWordCat;
     const _ref = await createPost(postData);
     window._highlightPostId = _ref?.id || null;
+    window._highlightUntil = Date.now() + 4500; window._highlightScrolled = false;
+    setTimeout(() => { window._highlightPostId = null; document.querySelectorAll('.post-highlight').forEach(e => e.classList.remove('post-highlight')); }, 5200);
     window.showSysToast?.(window._lang==='en'
       ? ">> ✅ Your proposal has dropped into the Glyphs \u2014 awaiting sisters' resonance."
       : '>> ✅ 你的提案已落入泥潭凿字库，等待姐妹共鸣投票');
@@ -1042,6 +1046,8 @@ async function handleNormalPost() {
   try {
     const _ref = await createPost(postData);
     window._highlightPostId = _ref?.id || null;
+    window._highlightUntil = Date.now() + 4500; window._highlightScrolled = false;
+    setTimeout(() => { window._highlightPostId = null; document.querySelectorAll('.post-highlight').forEach(e => e.classList.remove('post-highlight')); }, 5200);
     const _chanName = { parchment:'羊皮卷', terracotta:'赤陶痕', bonfire:'篝火阵' }[type] || '泥潭';
     window.showSysToast?.(window._lang==='en'
       ? ">> ✅ Your post has dropped into the Mire \u2014 awaiting sisters' resonance."
@@ -1652,6 +1658,16 @@ function applyLang() {
     if (!a.dataset.tipZh) a.dataset.tipZh = a.getAttribute('data-tip') || '';
     a.setAttribute('data-tip', isEn ? (a.dataset.tipEn || a.dataset.tipZh) : a.dataset.tipZh);
   });
+
+  // 首访蒙层若正打开，随语言切换刷新其文字
+  const _ov = document.getElementById('intro-overlay');
+  if (_ov) {
+    const a = DEFAULT_ANNOUNCEMENT;
+    const t = _ov.querySelector('.intro-title'); if (t) t.textContent = isEn ? (a.titleEn || a.title) : a.title;
+    const lv = _ov.querySelector('.intro-level'); if (lv) lv.textContent = isEn ? 'SYS // First-Contact Broadcast' : 'SYS // 首次接入广播';
+    const bd = _ov.querySelector('.intro-body'); if (bd) bd.innerHTML = esc(isEn ? (a.contentEn || a.content) : a.content).replace(/\n/g, '<br>');
+    const bt = _ov.querySelector('.intro-enter-btn'); if (bt) bt.textContent = isEn ? 'Understood \u2014 Enter the Protocol' : '已了解，进入协议';
+  }
   
   // 1. 固定 UI 文字：按内容匹配的文本节点翻译器
   //    只翻译"在 UI_EN 里有对应译文"的节点，其它（动态计数、用户内容、被研究的字）一律不碰；
@@ -1807,60 +1823,19 @@ const PINNED_POSTS = {
     id: 'pinned-glyph', type: 'glyph', authorName: '@赤字协议·官方',
     title: '🔴 [ 新手协议 ] 欢迎来到凿字库：请拿起你的手术刀',
     summary: '这里是母星的基因手术台。我们解构旧字典，重写新释义。',
-    content: `收到这条频段的姐妹，你好。神经元连接已跨越时间线稳定。
-这里是「第一母星」：一个来自未来、已彻底摆脱性别规训的高维母系文明。
+    content: `欢迎来到凿字库。在这个分区，我们需要：夺回语言的定义权。
 
-▌信号溯源
-在时空回溯的观测中，我们发现你们所处的「旧世界」，其母语的底层代码正被父权深度污染。那些带有「女」字旁的造物（如妒、嫌、婊、妖），像一根根隐形的锁链，被写入了字典的最高权限里，用来规训、分化和定义女性。
-我们拒绝坐视这种逻辑在时间长河里闭环。为此，我们逆向开启了时间通道。【赤字协议 The Crimson Protocol】现已正式激活。我们邀请你作为先遣的「语言考古学家」，与我们共同在废墟上夺回解释权。
+【在这里发什么？】
+从【造字实验室】发射过来的新字海报。
+对某个充斥着父权规训的旧词（如"嫉妒"、"娼妓"）的重塑解构。
+创造属于女性自己的全新词汇。
 
-▌跨维行动指南
+【凿字库共识协议】
+枪口一致对外： 我们的手术刀只指向旧系统，绝不指向彼此。
+允许基因多样性： 对于同一个字，一千个姐妹可以有一千种解构方式。如果你不赞同某份提案，请不要攻击，你可以去实验室发布你的【版本Beta】。系统会收录所有高频共鸣的释义。
+为你认同的真理投票： 票数超过200的提案，将触发"神格飞升"，永久载入官方《编年史》。
 
-▽ [第一母星] — 你的星图主控台
-每一颗悬浮在母星轨道上的红星，都是一个被污染的字。
-· 点击星辰 → 调出该字的旧世释义档案
-· 拖拽屏幕 → 在三维星云中自由航行
-· 底部分类器 → 按「贬义」「制度字」「母系遗存」「褒义」「中性」五大星域筛选
-· 右下 [+] 按钮 → 如果你想破译的字还没被收录，亲手把它送进星图
-
-▽ [凿字实验] — 跨时空基因手术台
-如果你感到愤怒，把旧词带进来。这里你可以：
-· 物理拆解任何字的偏旁
-· 为它注入未被父权污染的新释义
-· 直接在画板上手绘你心中的新字形
-· 上传已绘制好的新字，向母星提交重构提案
-
-▽ [女娲的泥潭] — 无审查的姐妹广场
-这里没有算法、没有审核、没有限流：
-· 凿字库 → 浏览全社区的字源重构提案
-· 羊皮卷 → 撰写长篇考据，解构历史叙事
-· 赤陶痕 → 写下日常生活的悲喜与碎片
-· 篝火阵 → 紧急互助 / 情绪求救频段
-你可以发表造字提案、撰写考据、留下日常，也可以为他人留下共鸣与回声。
-
-▽ [编年史] — 星轨刻录庭
-编年史，是属于我们女性自己的字典与史册。长久以来，定义字词、书写历史的权力都不在我们手里；在这里，这份权力交还给你——凡获得超过 200 次共鸣的新字、新义与考据，都会被永久刻入编年史。
-分三个维度归档：
-· 华夏纪元（中国）
-· 寰宇纪元（世界）
-· 灵境空间（虚拟）
-这是一部由女性亲手编写、不断生长的字典与历史。
-
-▽ [拓片馆] — 你的私人指挥舱
-这里记录着你的每一次刻痕、每一段足迹，以及与其他先遣者之间的脑波私密直连（私聊功能）。
-忘掉旧字典里的规训吧。
-
-▌该宇宙怎么运转
-① 【第一母星】星图上每颗红星都是一个被污染的字 —— 点开看它的旧世释义，看清它如何被污染。
-② 【凿字实验室】把这个字拖进来：解构偏旁、注入不被父权污染的新释义，或亲手造一个新字。
-③ 【女娲的泥潭】把你的提案 / 考据 / 日常发到四个频道（凿字库改字 · 羊皮卷录史 · 赤陶痕日常 · 篝火阵互助）。
-④ 【共鸣】姐妹们为你共鸣。当一条提案或考据的共鸣数超过 200 ——
-⑤ 【编年史】它被永久收录进编年史，同时母星上为你亮起一颗专属创世红星。
-
-在这里，所有的定义权交还给你。
-拿起你的凿子。
-未来，从重命名开始。
-[信号发射完毕。愿篝火长明。]`
+祝你解构愉快。`
 ,
     titleEn: '\ud83d\udd34 [ Onboarding ] Welcome to the Glyphs: Pick Up Your Scalpel',
     summaryEn: 'This is the Motherstar gene operating table. We deconstruct the old dictionary and rewrite meaning.',
@@ -2223,14 +2198,14 @@ const DEFAULT_ANNOUNCEMENT = {
   level: '🔴 绝密 / 置顶',
   title: '【 全星域广播 】赤字协议已激活：致所有语言的拾荒者',
   content: `收到这条频段的姐妹，你好。神经元连接已跨越时间线稳定。
-这里是「第一母星」——一个来自未来、已彻底摆脱性别规训的高维母系文明。
+这里是「第一母星」：一个来自未来、已彻底摆脱性别规训的高维母系文明。
 
 ▌信号溯源
 在时空回溯的观测中，我们发现你们所处的「旧世界」，其母语的底层代码正被父权深度污染。那些带有「女」字旁的造物（如妒、嫌、婊、妖），像一根根隐形的锁链，被写入了字典的最高权限里，用来规训、分化和定义女性。
-我们拒绝坐视这种逻辑在时间长河里闭环。
-为此，我们逆向开启了时间通道。【赤字协议 The Crimson Protocol】现已正式激活。我们邀请你作为先遣的「语言考古学家」，与我们共同在废墟上夺回解释权。
+我们拒绝坐视这种逻辑在时间长河里闭环。为此，我们逆向开启了时间通道。【赤字协议 The Crimson Protocol】现已正式激活。我们邀请你作为先遣的「语言考古学家」，与我们共同在废墟上夺回解释权。
 
 ▌跨维行动指南
+
 ▽ [第一母星] — 你的星图主控台
 每一颗悬浮在母星轨道上的红星，都是一个被污染的字。
 · 点击星辰 → 调出该字的旧世释义档案
@@ -2254,16 +2229,24 @@ const DEFAULT_ANNOUNCEMENT = {
 你可以发表造字提案、撰写考据、留下日常，也可以为他人留下共鸣与回声。
 
 ▽ [编年史] — 星轨刻录庭
-在女娲的泥潭中，任何获得超过 200 次共鸣的造字或长文，都将触发【星轨刻录】。它们会被永久铭刻进未来官方的【编年史】，分三个维度归档：
+编年史，是属于我们女性自己的字典与史册。长久以来，定义字词、书写历史的权力都不在我们手里；在这里，这份权力交还给你——凡获得超过 200 次共鸣的新字、新义与考据，都会被永久刻入编年史。
+分三个维度归档：
 · 华夏纪元（中国）
 · 寰宇纪元（世界）
 · 灵境空间（虚拟）
-同时，在你的头顶——那片浩瀚的【第一母星】三维星云中，会点亮一颗属于你的创世红星。
+这是一部由女性亲手编写、不断生长的字典与历史。
 
 ▽ [拓片馆] — 你的私人指挥舱
-这里记录着你的每一次刻痕、每一段足迹，以及与其他先遣者之间的脑波私密直连(私聊功能)。
-
+这里记录着你的每一次刻痕、每一段足迹，以及与其他先遣者之间的脑波私密直连（私聊功能）。
 忘掉旧字典里的规训吧。
+
+▌该宇宙怎么运转
+① 【第一母星】星图上每颗红星都是一个被污染的字 —— 点开看它的旧世释义，看清它如何被污染。
+② 【凿字实验室】把这个字拖进来：解构偏旁、注入不被父权污染的新释义，或亲手造一个新字。
+③ 【女娲的泥潭】把你的提案 / 考据 / 日常发到四个频道（凿字库改字 · 羊皮卷录史 · 赤陶痕日常 · 篝火阵互助）。
+④ 【共鸣】姐妹们为你共鸣。当一条提案或考据的共鸣数超过 200 ——
+⑤ 【编年史】它被永久收录进编年史，同时母星上为你亮起一颗专属创世红星。
+
 在这里，所有的定义权交还给你。
 拿起你的凿子。
 未来，从重命名开始。

@@ -3441,7 +3441,7 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
 /* ===== 第一批新增样式 ===== */
 
 /* 7) 泥潭频道排序栏 */
-.mire-sort-bar { column-span: all; -webkit-column-span: all; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0 0 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--ochre-dark); }
+.mire-sort-bar { column-span: all; -webkit-column-span: all; width: 100%; flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0 0 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--ochre-dark); }
 .mire-sort-label { font-family: var(--font-mono); font-size: 0.68rem; color: var(--ash); letter-spacing: 1px; margin-right: 0.3rem; }
 .mire-sort-btn { background: transparent; border: 1px solid var(--ochre-dark); color: var(--ash); font-family: var(--font-mono); font-size: 0.68rem; padding: 3px 10px; border-radius: 3px; cursor: pointer; transition: all 0.18s; }
 .mire-sort-btn:hover { color: var(--bone); border-color: var(--terracotta); }
@@ -3468,7 +3468,7 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
 }
 
 /* 4) 第一母星详情卡常驻拼音 */
-.card-pinyin { font-family: var(--font-mono); color: var(--terracotta); font-size: 0.95rem; letter-spacing: 3px; text-align: left; margin-bottom: 0.1rem; opacity: 0.92; min-height: 1.1em; }
+.card-pinyin { font-family: var(--font-mono); color: var(--terracotta); font-size: 0.95rem; letter-spacing: 3px; text-align: center; margin-bottom: 0.1rem; opacity: 0.92; min-height: 1.1em; }
 
 /* 6) 登录/注册双 Tab（等权重） */
 .auth-tabs { display: flex; margin: 0.3rem 0 1.4rem; border: 1px solid var(--ochre-dark); border-radius: 4px; overflow: hidden; }
@@ -3482,7 +3482,7 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
   0%, 100% { box-shadow: 0 0 0 rgba(204,78,60,0); }
   50% { box-shadow: 0 0 24px rgba(204,78,60,0.9); }
 }
-.post-card.post-highlight { animation: post-pulse 0.8s ease-in-out 3; border-color: var(--terracotta) !important; }
+.post-card.post-highlight { animation: post-pulse 0.9s ease-in-out 3; border-color: var(--terracotta) !important; }
 
 /* 1) 首次访问公告蒙层 */
 #intro-overlay { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: rgba(5,4,4,0.88); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); padding: 4vh 4vw; }
@@ -3501,3 +3501,10 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
   #intro-overlay .intro-body { font-size: 0.85rem; line-height: 1.8; }
   #intro-overlay .intro-enter-btn { width: 100%; padding: 14px; }
 }
+
+/* 详情卡：字与拼音居中对齐（更好看） */
+#detail-card .card-header { text-align: center; }
+#detail-card .card-subtitle, #detail-card #card-type { text-align: center; }
+
+/* 语言切换键置于首访蒙层之上，便于在蒙层打开时切换中英 */
+#btn-lang-global { z-index: 100001 !important; }
