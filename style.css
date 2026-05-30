@@ -349,8 +349,8 @@ body, html {
 /* ==========================================
    🌊 女娲的泥潭 (Page 3)
    ========================================== */
-.mire-container { display: flex; flex-direction: column; padding: 90px 3rem 1.5rem 3rem; max-width: 1600px; margin: 0 auto; width: 100%; height: 100%; overflow-y: auto; }
-.mire-nav { display: flex; gap: 3rem; margin-bottom: 0.3rem; border-bottom: 1px solid var(--obsidian-light); padding-bottom: 0.5rem; flex-wrap: wrap; flex-shrink: 0; }
+.mire-container { display: flex; flex-direction: column; padding: 90px 3rem 1.5rem 3rem; max-width: 1600px; margin: 0 auto; width: 100%; height: 100%; overflow-y: auto; position: relative; }
+.mire-nav { display: flex; gap: 3rem; margin-bottom: 1rem; border-bottom: 1px solid var(--obsidian-light); padding-bottom: 0.5rem; flex-wrap: wrap; flex-shrink: 0; }
 .mire-tab { font-family: var(--font-serif); font-size: 1.1rem; color: var(--ash-text); font-weight: 700; cursor: pointer; position: relative; padding-bottom: 0.5rem; letter-spacing: 2px; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
 .mire-tab span.count { font-family: var(--font-mono); font-size: 0.7rem; background: var(--obsidian-light); padding: 2px 6px; border: 1px solid var(--ochre-dark); border-radius: 10px; }
 .mire-tab:hover { color: var(--bone); }
@@ -2349,7 +2349,7 @@ body, html {
   }
   .star-nav-left { left: 4px !important; }
   .star-nav-right { right: 4px !important; }
-  #detail-card .card-header { font-size: 3.2rem !important; }
+  #detail-card .card-header { font-size: 3.2rem !important; line-height: 1 !important; }
   #detail-card .card-subtitle { font-size: 0.75rem !important; }
 
   /* ---- 编年史 ---- */
@@ -3546,5 +3546,19 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
     margin: 0 !important;
     padding: 0.1rem 0 0.4rem !important;
     justify-content: flex-end !important;
+  }
+}
+
+/* 桌面（≥769px）：排序栏移到导航行右侧，与导航同处一行，不再单独占一行 */
+@media (min-width: 769px) {
+  .tab-content.active.waterfall-container > .mire-sort-bar {
+    position: absolute;
+    top: 96px;
+    right: 3rem;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border-bottom: none;
+    z-index: 6;
   }
 }
