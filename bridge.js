@@ -545,7 +545,7 @@ function renderPosts(cont, posts, type) {
   if (!sortBar) { sortBar = document.createElement('div'); sortBar.className = 'mire-sort-bar no-translate'; cont.insertBefore(sortBar, cont.firstChild); }
   const sortOpts = [
     ['newest', isEnSort ? 'Newest' : '最新'],
-    ['resonance', (isEnSort ? 'Resonance' : '共鸣') + ' ↓'],
+    ['resonance', (isEnSort ? 'Archive' : '收录') + ' ↓'],
     ['comments', (isEnSort ? 'Comments' : '评论') + ' ↓'],
   ];
   sortBar.innerHTML = `<span class="mire-sort-label">${isEnSort ? 'Sort' : '排序'}</span>` +
@@ -591,7 +591,7 @@ function renderPosts(cont, posts, type) {
         ${canvasHtml}
         <div class="card-actions" onclick="event.stopPropagation()">
           <div class="action-group">
-            <button class="action-btn like ${_votedPosts.has(p.id)?'active':''}" onclick="fbLike('${p.id}',this)" ${_votedPosts.has(p.id)?'disabled style="opacity:0.5"':''}>❤ ${window._lang==='en'?'Resonate':'共鸣'} <span>${p.votes||0}</span></button>
+            <button class="action-btn like ${_votedPosts.has(p.id)?'active':''}" onclick="fbLike('${p.id}',this)" ${_votedPosts.has(p.id)?'disabled style="opacity:0.5"':''}>❤ ${window._lang==='en'?'Archive':'收录'} <span>${p.votes||0}</span></button>
           </div>
           <button class="action-btn comment" onclick="window.openFbPostDetail('${p.id}')">💬 ${window._lang==='en'?'Respond':'响应'} <span>${p.comments||0}</span></button>
           <button class="report-btn" onclick="fbReport('${p.id}')" title="${window._lang==='en'?'Report':'举报'}">⚑</button>
@@ -804,11 +804,11 @@ window.openFbPostDetail = function(postId) {
   
   contentArea.innerHTML = html;
   
-  // 交互栏（只保留"共鸣"——投票与共鸣本是同一动作，已合并）
+  // 交互栏（只保留"收录"——投票/共鸣本是同一动作，已合并）
   if (interactionArea) {
     interactionArea.innerHTML = `
       <div class="action-group">
-        <button class="action-btn like" onclick="fbLike('${postId}',this)">❤ ${isEn?'Resonate':'共鸣'} <span>${p.votes||0}</span></button>
+        <button class="action-btn like" onclick="fbLike('${postId}',this)">❤ ${isEn?'Archive':'收录'} <span>${p.votes||0}</span></button>
       </div>
       <button class="action-btn comment">💬 ${isEn?'Responses':'响应'} <span>${p.comments||0}</span></button>`;
   }
@@ -1520,6 +1520,7 @@ const UI_EN = {
   // 星域
   '> 当前星域显示':'> Currently showing', '个语言锚点':'language anchors',
   // 拓片馆
+  '❤ 收录':'❤ Archive',
   '觉醒日':'Awakening Date', '共鸣频段':'Resonance Freq',
   '泥潭足迹':'Mire Footprints', '创世字符':'Genesis Glyphs', '凿壁者勋章':'Chiseler Medal',
   // 通用
@@ -1988,7 +1989,7 @@ window.openPinnedPost = function(pinnedId) {
   if (interactionArea) {
     interactionArea.innerHTML = `
       <div class="action-group">
-        <button class="action-btn like" onclick="window.likePinned('${pinnedId}',this)" ${userLiked?'disabled style="opacity:0.5"':''}>❤ ${isEn?'Resonate':'共鸣'} <span>${likes}</span></button>
+        <button class="action-btn like" onclick="window.likePinned('${pinnedId}',this)" ${userLiked?'disabled style="opacity:0.5"':''}>❤ ${isEn?'Archive':'收录'} <span>${likes}</span></button>
       </div>
       <button class="action-btn comment">💬 ${isEn?'Respond':'响应'} <span>0</span></button>`;
   }
