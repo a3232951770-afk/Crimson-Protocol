@@ -548,7 +548,7 @@ function renderPosts(cont, posts, type) {
     ['resonance', (isEnSort ? 'Archive' : '收录') + ' ↓'],
     ['comments', (isEnSort ? 'Comments' : '评论') + ' ↓'],
   ];
-  sortBar.innerHTML = `<span class="mire-sort-label">${isEnSort ? 'Sort' : '排序'}</span>` +
+  sortBar.innerHTML =
     sortOpts.map(([k, label]) => `<button class="mire-sort-btn ${sortKey === k ? 'active' : ''}" onclick="window.setMireSort('${cont.id}','${k}')">${label}</button>`).join('');
   sortBar.style.display = posts.length ? 'flex' : 'none';
 

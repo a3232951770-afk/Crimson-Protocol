@@ -154,7 +154,7 @@ body, html {
 .glass-panel { background: linear-gradient(135deg, rgba(11, 11, 10, 0.85) 0%, rgba(11, 11, 10, 0.95) 100%), url('https://i.postimg.cc/7L7pSxNc/zi-gong-xing-yun-xu-hua-ban.jpg'); background-size: cover; background-position: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 0 40px rgba(0, 0, 0, 0.9); }
 #detail-card { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40%) scale(0.95); width: 420px; border: 1px solid var(--terracotta); padding: 40px; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 4px; color: #fff; }
 #detail-card.active { visibility: visible; opacity: 1; transform: translate(-50%, -50%) scale(1); }
-#detail-card .card-header { font-size: 3rem; color: var(--terracotta); text-shadow: 0 0 15px rgba(204, 78, 60, 0.6); font-family: 'Songti SC', 'SimSun', serif; }
+#detail-card .card-header { font-size: 3rem; color: var(--terracotta); margin-top: 0; text-shadow: 0 0 15px rgba(204, 78, 60, 0.6); font-family: 'Songti SC', 'SimSun', serif; }
 #detail-card .card-subtitle { color: #aaa; font-size: 0.85rem; margin-bottom: 25px; letter-spacing: 1.5px; font-family: var(--font-sans); }
 .redacted-text { background-color: #000; color: #000; padding: 15px; cursor: pointer; transition: all 0.3s; user-select: none; line-height: 1.9; font-size: 1.05rem; border-radius: 2px; position: relative; box-shadow: inset 0 0 15px rgba(0,0,0,0.9); min-height: 60px; font-family: var(--font-serif); }
 .redacted-text::before { content: ' '; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(20,20,20,0.8) 10px, rgba(20,20,20,0.8) 20px); pointer-events: none; opacity: 0.5; }
@@ -350,7 +350,7 @@ body, html {
    🌊 女娲的泥潭 (Page 3)
    ========================================== */
 .mire-container { display: flex; flex-direction: column; padding: 90px 3rem 1.5rem 3rem; max-width: 1600px; margin: 0 auto; width: 100%; height: 100%; overflow-y: auto; }
-.mire-nav { display: flex; gap: 3rem; margin-bottom: 1rem; border-bottom: 1px solid var(--obsidian-light); padding-bottom: 0.5rem; flex-wrap: wrap; flex-shrink: 0; }
+.mire-nav { display: flex; gap: 3rem; margin-bottom: 0.3rem; border-bottom: 1px solid var(--obsidian-light); padding-bottom: 0.5rem; flex-wrap: wrap; flex-shrink: 0; }
 .mire-tab { font-family: var(--font-serif); font-size: 1.1rem; color: var(--ash-text); font-weight: 700; cursor: pointer; position: relative; padding-bottom: 0.5rem; letter-spacing: 2px; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
 .mire-tab span.count { font-family: var(--font-mono); font-size: 0.7rem; background: var(--obsidian-light); padding: 2px 6px; border: 1px solid var(--ochre-dark); border-radius: 10px; }
 .mire-tab:hover { color: var(--bone); }
@@ -3092,7 +3092,7 @@ body, html {
     flex-wrap: nowrap !important;
     gap: 0 !important;
     padding: 0.4rem 0.5rem !important;
-    margin: 0 0 0.6rem 0 !important;
+    margin: 0 0 0.3rem 0 !important;
     overflow: visible !important;
     border-bottom: 1px dashed rgba(139,90,43,0.3);
   }
@@ -3534,3 +3534,17 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
 .auth-title .auth-title-text { flex: 1; }
 .auth-close-x { background: none; border: none; color: var(--ash); font-size: 1.05rem; line-height: 1; cursor: pointer; padding: 4px 8px; margin-left: 8px; transition: color 0.2s; flex-shrink: 0; }
 .auth-close-x:hover { color: var(--terracotta); }
+
+/* 手机/平板：排序栏强制整行满宽（覆盖 .waterfall-container > * 的 50% 宽），
+   让它成为导航下方一条独立的细行，置顶帖与帖子从下一行起左右填满 */
+@media (max-width: 768px) {
+  .tab-content.active.waterfall-container > .mire-sort-bar {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    flex-basis: 100% !important;
+    order: -1 !important;
+    margin: 0 !important;
+    padding: 0.1rem 0 0.4rem !important;
+    justify-content: flex-end !important;
+  }
+}
