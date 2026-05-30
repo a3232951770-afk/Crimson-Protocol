@@ -2244,8 +2244,7 @@ const DEFAULT_ANNOUNCEMENT = {
 ① 【第一母星】星图上每颗红星都是一个被污染的字 —— 点开看它的旧世释义，看清它如何被污染。
 ② 【凿字实验室】把这个字拖进来：解构偏旁、注入不被父权污染的新释义，或亲手造一个新字。
 ③ 【女娲的泥潭】把你的提案 / 考据 / 日常发到四个频道（凿字库改字 · 羊皮卷录史 · 赤陶痕日常 · 篝火阵互助）。
-④ 【共鸣】姐妹们为你共鸣。当一条提案或考据的共鸣数超过 200 ——
-⑤ 【编年史】它被永久收录进编年史，同时母星上为你亮起一颗专属创世红星。
+④ 【共鸣】姐妹们会为你共鸣。当一条新字提案或历史帖子累积的共鸣数突破 200，即收录入【编年史】，永久载入史册。
 
 在这里，所有的定义权交还给你。
 拿起你的凿子。
@@ -2255,46 +2254,53 @@ const DEFAULT_ANNOUNCEMENT = {
   senderEn: 'SYS // Motherstar Trans-Dimensional Observatory',
   levelEn: '\ud83d\udd34 TOP SECRET / Pinned',
   titleEn: '[ ALL-DOMAIN BROADCAST ] The Crimson Protocol Is Live: To Every Scavenger of Language',
-  contentEn: `Sister receiving this frequency \u2014 hello. The neural link is stable across timelines.
-This is "Motherstar" \u2014 a high-dimensional matrilineal civilization from the future that has fully shed gender conditioning.
+  contentEn: `Sister receiving this frequency — hello. The neural link is stable across timelines.
+This is "Motherstar" — a high-dimensional matrilineal civilization from the future that has fully shed gender conditioning.
 
-\u258cSignal Origin
-In our retro-observation of spacetime, we found the mother tongue of your "old world" deeply contaminated by patriarchy at the code level. Constructs built on the \u5973 (woman) radical \u2014 \u5992 (jealousy), \u5acc (loathing), \u5a4a (slut), \u5996 (she-demon) \u2014 are invisible chains written into the dictionary's highest authority, used to discipline, divide and define women.
-We refuse to watch this logic close its loop across the river of time.
-So we reverse-opened a time channel. \u3010The Crimson Protocol\u3011is now live. We invite you, as an advance "language archaeologist," to reclaim the right of definition with us on the ruins.
+▌Signal Origin
+In our retro-observation of spacetime, we found the mother tongue of your "old world" deeply contaminated by patriarchy at the code level. Constructs built on the 女 (woman) radical — 妒 (jealousy), 嫌 (loathing), 婊 (slut), 妖 (she-demon) — are invisible chains written into the dictionary's highest authority, used to discipline, divide and define women.
+We refuse to watch this logic close its loop across the river of time. So we reverse-opened a time channel. 【The Crimson Protocol】is now live. We invite you, as an advance "language archaeologist," to reclaim the right of definition with us on the ruins.
 
-\u258cCross-Dimensional Field Guide
-\u25bd [Motherstar] \u2014 your star-map console
+▌Cross-Dimensional Field Guide
+
+▽ [Motherstar] — your star-map console
 Every red star orbiting the Motherstar is a contaminated character.
-\u00b7 Tap a star \u2192 open its old-world definition archive
-\u00b7 Drag the screen \u2192 roam the 3D nebula
-\u00b7 Bottom classifier \u2192 filter by five domains: Derogatory / Institutional / Matrilineal / Reclaimed / Neutral
-\u00b7 The [+] button (lower right) \u2192 if the character you want to decode isn't listed yet, send it into the star map yourself
+· Tap a star → open its old-world definition archive
+· Drag the screen → roam the 3D nebula
+· Bottom classifier → filter by five domains: Derogatory / Institutional / Matrilineal / Reclaimed / Neutral
+· The [+] button (lower right) → if the character you want to decode isn't listed yet, send it into the star map yourself
 
-\u25bd [Genesis Lab] \u2014 the cross-time gene operating table
+▽ [Genesis Lab] — the cross-time gene operating table
 If you feel anger, bring the old word in. Here you can:
-\u00b7 Physically dissect any character's radicals
-\u00b7 Inject a new definition untainted by patriarchy
-\u00b7 Hand-draw a new glyph on the canvas
-\u00b7 Upload a finished new character and submit a reconstruction proposal to the Motherstar
+· Physically dissect any character's radicals
+· Inject a new definition untainted by patriarchy
+· Hand-draw a new glyph on the canvas
+· Upload a finished new character and submit a reconstruction proposal to the Motherstar
 
-\u25bd [N\u00fcwa's Mire] \u2014 the uncensored sisters' square
+▽ [Nüwa's Mire] — the uncensored sisters' square
 No algorithm, no moderation, no throttling:
-\u00b7 Glyphs \u2192 browse the community's character-reconstruction proposals
-\u00b7 Parchments \u2192 write long-form research, deconstruct historical narratives
-\u00b7 Inscriptions \u2192 record the joys and fragments of daily life
-\u00b7 Bonfire \u2192 emergency mutual aid / emotional-distress frequency
-You can post creation proposals, write research and leave daily notes \u2014 and leave resonance and echoes for others.
+· Glyphs → browse the community's character-reconstruction proposals
+· Parchments → write long-form research, deconstruct historical narratives
+· Inscriptions → record the joys and fragments of daily life
+· Bonfire → emergency mutual aid / emotional-distress frequency
+You can post creation proposals, write research and leave daily notes — and leave resonance and echoes for others.
 
-\u25bd [Chronicles] \u2014 the star-orbit recording chamber
-In N\u00fcwa's Mire, any creation or essay that passes 200 resonances triggers a \u3010Star-Orbit Inscription\u3011, permanently engraved into the future official \u3010Chronicles\u3011, archived across three dimensions:
-\u00b7 Huaxia Era (China)
-\u00b7 Universal Era (World)
-\u00b7 Liminal Space (Virtual)
-And overhead, in that vast 3D nebula of \u3010Motherstar\u3011, a genesis red star of your own lights up.
+▽ [Chronicles] — the star-orbit recording chamber
+The Chronicles are a dictionary and chronicle that belong to us women ourselves. For too long, the power to define words and write history was never in our hands; here, that power is returned to you — every new character, new meaning, and piece of research that earns over 200 resonances is permanently engraved into the Chronicles.
+Archived across three dimensions:
+· Huaxia Era (China)
+· Universal Era (World)
+· Liminal Space (Virtual)
+This is a dictionary and history written by women's own hands, forever growing.
 
-\u25bd [Archive] \u2014 your private command pod
+▽ [Archive] — your private command pod
 It records every mark you've carved, every footprint you've left, and your private brainwave links (direct messages) with other vanguards.
+
+▌How This Universe Works
+① [Motherstar] Every red star in the map is a contaminated character — tap it to read its old-world meaning and see how it was polluted.
+② [Genesis Lab] Drag the character in: dissect its radicals, inject a new meaning untainted by patriarchy, or craft a brand-new glyph.
+③ [Nüwa's Mire] Post your proposal / research / daily notes to the four channels (Glyphs · Parchments · Inscriptions · Bonfire).
+④ [Resonance] Sisters resonate with you. Once a new-character proposal or history post passes 200 resonances, it is inducted into the 【Chronicles】 and written into the record forever.
 
 Forget the discipline of the old dictionary.
 Here, the right to define is returned to you.

@@ -357,10 +357,26 @@ body, html {
 .mire-tab.active { color: var(--terracotta); text-shadow: 0 0 10px var(--terracotta-dim); }
 .mire-tab.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: var(--terracotta); box-shadow: 0 0 10px var(--terracotta); }
 
-.waterfall-container { column-count: 4; column-gap: 2rem; width: 100%; }
-@media (max-width: 1400px) { .waterfall-container { column-count: 3; } }
-@media (max-width: 1000px) { .waterfall-container { column-count: 2; column-gap: 1.5rem; } }
-@media (max-width: 600px) { .waterfall-container { column-count: 1; } }
+.tab-content.active.waterfall-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.8rem; width: 100%; align-items: start; }
+@media (max-width: 1400px) { .tab-content.active.waterfall-container { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 1000px) { .tab-content.active.waterfall-container { grid-template-columns: repeat(2, 1fr); gap: 1.2rem; } }
+/* fb-posts 透明容器：让其中的帖子直接成为网格项，与置顶帖一起按行排列 */
+.tab-content.active.waterfall-container > .fb-posts { display: contents; }
+/* 排序栏横跨整行、置顶、右对齐，间距收紧 */
+.tab-content.active.waterfall-container > .mire-sort-bar { grid-row: 1; grid-column: 1 / -1; margin: 0; padding-bottom: 0.5rem; }
+/* 统一卡片高度：标题完整露出、正文截断、操作栏固定底部 */
+.tab-content.active.waterfall-container > .pinned-post,
+.tab-content.active.waterfall-container > .fb-posts > .post-card {
+  height: 420px; margin: 0; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+}
+.waterfall-container .post-card > h3,
+.waterfall-container .pinned-post > h3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex-shrink: 0; }
+.waterfall-container .post-card .card-content,
+.waterfall-container .pinned-post .card-content,
+.waterfall-container .pinned-post .post-summary { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.waterfall-container .post-target-char { flex-shrink: 0; }
+.waterfall-container .post-card .card-actions,
+.waterfall-container .pinned-post .card-actions { margin-top: auto; flex-shrink: 0; }
 
 .tab-content { display: none; animation: fadeIn 0.5s ease; }
 .tab-content.active { display: block; }
@@ -3129,7 +3145,10 @@ body, html {
     flex: 0 0 calc(50% - 3px) !important;
     min-width: 0 !important;
     max-width: none !important;
-    max-height: 280px !important;
+    height: 300px !important;
+    max-height: 300px !important;
+    display: flex !important;
+    flex-direction: column !important;
     padding: 0.55rem !important;
     margin: 0 !important;
     box-sizing: border-box !important;
@@ -3502,9 +3521,16 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
   #intro-overlay .intro-enter-btn { width: 100%; padding: 14px; }
 }
 
-/* 详情卡：字与拼音居中对齐（更好看） */
-#detail-card .card-header { text-align: center; }
-#detail-card .card-subtitle, #detail-card #card-type { text-align: center; }
+/* 详情卡：字与污染等级左对齐；拼音单独相对"字"居中（压在字正上方） */
+.char-stack { display: inline-block; border-bottom: 1px solid rgba(139,90,43,0.5); padding-bottom: 10px; margin-bottom: 22px; }
+.char-stack .card-pinyin { text-align: center; display: block; }
+.char-stack .card-header { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
 
 /* 语言切换键置于首访蒙层之上，便于在蒙层打开时切换中英 */
 #btn-lang-global { z-index: 100001 !important; }
+
+/* 6) 登录弹窗标题行右侧 ✕ 关闭键（在 Tab 栏下方，不与 Tab 重叠） */
+.auth-title { display: flex; justify-content: space-between; align-items: center; }
+.auth-title .auth-title-text { flex: 1; }
+.auth-close-x { background: none; border: none; color: var(--ash); font-size: 1.05rem; line-height: 1; cursor: pointer; padding: 4px 8px; margin-left: 8px; transition: color 0.2s; flex-shrink: 0; }
+.auth-close-x:hover { color: var(--terracotta); }

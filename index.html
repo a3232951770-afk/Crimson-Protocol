@@ -80,8 +80,7 @@
                 <div class="close-btn">✕</div>
                 <button class="star-nav-arrow star-nav-left" onclick="window.navigateStarCard(-1)">‹</button>
                 <button class="star-nav-arrow star-nav-right" onclick="window.navigateStarCard(1)">›</button>
-                <div class="card-pinyin" id="card-pinyin"></div>
-                <div class="card-header" id="card-title">嫌</div>
+                <div class="char-stack"><div class="card-pinyin" id="card-pinyin"></div><div class="card-header" id="card-title">嫌</div></div>
                 <div class="card-subtitle" id="card-type">旧世字典释义 · 污染等级 IV</div>
                 <div class="redacted-text" id="card-desc" onclick="this.classList.add('revealed')">
                     嫌，怨也。从女，兼声。本义为厌恶、猜忌。常用于贬义女性特质。
@@ -677,7 +676,7 @@
                 <button class="auth-tab" data-panel="login" onclick="window.CrimsonAuth.showPanel('login')">接入协议（登录）</button>
             </div>
             <div id="auth-panel-login" class="auth-panel">
-                <div class="auth-title">[ 赤字协议 ] <span>身份接入</span></div>
+                <div class="auth-title"><span class="auth-title-text">[ 赤字协议 ] <span>身份接入</span></span><button class="auth-close-x" onclick="window.closeAuthModal()" title="关闭">✕</button></div>
                 <div class="auth-terminal-lines">
                     <div>> 检测到未授权节点。</div>
                     <div id="auth-err-login" class="auth-err" style="display:none;"></div>
@@ -689,7 +688,7 @@
                 <button class="auth-submit-btn" onclick="window.CrimsonAuth.login()">[ 接入协议 ]</button>
             </div>
             <div id="auth-panel-register" class="auth-panel active">
-                <div class="auth-title">[ 赤字协议 ] <span>创建节点</span></div>
+                <div class="auth-title"><span class="auth-title-text">[ 赤字协议 ] <span>创建节点</span></span><button class="auth-close-x" onclick="window.closeAuthModal()" title="关闭">✕</button></div>
                 <div class="auth-terminal-lines">
                     <div>> 正在初始化新考古学家档案...</div>
                     <div id="auth-err-reg" class="auth-err" style="display:none;"></div>
