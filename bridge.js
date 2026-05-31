@@ -918,42 +918,59 @@ async function handleForge() {
           // 2. 画freehand笔画
           ctx.drawImage(fc, 0, 0, compCanvas.width, compCanvas.height);
           
-          // 3. 画所有拖入的元素：上传图片按图片画，偏旁按文字画（排除删除按钮"×"等控件）
+          // 3. 画所有拖入的元素：忠实复刻画板里的 transform（含宽/高拉伸），做到所见即所得
           const radicals = container.querySelectorAll('.dropped-radical');
           radicals.forEach(rad => {
             const radRect = rad.getBoundingClientRect();
             const x = radRect.left - rect.left;
             const y = radRect.top - rect.top;
-            const w = radRect.width, h = radRect.height;
-            // 上传的图片 → 等比完整画进框内（contain：不裁剪、不变形、显示全貌）
+            const w = radRect.width, h = radRect.height;   // 已含 scale 后的实际显示尺寸
+            // 读取画板里独立的宽、高拉伸比例（拖宽改 scaleX，拖高改 scaleY）
+            const scaleX = parseFloat(rad.dataset.scaleX) || 1;
+            const scaleY = parseFloat(rad.dataset.scaleY) || 1;
+            // 反推未缩放的基准盒子尺寸，使绘制顺序与 DOM 的 transform: scale() 一致
+            const baseW = scaleX ? w / scaleX : w;
+            const baseH = scaleY ? h / scaleY : h;
+            const cx = x + w / 2, cy = y + h / 2;          // 盒子中心（CSS transform-origin: center）
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(scaleX, scaleY);   // 与画板完全相同的各向异性拉伸，宽高分别生效
+
+            // 上传的图片 → 先在基准盒子内 contain，再随盒子一起被拉伸（对应 DOM 的 object-fit:contain + transform）
             const imgEl = rad.querySelector('img');
             if (imgEl) {
               try {
                 const iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;
                 if (iw && ih) {
-                  const sc = Math.min(w / iw, h / ih);
+                  const sc = Math.min(baseW / iw, baseH / ih);
                   const dw = iw * sc, dh = ih * sc;
-                  ctx.drawImage(imgEl, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+                  ctx.drawImage(imgEl, -dw / 2, -dh / 2, dw, dh);
                 }
               } catch(err) {}
+              ctx.restore();
               return;
             }
-            // 文字偏旁 → 只取偏旁本身（排除 ×、缩放手柄等控件）
+
+            // 文字偏旁 → 取偏旁本身（排除 ×、缩放手柄等控件），按画板真实基准字号绘制
             let text = rad.querySelector('.radical-text')?.textContent?.trim();
             if (!text) {
               const clone = rad.cloneNode(true);
               clone.querySelectorAll('.control-delete,.control-handle,img').forEach(n => n.remove());
               text = clone.textContent.trim();
             }
-            if (!text) return;
-            const scaleX = parseFloat(rad.dataset.scaleX) || 1;
-            const fontSize = Math.round(96 * scaleX);
-            ctx.save();
-            ctx.font = `900 ${fontSize}px "Noto Serif SC", serif`;
+            if (!text) { ctx.restore(); return; }
+            const span = rad.querySelector('.radical-text');
+            let baseFont = 96;   // 默认 6rem = 96px
+            if (span) {
+              const fs = parseFloat(getComputedStyle(span).fontSize);
+              if (fs) baseFont = fs;
+            }
+            ctx.font = `900 ${baseFont}px "Noto Serif SC", serif`;
             ctx.fillStyle = '#cc4e3c';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(text, x + w / 2, y + h / 2);
+            ctx.fillText(text, 0, 0);   // 在已 translate+scale 的坐标系里居中绘制
             ctx.restore();
           });
           
