@@ -378,6 +378,25 @@ body, html {
 .waterfall-container .post-card .card-actions,
 .waterfall-container .pinned-post .card-actions { margin-top: auto; flex-shrink: 0; }
 
+/* === 羊皮卷卡片：标题最多3行 + 去正文摘要 + 收录/响应底栏永久常驻（只作用于羊皮卷） === */
+/* 略加高，给「3行标题 + 配图 + 底栏」留出舒展空间；提权覆盖上面的 420px */
+.tab-content.active.waterfall-container > .fb-posts > .post-card.card-parchment { height: 460px; }
+/* 中间区独占剩余高度，超出自身截断，绝不外溢挤压底栏 */
+.card-parchment .card-body-wrap {
+  flex: 1 1 auto; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+/* 标题进了中间区，重新限制最多 3 行（短标题完整显示，超长截断） */
+.card-parchment .card-body-wrap h3 {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; flex-shrink: 0; margin-bottom: 1rem;
+}
+.card-parchment .card-body-wrap .post-method-badge { flex-shrink: 0; }
+/* 空间紧张时配图优先收缩，永远不会把底栏顶出可视区 */
+.card-parchment .card-body-wrap img { flex: 0 1 auto; min-height: 0; }
+/* 底栏不参与压缩，稳定钉在卡片底部 */
+.card-parchment .card-actions { flex-shrink: 0; }
+
 .tab-content { display: none; animation: fadeIn 0.5s ease; }
 .tab-content.active { display: block; }
 

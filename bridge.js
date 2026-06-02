@@ -577,18 +577,13 @@ function renderPosts(cont, posts, type) {
     const dimTag = p.dimension ? `<span class="post-method-badge" style="color:#c8860a;border-color:rgba(200,134,10,0.3);">${dimLabels[p.dimension]||p.dimension}</span>` : '';
     const imgHtml = p.postImage ? `<img src="${p.postImage}" style="width:100%;max-height:180px;object-fit:cover;border:1px solid rgba(204,78,60,0.2);margin:0.5rem 0;" onclick="event.stopPropagation();window.openLightbox?.('${p.postImage}')"/>` : '';
     const canvasHtml = p.canvasImage ? `<div style="font-size:0.65rem;color:var(--ash);text-align:center;margin-top:4px;">[ 📷 含画板截图 ]</div>` : '';
-    return `
-      <div class="post-card ${typeClass}" data-type="${type}" data-post-id="${p.id}" onclick="window.openFbPostDetail('${p.id}')">
+    // 共用片段：作者/时间栏 与 收录/响应底栏（各 tab 一致）
+    const metaHtml = `
         <div class="card-meta">
           <span class="card-author" data-author-id="${esc(p.authorId||'')}" data-author-name="${esc(p.authorName||'')}">${esc(p.authorName||'')}</span>
           <span class="card-stats">${t}</span>
-        </div>
-        ${p.targetChar?`<div class="post-target-char">${esc(p.targetChar)}</div>`:''}
-        ${dimTag}
-        ${p.title?`<h3>${esc(p.title)}</h3>`:''}
-        ${imgHtml}
-        <div class="card-content">${esc(p.content||'').substring(0,120)}${(p.content||'').length>120?'...':''}</div>
-        ${canvasHtml}
+        </div>`;
+    const actionsHtml = `
         <div class="card-actions" onclick="event.stopPropagation()">
           <div class="action-group">
             <button class="action-btn like ${_votedPosts.has(p.id)?'active':''}" onclick="fbLike('${p.id}',this)" ${_votedPosts.has(p.id)?'disabled style="opacity:0.5"':''}>❤ ${window._lang==='en'?'Archive':'收录'} <span>${p.votes||0}</span></button>
@@ -596,7 +591,35 @@ function renderPosts(cont, posts, type) {
           <button class="action-btn comment" onclick="window.openFbPostDetail('${p.id}')">💬 ${window._lang==='en'?'Respond':'响应'} <span>${p.comments||0}</span></button>
           <button class="report-btn" onclick="fbReport('${p.id}')" title="${window._lang==='en'?'Report':'举报'}">⚑</button>
           ${isAdmin?`<button class="admin-delete-btn" onclick="fbDelete('${p.id}',this.closest('.post-card'))">🗑</button>`:''}
+        </div>`;
+
+    // 羊皮卷专属：标题(最多3行)+配图 包进可伸缩中间区，去掉正文摘要；底栏结构性钉死在底部，永远可见
+    if (type === 'parchment') {
+      return `
+      <div class="post-card ${typeClass}" data-type="${type}" data-post-id="${p.id}" onclick="window.openFbPostDetail('${p.id}')">
+        ${metaHtml}
+        <div class="card-body-wrap">
+          ${p.targetChar?`<div class="post-target-char">${esc(p.targetChar)}</div>`:''}
+          ${dimTag}
+          ${p.title?`<h3>${esc(p.title)}</h3>`:''}
+          ${imgHtml}
+          ${canvasHtml}
         </div>
+        ${actionsHtml}
+      </div>`;
+    }
+
+    // 其他分区（凿字库 / 赤陶痕 / 篝火阵）维持原结构
+    return `
+      <div class="post-card ${typeClass}" data-type="${type}" data-post-id="${p.id}" onclick="window.openFbPostDetail('${p.id}')">
+        ${metaHtml}
+        ${p.targetChar?`<div class="post-target-char">${esc(p.targetChar)}</div>`:''}
+        ${dimTag}
+        ${p.title?`<h3>${esc(p.title)}</h3>`:''}
+        ${imgHtml}
+        <div class="card-content">${esc(p.content||'').substring(0,120)}${(p.content||'').length>120?'...':''}</div>
+        ${canvasHtml}
+        ${actionsHtml}
       </div>`;
   }).join('');
   
