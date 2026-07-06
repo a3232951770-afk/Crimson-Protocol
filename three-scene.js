@@ -141,10 +141,11 @@ function openCard(star) {
         const CC = {stigma:'#ff6b6b',institution:'var(--terracotta)',matrilineal:'var(--amber)',reclaim:'#5a9e6f',neutral:'var(--bone)'};
         titleEl.style.color = CC[cd.category]||'var(--terracotta)';
         typeEl.innerText = `${CL[cd.category]||''} · ${isEn?'Pollution':'污染等级'} ${cd.pollutionLevel}/5`;
-        const sw = (isEn && en) ? en.s : (cd.shuowen||'');
-        const md = (isEn && en) ? en.m : (cd.modern||'');
-        const dict = window.formatDictBlock ? window.formatDictBlock(star.text, isEn) : '';
-        desc.innerText = `${[sw, md].filter(Boolean).join('\n')}${dict}`;
+        const sw = (isEn && en && en.s) ? en.s : (cd.shuowen||'');
+        const md = (isEn && en && en.m) ? en.m : (cd.modern||'');
+        const head = [sw, md].filter(Boolean).join('\n');
+        const dict = window.formatDictBlock ? window.formatDictBlock(star.text, isEn, { lead: !!head }) : '';
+        desc.innerText = `${head}${dict}`;
     } else {
         if (pyEl) pyEl.innerText = '';
         titleEl.style.color = star.type==='amber'?'var(--amber)':'var(--terracotta)';

@@ -157,6 +157,11 @@ body, html {
 #detail-card .card-header { font-size: 3rem; color: var(--terracotta); margin-top: 0; text-shadow: 0 0 15px rgba(204, 78, 60, 0.6); font-family: 'Songti SC', 'SimSun', serif; }
 #detail-card .card-subtitle { color: #aaa; font-size: 0.85rem; margin-bottom: 25px; letter-spacing: 1.5px; font-family: var(--font-sans); }
 .redacted-text { background-color: #000; color: #000; padding: 15px; cursor: pointer; transition: all 0.3s; user-select: none; line-height: 1.9; font-size: 1.05rem; border-radius: 2px; position: relative; box-shadow: inset 0 0 15px rgba(0,0,0,0.9); min-height: 60px; font-family: var(--font-serif); }
+/* 释义框内部滚动：长释义（如「好」）不再顶穿卡片 */
+#card-desc { max-height: 42vh; overflow-y: auto; }
+#card-desc::-webkit-scrollbar { width: 6px; }
+#card-desc::-webkit-scrollbar-track { background: transparent; }
+#card-desc::-webkit-scrollbar-thumb { background: rgba(204,78,60,0.5); border-radius: 3px; }
 .redacted-text::before { content: ' '; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(20,20,20,0.8) 10px, rgba(20,20,20,0.8) 20px); pointer-events: none; opacity: 0.5; }
 /* 改动1：常驻呼吸提示 — 居中显示在黑条正中央，缓慢脉动 */
 .redacted-text::after {
@@ -2370,6 +2375,8 @@ body, html {
   .star-nav-right { right: 4px !important; }
   #detail-card .card-header { font-size: 3.2rem !important; line-height: 1 !important; }
   #detail-card .card-subtitle { font-size: 0.75rem !important; }
+  /* 移动端整卡已可滚动，释义框取消内部滚动，避免嵌套滚动 */
+  #card-desc { max-height: none; overflow: visible; }
 
   /* ---- 编年史 ---- */
   /* 字典/史记 顶部切换按钮：从浮动改为固定不挡内容 */

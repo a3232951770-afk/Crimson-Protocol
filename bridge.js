@@ -29,22 +29,37 @@ import {
 import { DICT_DEFS } from './dict-defs.js';
 window.DICT_DEFS = DICT_DEFS;
 
-// 释义块格式化：把 dict-defs 的义项数组渲染成编号文本，接在 modern 之下。
-// 「（考释）/（Note）」行不编号；无数据返回空串。
-window.formatDictBlock = function(char, isEn){
+// dict-defs 义项 → 编号行数组；「（考释）/（Note）」行不编号；无数据返回 []。
+window._dictLines = function(char, isEn){
   const d = (window.DICT_DEFS || {})[char];
-  if (!d) return '';
+  if (!d) return [];
   const arr = isEn ? (Array.isArray(d.en) && d.en.length ? d.en : d.zh) : d.zh;
-  if (!Array.isArray(arr) || !arr.length) return '';
+  if (!Array.isArray(arr) || !arr.length) return [];
   let n = 0;
-  const lines = arr.map(s => {
-    const isNote = /^（考释）/.test(s) || /^\(Note\)/.test(s);
-    if (isNote) return s;
+  return arr.map(s => {
+    if (/^（考释）/.test(s) || /^\(Note\)/.test(s)) return s;
     n += 1;
     return n + '. ' + s;
   });
+};
+
+// 纯文本释义块（innerText 用）。opts.lead=false 时不加前导空行（新字无说文/旧义时用）。
+window.formatDictBlock = function(char, isEn, opts){
+  opts = opts || {};
+  const lines = window._dictLines(char, isEn);
+  if (!lines.length) return '';
   const label = isEn ? 'Definitions' : '释义';
-  return '\n\n' + label + '\n' + lines.join('\n');
+  const lead = opts.lead === false ? '' : '\n\n';
+  return lead + label + '\n' + lines.join('\n');
+};
+
+// HTML 释义块（innerHTML 用），redacted=true 时套用污染遮盖样式。
+window.formatDictHtml = function(char, isEn, redacted){
+  const lines = window._dictLines(char, isEn);
+  if (!lines.length) return '';
+  const label = isEn ? 'Definitions' : '释义';
+  const cls = redacted ? ' class="redacted"' : '';
+  return `<span${cls}>${[label, ...lines].join('<br>')}</span>`;
 };
 
 // ==========================================
@@ -335,10 +350,11 @@ function injectStarFilter() {
     if (typeEl) typeEl.innerText = `${catLabels[data.category]||''} · ${isEn?'Pollution':'污染等级'} ${data.pollutionLevel}/5`;
     if (descEl) {
       descEl.classList.remove('revealed');
-      const sw = (isEn && en) ? en.s : (data.shuowen||'');
-      const md = (isEn && en) ? en.m : (data.modern||'');
-      const dict = window.formatDictBlock ? window.formatDictBlock(char, isEn) : '';
-      descEl.innerText = `${[sw, md].filter(Boolean).join('\n')}${dict}`;
+      const sw = (isEn && en && en.s) ? en.s : (data.shuowen||'');
+      const md = (isEn && en && en.m) ? en.m : (data.modern||'');
+      const head = [sw, md].filter(Boolean).join('\n');
+      const dict = window.formatDictBlock ? window.formatDictBlock(char, isEn, { lead: !!head }) : '';
+      descEl.innerText = `${head}${dict}`;
     }
     card.classList.add('active');
     
@@ -386,14 +402,15 @@ function overrideTerminalSearch() {
           ? { stigma:'Derogatory', institution:'Institutional', matrilineal:'Matrilineal', reclaim:'Reclaimed', neutral:'Neutral' }
           : { stigma:'贬义字', institution:'制度字', matrilineal:'母系遗存', reclaim:'褒义字', neutral:'中性字' };
         const enDef = (typeof CHAR_EN !== 'undefined') ? CHAR_EN[data.char] : null;
-        const swText = (isEn && enDef && enDef.s) ? enDef.s : data.shuowen;
-        const mdText = (isEn && enDef && enDef.m) ? enDef.m : data.modern;
+        const swText = (isEn && enDef && enDef.s) ? enDef.s : (data.shuowen || '');
+        const dictText = window._dictLines ? window._dictLines(data.char, isEn).join('\n') : '';
+        const mdText = dictText || ((isEn && enDef && enDef.m) ? enDef.m : (data.modern || ''));
         text = `THE CRIMSON PROTOCOL\nARCHIVE NO. ${Math.floor(Math.random()*90000+10000)}\n`
              + `\n【 ${isEn?'Character':'字符'}：${data.char} / ${data.pinyin} 】`
              + `\n【 ${isEn?'Category':'分类'}：${catNames[data.category]||data.category} 】`
              + `\n【 ${isEn?'Pollution':'污染等级'}：${bars} ${data.pollutionLevel}/5 】`
-             + `\n\n${isEn?'Shuowen Jiezi (original):':'《说文解字》原文：'}\n${swText}`
-             + `\n\n${isEn?'Modern definition:':'现代字典义：'}\n${mdText}`;
+             + (swText ? `\n\n${isEn?'Shuowen Jiezi (original):':'《说文解字》原文：'}\n${swText}` : '')
+             + (mdText ? `\n\n${isEn?'Modern definition:':'现代字典义：'}\n${mdText}` : '');
         window._currentCharData = data;
         const catGroup = document.getElementById('new-word-category-group');
         if (catGroup) catGroup.style.display = 'none';
@@ -1336,22 +1353,27 @@ function injectDictionaryData() {
       if (uiChar) uiChar.innerText = char;
       if (uiMeta) uiMeta.innerHTML = `ARCHIVE · ${catLabels[data.category]||''} · ${isEn?'Pollution':'污染等级'} ${data.pollutionLevel}/5`;
       if (uiOldDef) {
-        const sw = (isEn && en) ? en.s : data.shuowen;
-        const md = (isEn && en) ? en.m : data.modern;
-        uiOldDef.innerHTML = `<span class="redacted">${sw}</span><br><br><span class="redacted">${md}</span>`;
+        const sw = (isEn && en && en.s) ? en.s : (data.shuowen || '');
+        const md = (isEn && en && en.m) ? en.m : (data.modern || '');
+        const dictHtml = window.formatDictHtml ? window.formatDictHtml(char, isEn, true) : '';
+        const parts = [];
+        if (sw) parts.push(`<span class="redacted">${sw}</span>`);
+        if (md) parts.push(`<span class="redacted">${md}</span>`);
+        if (dictHtml) parts.push(dictHtml);
+        uiOldDef.innerHTML = parts.join('<br><br>');
       }
 
       const proposalsList = document.getElementById('ui-proposals-list');
       if (proposalsList) {
-        const analysisText = (isEn && en) ? en.a : (data.analysis || '');
-        let proposalsHtml = `
+        const analysisText = (isEn && en && en.a) ? en.a : (data.analysis || '');
+        let proposalsHtml = analysisText ? `
           <div class="proposal-item">
             <div class="proposal-meta">
               <span>> ${isEn?'Proposer':'提议者'}：<span class="proposal-author">@系统解析</span></span>
               <span>[ ${isEn?'Deep Analysis':'深度分析'} ]</span>
             </div>
             <div class="proposal-text">${analysisText}</div>
-          </div>`;
+          </div>` : '';
         proposalsList.innerHTML = proposalsHtml;
         
         // 只加载已升入字典的提案（≥200票）
@@ -1659,6 +1681,52 @@ const UI_EN = {
 
 // 字典字段英文翻译（关键字段）
 const CHAR_EN = {
+  '女':{s:'A woman. Pictographic.'},
+  '婊':{s:'Not recorded in the Shuowen; a later vernacular character. 表 originally meant the outer layer of a garment.'},
+  '妨':{s:'To harm. From 女 (woman), 方 phonetic.'},
+  '佞':{s:'Glib flattery joined to talent. From 女 (woman), with 信 abbreviated.'},
+  '妪':{s:'A mother. From 女 (woman), 区 phonetic.'},
+  '媸':{s:'A later character, growing common after the Jin dynasty. It means ugly, the opposite of 妍 (fair).'},
+  '媱':{s:'A graceful, curving beauty. From 女 (woman), 䍃 phonetic.'},
+  '妃':{s:'A match, a mate. From 女 (woman), 己 phonetic.'},
+  '嫔':{s:'To serve, to submit. From 女 (woman), 宾 phonetic.'},
+  '寡':{s:'Few, scant.'},
+  '婴':{s:'A neck ornament. From 女 (woman) and 賏, with 賏 also giving the sound.'},
+  '嫡':{s:'The principal wife. From 女 (woman), 啇 phonetic.'},
+  '庶':{s:'The many under one roof.'},
+  '婉':{s:'Compliant, gentle. From 女 (woman), 宛 phonetic.'},
+  '娴':{s:'Refined, elegant. From 女 (woman), 闲 phonetic.'},
+  '姿':{s:'Bearing, manner. From 女 (woman), 次 phonetic.'},
+  '娟':{s:'Graceful bearing (婵娟). From 女 (woman), 肙 phonetic.'},
+  '婷':{s:'A later character, mostly denoting a pleasing complexion and a graceful figure.'},
+  '婀':{s:'A later character, usually paired with 娜 as 婀娜 (lissome).'},
+  '娜':{s:'A later character.'},
+  '姝':{s:'Fair, fine. From 女 (woman), 朱 phonetic.'},
+  '娉':{s:'To inquire, as in a marriage proposal. From 女 (woman), 甹 phonetic.'},
+  '姣':{s:'Fair, comely. From 女 (woman), 交 phonetic.'},
+  '娆':{s:'Vexing, harassing. From 女 (woman), 尧 phonetic.'},
+  '淑':{s:'Clear and limpid.'},
+  '始':{s:'A woman\'s beginning. From 女 (woman), 台 phonetic.'},
+  '妊':{s:'To be pregnant. From 女 (woman), 壬 phonetic.'},
+  '如':{s:'To follow, to comply. From 女 (woman) and 口 (mouth).'},
+  '娠':{s:'The stirring of a pregnant woman\'s body. From 女 (woman), 辰 phonetic.'},
+  '娩':{s:'To bear a child and be delivered of the body. From 女 (woman), 免 phonetic.'},
+  '奶':{s:'Originally the breast; extended to one who gives milk (a mother or wet nurse), and further to a grandmother.'},
+  '姨':{s:'A wife\'s sisters of the same origin are called 姨. From 女 (woman), 夷 phonetic.'},
+  '婶':{s:'The wife of one\'s father\'s younger brother.'},
+  '嫂':{s:'An elder brother\'s wife. From 女 (woman), 叟 phonetic.'},
+  '嬷':{s:'A later character, mostly denoting an old woman or a woman doing menial household work, such as a wet nurse.'},
+  '姥':{s:'A later character.'},
+  '婆':{s:'An old woman. From 女 (woman), 波 phonetic.'},
+  '嬖':{s:'A favorite, one who is doted on. From 女 (woman), 辟 phonetic.'},
+  '嬉':{s:'Joy, play. From 女 (woman), 喜 phonetic.'},
+  '威':{s:'A mother-in-law. From 女 (woman) and 戌.'},
+  '妿':{s:'A female teacher.'},
+  '媢':{s:'A husband\'s jealousy of his wife. From 女 (woman), 冒 phonetic. One source: to eye one another.'},
+  '嫚':{s:'To insult and slight. From 女 (woman), 曼 phonetic.'},
+  '姦':{s:'Private, selfish. From three 女 (women). One source: deceit, and lewdness.'},
+  '嬾':{s:'Slack, idle; one source: lying down. From 女 (woman), 賴 phonetic.'},
+  '㜯':{s:'Joyful delight.'},
   '妒':{s:'Jealousy of wife toward husband. From 女 (woman), 户 (door) phonetic.',m:'Jealousy, envy — negative emotion attributed exclusively to women.',a:'Shuowen opens by binding jealousy as an innate female trait. The same competitive emotion in male characters is called "ambition."'},
   '嫉':{s:'To harm the worthy. From 女 (woman), 疾 (illness) phonetic.',m:'Envy and resentment toward those who surpass oneself.',a:'"To harm the worthy" — attributed to women. 疾 means illness: a woman\'s talent is defined as a disease.'},
   '奸':{s:'To violate. From three 女 (women).',m:'①Sexual assault ②Treacherous, cunning.',a:'Three women stacked = immorality. The character construction itself is violence — equating female existence with transgression.'},
@@ -1853,25 +1921,28 @@ function updateDictLang() {
   
   const uiOldDef = document.getElementById('ui-old-def');
   if (uiOldDef) {
-    if (isEn && en) {
-      uiOldDef.innerHTML = `<span class="redacted">${en.s}</span><br><br><span class="redacted">${en.m}</span>`;
-    } else {
-      uiOldDef.innerHTML = `<span class="redacted">${data.shuowen}</span><br><br><span class="redacted">${data.modern}</span>`;
-    }
+    const sw = (isEn && en && en.s) ? en.s : (data.shuowen || '');
+    const md = (isEn && en && en.m) ? en.m : (data.modern || '');
+    const dictHtml = window.formatDictHtml ? window.formatDictHtml(char, isEn, true) : '';
+    const parts = [];
+    if (sw) parts.push(`<span class="redacted">${sw}</span>`);
+    if (md) parts.push(`<span class="redacted">${md}</span>`);
+    if (dictHtml) parts.push(dictHtml);
+    uiOldDef.innerHTML = parts.join('<br><br>');
   }
   const proposalsList = document.getElementById('ui-proposals-list');
   if (proposalsList) {
-    const analysisText = (isEn && en) ? en.a : (data.analysis || '');
+    const analysisText = (isEn && en && en.a) ? en.a : (data.analysis || '');
     const labelProposer = isEn ? '> Proposer:' : '> 提议者：';
     const labelAnalysis = isEn ? '[ Deep Analysis ]' : '[ 深度分析 ]';
-    proposalsList.innerHTML = `
+    proposalsList.innerHTML = analysisText ? `
       <div class="proposal-item">
         <div class="proposal-meta">
           <span>${labelProposer} <span class="proposal-author">@系统解析</span></span>
           <span>${labelAnalysis}</span>
         </div>
         <div class="proposal-text">${analysisText}</div>
-      </div>`;
+      </div>` : '';
   }
 }
 
