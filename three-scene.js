@@ -143,7 +143,8 @@ function openCard(star) {
         typeEl.innerText = `${CL[cd.category]||''} · ${isEn?'Pollution':'污染等级'} ${cd.pollutionLevel}/5`;
         const sw = (isEn && en) ? en.s : (cd.shuowen||'');
         const md = (isEn && en) ? en.m : (cd.modern||'');
-        desc.innerText = `${sw}\n${md}`;
+        const dict = window.formatDictBlock ? window.formatDictBlock(star.text, isEn) : '';
+        desc.innerText = `${[sw, md].filter(Boolean).join('\n')}${dict}`;
     } else {
         if (pyEl) pyEl.innerText = '';
         titleEl.style.color = star.type==='amber'?'var(--amber)':'var(--terracotta)';

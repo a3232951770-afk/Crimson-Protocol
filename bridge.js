@@ -26,6 +26,27 @@ import {
   getAnnouncements
 } from './firebase.js';
 
+import { DICT_DEFS } from './dict-defs.js';
+window.DICT_DEFS = DICT_DEFS;
+
+// 释义块格式化：把 dict-defs 的义项数组渲染成编号文本，接在 modern 之下。
+// 「（考释）/（Note）」行不编号；无数据返回空串。
+window.formatDictBlock = function(char, isEn){
+  const d = (window.DICT_DEFS || {})[char];
+  if (!d) return '';
+  const arr = isEn ? (Array.isArray(d.en) && d.en.length ? d.en : d.zh) : d.zh;
+  if (!Array.isArray(arr) || !arr.length) return '';
+  let n = 0;
+  const lines = arr.map(s => {
+    const isNote = /^（考释）/.test(s) || /^\(Note\)/.test(s);
+    if (isNote) return s;
+    n += 1;
+    return n + '. ' + s;
+  });
+  const label = isEn ? 'Definitions' : '释义';
+  return '\n\n' + label + '\n' + lines.join('\n');
+};
+
 // ==========================================
 // 🚀 初始化入口
 // ==========================================
@@ -316,7 +337,8 @@ function injectStarFilter() {
       descEl.classList.remove('revealed');
       const sw = (isEn && en) ? en.s : (data.shuowen||'');
       const md = (isEn && en) ? en.m : (data.modern||'');
-      descEl.innerText = `${sw}\n${md}`;
+      const dict = window.formatDictBlock ? window.formatDictBlock(char, isEn) : '';
+      descEl.innerText = `${[sw, md].filter(Boolean).join('\n')}${dict}`;
     }
     card.classList.add('active');
     
