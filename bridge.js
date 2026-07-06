@@ -2488,6 +2488,12 @@ function updateAnnouncementBanner() {
 
   const readIds = JSON.parse(localStorage.getItem('crimson_read_announcements') || '[]');
   const unread = _allAnnouncements.find(a => !readIds.includes(a.id));
+  // 用户点 × 关闭后：若已无未读公告，保持隐藏；一旦有新的未读公告，则重新出现
+  if (unread) window._annBannerDismissed = false;
+  if (!unread && window._annBannerDismissed) {
+    banner.style.display = 'none';
+    return;
+  }
   // 优先展示未读那条；若全部已读，则展示最新一条（仍在、仍滚动，只是暗下来）
   const current = unread || _allAnnouncements[0];
 
@@ -2514,6 +2520,8 @@ window.dismissAnnouncement = function() {
   const banner = document.getElementById('announcement-banner');
   const id = banner?.dataset.currentId;
   if (id) markAnnouncementRead(id);
+  window._annBannerDismissed = true;
+  if (banner) banner.style.display = 'none';
   updateAnnouncementBanner();
 };
 
