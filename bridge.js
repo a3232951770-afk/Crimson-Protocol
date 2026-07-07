@@ -3151,7 +3151,8 @@ window.showFirstVisitOverlay = function() {
   const REPO = 'https://github.com/enenmia/feministekeyboard';
   // 临时：直链她的原仓库 ZIP。等你把打包好的版本（含你增补的词 + 改好的 weasel.custom.yaml）
   // 托管到自己的仓库后，把下面这行换成你自己的 ZIP 直链即可。
-  const ZIP = REPO + '/archive/refs/heads/main.zip';
+  // 你的打包版（含增补词 + 已修好的 weasel.custom.yaml），托管在你自己的 Release 上
+  const ZIP = 'https://github.com/a3232951770-afk/Crimson-Protocol/releases/download/v1/feministekeyboard.zip';
 
   // demo 映射（取自 customized.dict.yaml，嫉妒/妨碍置顶）
   const DEMO = [
