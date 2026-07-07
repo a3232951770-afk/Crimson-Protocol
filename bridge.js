@@ -1566,6 +1566,7 @@ function pickLang(obj, key) {
 const UI_EN = {
   // 导航
   '第一母星':'Motherstar', '编年史':'Chronicles', '女娲的泥潭':"Nüwa's Mire", '拓片馆':'Archive',
+  '输入法':'Keyboard',
   '[+] 凿字 / 发帖':'[+] Create',
   // 编年史
   '字典':'Lexicon', '史记':'Timeline', '检索碑文...':'Search inscriptions...',
@@ -3141,3 +3142,194 @@ window.showFirstVisitOverlay = function() {
     overlay.querySelector('#intro-enter-btn').onclick = close;
   } catch (e) { console.warn('intro overlay failed:', e); }
 };
+
+// ============================================================
+// 爱女输入法 · 下载入口弹窗（demo + 四版教程 + 署名致谢）
+// 由谭惠恩（鸟惠）开发的 Feminist eKeyboard，经授权收录
+// ============================================================
+(function () {
+  const REPO = 'https://github.com/enenmia/feministekeyboard';
+  // 临时：直链她的原仓库 ZIP。等你把打包好的版本（含你增补的词 + 改好的 weasel.custom.yaml）
+  // 托管到自己的仓库后，把下面这行换成你自己的 ZIP 直链即可。
+  const ZIP = REPO + '/archive/refs/heads/main.zip';
+
+  // demo 映射（取自 customized.dict.yaml，嫉妒/妨碍置顶）
+  const DEMO = [
+    { o: '嫉妒', py: 'jidu',        r: ['眼红', '忮忌'],       k: '去女字旁', kEn: 'radical removed' },
+    { o: '妨碍', py: 'fangai',      r: ['阻碍', '仿碍'],       k: '去女字旁', kEn: 'radical removed' },
+    { o: '奸诈', py: 'jianzha',     r: ['阴险', '讦诈'],       k: '去女字旁', kEn: 'radical removed' },
+    { o: '妓女', py: 'jinv',        r: ['伎女', '性工作者'],   k: '去女字旁', kEn: 'radical removed' },
+    { o: '婊子', py: 'biaozi',      r: ['男吊子'],             k: '去女字旁', kEn: 'radical removed' },
+    { o: '他',   py: 'ta',          r: ['她', '男也'],         k: '去性别',   kEn: 'de-gendered' },
+    { o: '你',   py: 'ni',          r: ['妳', '男尔'],         k: '去性别',   kEn: 'de-gendered' },
+    { o: '真诚', py: 'zhencheng',   r: ['真娍'],               k: '加女字旁', kEn: 'radical added' },
+    { o: '创意', py: 'chuangyi',    r: ['创嬑'],               k: '加女字旁', kEn: 'radical added' },
+    { o: '善良', py: 'shanliang',   r: ['嫸良'],               k: '加女字旁', kEn: 'radical added' },
+    { o: '尊重', py: 'zunzhong',    r: ['尊媑'],               k: '加女字旁', kEn: 'radical added' },
+    { o: '父组件', py: 'fuzujian',  r: ['母组件'],             k: '彩蛋',     kEn: 'easter egg' },
+  ];
+
+  // 四版教程（中英）。〔PUA〕一律写成「Unicode 私用区（PUA）码位」。
+  const TUT = {
+    win: {
+      zh: `<ol>
+        <li><b>装小狼毫</b>：打开 rime.im，下载「小狼毫（Weasel）」Windows 安装包并运行安装。装完它已注册为系统输入法，桌面不会有快捷方式，这是正常的，它以后台服务加托盘图标的形式存在。</li>
+        <li><b>切到小狼毫，找到托盘图标</b>：按 <code>Win + 空格</code> 循环切换输入法，切到「小狼毫」；或点任务栏右下角中英文语言按钮选它。切过去后，右下角任务栏靠近时钟处会出现小狼毫的小图标；Win11 常把它收进一个向上的「⌃」箭头里，点开才看得到。它不是桌面快捷方式。</li>
+        <li><b>打开用户目录</b>：按 <code>Win + R</code>，输入 <code>%AppData%\\Rime</code>，回车打开用户目录。若打不开或不存在，先去安装目录双击一次 <code>WeaselDeployer.exe</code> 部署，它会把这个目录建出来。</li>
+        <li><b>放入方案文件</b>：下载方案 ZIP 并解压，得到一个文件夹，<b>里面</b>才是真正的方案文件。把这个文件夹<b>里面的所有内容</b>直接放进 <code>%AppData%\\Rime</code>，不要把整个文件夹原样丢进去（多套一层子文件夹 Rime 就加载不到）。同名文件选「替换」。若弹「访问被拒绝／需要权限」并指向 <code>build</code>：先退出小狼毫（托盘右键退出，或任务管理器结束 WeaselServer.exe 与 WeaselDeployer.exe）再重试，或直接跳过 build 不搬（部署时会自动重建）。再把 <code>installation.yaml</code> 删掉，部署时会自动生成适配本机的版本。</li>
+        <li><b>部署</b>：双击 <code>WeaselDeployer.exe</code>（或托盘右键「重新部署」），等约一分钟。</li>
+        <li><b>测试</b>：任意输入框打 <code>jidu</code>，出现女性友好候选即成功。若没变，按 <code>F4</code> 调出方案菜单选中本方案。</li>
+        <li><b>（选做）显示自造字</b>：自造字用了 Unicode 私用区（PUA）码位，需装配套字体才显示，否则是空心方框 □。解压文件夹里打开 <code>fonts</code>，双击 <code>FeministeKeyboard-Regular.ttf</code> 点安装。候选框字体在下载包里已配好（<code>weasel.custom.yaml</code> 指定为 Feminist eKeyboard），装上字体、彻底退出小狼毫再重开即可。这些字只在装了该字体的设备上显示，发到别处会是方框，这是 Unicode 私用区（PUA）码位的机制。</li>
+      </ol>`,
+      en: `<ol>
+        <li><b>Install Weasel</b>: from rime.im, download the Windows installer for 小狼毫 (Weasel) and run it. It registers as a system input method; there is no desktop shortcut (normal) — it lives as a background service plus a tray icon.</li>
+        <li><b>Switch to it, find the tray icon</b>: press <code>Win + Space</code> to cycle input methods to Weasel, or use the taskbar language button. A small Weasel icon then appears at the bottom-right tray (Win11 often hides it under the "⌃" arrow). It is not a desktop shortcut.</li>
+        <li><b>Open the user folder</b>: press <code>Win + R</code>, type <code>%AppData%\\Rime</code>, Enter. If it does not exist, run <code>WeaselDeployer.exe</code> once from the install folder to create it.</li>
+        <li><b>Add the scheme files</b>: download and unzip the scheme; you get a folder whose <b>contents</b> are the real scheme files. Put the <b>contents</b> of that folder directly into <code>%AppData%\\Rime</code> (not the folder itself — a nested subfolder will not load). Replace duplicates. If you hit "access denied / permission" on <code>build</code>: quit Weasel first (tray → quit, or end WeaselServer.exe and WeaselDeployer.exe in Task Manager) and retry, or skip <code>build</code> (it is regenerated on deploy). Then delete <code>installation.yaml</code>; deploy regenerates a machine-specific one.</li>
+        <li><b>Deploy</b>: double-click <code>WeaselDeployer.exe</code> (or tray → redeploy), wait ~1 min.</li>
+        <li><b>Test</b>: type <code>jidu</code>; the female-friendly candidates should appear. If not, press <code>F4</code> and pick this scheme.</li>
+        <li><b>(Optional) show the coined characters</b>: the coined characters use Unicode Private Use Area (PUA) codepoints and need the bundled font, otherwise they show as empty boxes □. Open <code>fonts</code> in the unzipped folder and install <code>FeministeKeyboard-Regular.ttf</code>. The candidate-window font is already set in the download package. These characters only render on devices with the font installed; elsewhere they appear as boxes — this is how Unicode Private Use Area (PUA) codepoints work.</li>
+      </ol>`
+    },
+    mac: {
+      zh: `<ol>
+        <li><b>装鼠须管</b>：打开 rime.im，下载「鼠须管（Squirrel）」并安装。</li>
+        <li><b>启用</b>：系统设置 → 键盘 → 输入法 → 左下角加号 → 选「简体中文 → 鼠须管（Squirrel）」→ 添加 → 完成。</li>
+        <li><b>下载方案 ZIP，解压。</b></li>
+        <li><b>打开用户目录</b>：切到鼠须管输入法，点菜单栏鼠须管图标 → 「Settings…」，会弹出 Rime 用户目录（<code>~/Library/Rime</code>）。</li>
+        <li><b>放入方案文件</b>：把用户目录里原有的初始内容删掉，再把解压文件夹<b>里面</b>的所有内容放进去。</li>
+        <li><b>部署</b>：点菜单栏鼠须管图标 → 「重新部署（Deploy）」，等约一分钟。</li>
+        <li><b>测试</b>：任意输入框打 <code>jidu</code>，看候选。</li>
+        <li><b>（选做）显示自造字</b>：解压文件夹里打开 <code>fonts</code>，双击 <code>FeministeKeyboard-Regular.ttf</code> 点「安装字体」，回鼠须管再「重新部署」一次。候选框用哪款字体已在配置里设好，装上字体、部署后自造字即正常显示。</li>
+      </ol>`,
+      en: `<ol>
+        <li><b>Install Squirrel</b>: from rime.im, download 鼠须管 (Squirrel) and install.</li>
+        <li><b>Enable</b>: System Settings → Keyboard → Input Methods → "+" → Simplified Chinese → Squirrel → Add → Done.</li>
+        <li><b>Download and unzip the scheme.</b></li>
+        <li><b>Open the user folder</b>: switch to Squirrel, click the Squirrel menu-bar icon → "Settings…", which opens the Rime user folder (<code>~/Library/Rime</code>).</li>
+        <li><b>Add the scheme files</b>: delete the initial contents of the user folder, then put in the <b>contents</b> of the unzipped folder.</li>
+        <li><b>Deploy</b>: Squirrel menu-bar icon → "Deploy", wait ~1 min.</li>
+        <li><b>Test</b>: type <code>jidu</code>.</li>
+        <li><b>(Optional) show the coined characters</b>: open <code>fonts</code> and install <code>FeministeKeyboard-Regular.ttf</code>, then redeploy Squirrel. The candidate-window font is already set in the configuration; once the font is installed and deployed, the coined characters render.</li>
+      </ol>`
+    },
+    ios: {
+      zh: `<ol>
+        <li><b>安装</b>：App Store 搜「仓输入法（Hamster）」装上。</li>
+        <li><b>启用并开权限</b>：设置 → 通用 → 键盘 → 键盘 → 添加「仓输入法」；再进 设置 → 通用 → 键盘 → 仓输入法，打开「允许完全访问」。这一步必须做，否则键盘没有写入权限，方案装不进去。</li>
+        <li><b>放入方案文件（用「文件」App）</b>：把方案 ZIP 下载到「文件」里解压。打开「文件」→ 浏览 → 我的 iPhone → Hamster → <code>Rime</code> 文件夹，把里面原有的初始内容删掉，再把解压文件夹<b>里面</b>的所有方案文件复制进 <code>Rime</code>（是文件夹里面的内容，不要多套一层）。</li>
+        <li><b>部署</b>：打开仓输入法 App → RIME → 「重新部署」。</li>
+        <li><b>选方案</b>：进「输入方案设置」，若没自动选中就手动勾上本方案。</li>
+        <li><b>测试</b>：切到仓输入法键盘，打 <code>jidu</code>。</li>
+        <li><b>（选做）自造字显示</b>：自造字是 Unicode 私用区（PUA）码位，需让候选栏用配套字体才显示，可在仓输入法的键盘/字体设置里把候选字体指向 Feminist eKeyboard（字体在方案的 <code>fonts</code> 里）。想在别的 App 里也正常显示，需把字体作为 iOS 描述文件安装，属进阶。</li>
+      </ol>`,
+      en: `<ol>
+        <li><b>Install</b>: search "Hamster / 仓输入法" in the App Store.</li>
+        <li><b>Enable and grant access</b>: Settings → General → Keyboard → Keyboards → add Hamster; then Settings → General → Keyboard → Hamster → turn on "Allow Full Access" (required, or the keyboard cannot write the scheme).</li>
+        <li><b>Add the scheme files (via the Files app)</b>: download the ZIP into Files and unzip. Open Files → Browse → On My iPhone → Hamster → <code>Rime</code>; delete the initial contents, then copy the <b>contents</b> of the unzipped folder into <code>Rime</code> (the files inside the folder, not the folder itself).</li>
+        <li><b>Deploy</b>: open Hamster → RIME → "Redeploy".</li>
+        <li><b>Select the scheme</b>: in "Input Schema Settings", tick this scheme if not already selected.</li>
+        <li><b>Test</b>: switch to the Hamster keyboard and type <code>jidu</code>.</li>
+        <li><b>(Optional) coined characters</b>: they use Unicode Private Use Area (PUA) codepoints and need the bundled font on the candidate bar — point Hamster's candidate font to Feminist eKeyboard (font in the scheme's <code>fonts</code>). Showing them in other apps requires installing the font as an iOS profile (advanced).</li>
+      </ol>`
+    }
+  };
+
+  let curTab = 'win';
+
+  function t(zh, en) { return (window._lang === 'en') ? en : zh; }
+
+  function chipHtml() {
+    return DEMO.map((d, i) =>
+      `<button class="kb-chip" data-i="${i}">${d.o}</button>`).join('');
+  }
+
+  function resultHtml(d) {
+    const cands = d.r.map(x => `<span class="kb-cand kb-fe">${x}</span>`).join('');
+    const tag = t(d.k, d.kEn);
+    return `<div class="kb-r-old">${d.o}</div>
+      <div class="kb-r-arrow">→</div>
+      <div class="kb-r-new">${cands}</div>
+      <div class="kb-r-tag">[ ${tag} ]</div>`;
+  }
+
+  function normPy(s) {
+    return (s || '').toLowerCase().replace(/[^a-z]/g, '');
+  }
+
+  function renderModal() {
+    const box = document.getElementById('kb-modal-box');
+    if (!box) return;
+    box.innerHTML = `
+      <button class="kb-close" onclick="window.closeKeyboardModal()">✕</button>
+      <div class="kb-head">
+        <div class="kb-title">爱女输入法</div>
+        <div class="kb-sub">Feminist eKeyboard · ${t('把重写过的字，用进日常输入', 'type the rewritten characters in daily input')}</div>
+      </div>
+
+      <div class="kb-demo">
+        <div class="kb-demo-label">[ ${t('现场感受', 'TRY IT')} ]</div>
+        <input id="kb-demo-input" class="kb-demo-input" placeholder="${t('敲拼音，或点下面的词', 'type pinyin, or tap a word below')}" autocomplete="off" spellcheck="false" />
+        <div class="kb-chips">${chipHtml()}</div>
+        <div class="kb-result" id="kb-result">${resultHtml(DEMO[0])}</div>
+      </div>
+
+      <div class="kb-dl-wrap">
+        <a class="kb-dl-btn" href="${ZIP}" target="_blank" rel="noopener">${t('下载方案（ZIP）', 'DOWNLOAD (ZIP)')} ↓</a>
+        <div class="kb-setup-label">${t('下载与安装教程', 'Download & Setup')} · Download &amp; Setup</div>
+        <div class="kb-tabs">
+          <button class="kb-tab ${curTab==='win'?'active':''}" data-tab="win">${t('电脑 Windows 版', 'Windows')}</button>
+          <button class="kb-tab ${curTab==='mac'?'active':''}" data-tab="mac">${t('电脑 macOS 版', 'macOS')}</button>
+          <button class="kb-tab ${curTab==='ios'?'active':''}" data-tab="ios">${t('手机 iOS 版', 'iOS')}</button>
+        </div>
+        <div class="kb-panel" id="kb-panel">${TUT[curTab][window._lang==='en'?'en':'zh']}</div>
+      </div>
+
+      <div class="kb-credit">
+        <p>${t('爱女输入法由 <b>谭惠恩（鸟惠）</b> 开发，基于开源 Rime 输入法框架。感谢她开发出如此具有实用性的输入法，也感谢她的授权与合作！',
+              'The Feminist eKeyboard was created by <b>Tan Huien (Niaohui)</b>, built on the open-source Rime framework. Deep thanks to her for building such a genuinely usable tool, and for her permission and collaboration.')}</p>
+        <a class="kb-gh-btn" href="${REPO}" target="_blank" rel="noopener">${t('前往 GitHub 项目 · 请给她一颗 star 支持吧！', 'Visit the GitHub project · please give it a star!')} →</a>
+      </div>
+    `;
+
+    // 交互：chips
+    box.querySelectorAll('.kb-chip').forEach(btn => {
+      btn.onclick = () => {
+        const d = DEMO[+btn.dataset.i];
+        document.getElementById('kb-result').innerHTML = resultHtml(d);
+        const inp = document.getElementById('kb-demo-input');
+        if (inp) inp.value = '';
+      };
+    });
+    // 交互：typing pinyin
+    const inp = document.getElementById('kb-demo-input');
+    if (inp) {
+      inp.oninput = () => {
+        const q = normPy(inp.value);
+        if (!q) return;
+        const hit = DEMO.find(d => d.py === q) || DEMO.find(d => d.py.startsWith(q));
+        if (hit) document.getElementById('kb-result').innerHTML = resultHtml(hit);
+      };
+    }
+    // 交互：tabs
+    box.querySelectorAll('.kb-tab').forEach(tb => {
+      tb.onclick = () => {
+        curTab = tb.dataset.tab;
+        box.querySelectorAll('.kb-tab').forEach(x => x.classList.remove('active'));
+        tb.classList.add('active');
+        document.getElementById('kb-panel').innerHTML = TUT[curTab][window._lang === 'en' ? 'en' : 'zh'];
+      };
+    });
+  }
+
+  window.openKeyboardModal = function () {
+    const m = document.getElementById('kb-modal');
+    if (!m) return;
+    renderModal();
+    m.classList.add('active');
+  };
+  window.closeKeyboardModal = function (e) {
+    if (e && e.target && e.target.id && e.target.id !== 'kb-modal') return;
+    document.getElementById('kb-modal')?.classList.remove('active');
+  };
+})();

@@ -3588,3 +3588,85 @@ html[lang="en"] .wb-tab { font-size: 0.9rem; letter-spacing: 0.5px; padding: 1re
     z-index: 6;
   }
 }
+
+/* ============================================================
+   爱女输入法 · 下载入口弹窗
+   ============================================================ */
+/* 自造字字体：把 FeministeKeyboard-Regular.ttf 放到站点 fonts/ 目录 */
+@font-face {
+  font-family: 'Feminist eKeyboard';
+  src: url('fonts/FeministeKeyboard-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+.kb-modal-box {
+  width: 90%; max-width: 720px; max-height: 88vh; overflow-y: auto;
+  background-color: var(--obsidian); background-image: var(--parchment-texture);
+  border: 1px solid var(--terracotta); border-top: 4px solid var(--neon-red);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 30px rgba(0,0,0,0.8);
+  position: relative; padding: 2.4rem 2.6rem 2rem;
+  transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+.modal-overlay.active .kb-modal-box { transform: translateY(0); }
+.kb-modal-box::-webkit-scrollbar { width: 6px; }
+.kb-modal-box::-webkit-scrollbar-thumb { background: rgba(204,78,60,0.5); border-radius: 3px; }
+
+.kb-close { position: absolute; top: 14px; right: 18px; background: transparent; border: none;
+  color: var(--ash-text); font-family: var(--font-mono); font-size: 1rem; cursor: pointer; z-index: 5; transition: color .2s; }
+.kb-close:hover { color: var(--neon-red); }
+
+.kb-head { border-bottom: 1px solid var(--terracotta-dim); padding-bottom: 1.1rem; margin-bottom: 1.4rem; }
+.kb-title { font-family: var(--font-serif); font-size: 2.1rem; font-weight: 700; color: var(--bone); letter-spacing: 2px; }
+.kb-sub { font-family: var(--font-mono); font-size: .78rem; color: var(--terracotta); letter-spacing: 1px; margin-top: .5rem; }
+
+/* demo */
+.kb-demo { border: 1px dashed rgba(204,78,60,.35); padding: 1.2rem 1.3rem; margin-bottom: 1.6rem; background: rgba(0,0,0,.25); }
+.kb-demo-label { font-family: var(--font-mono); font-size: .68rem; color: var(--amber); letter-spacing: 2px; margin-bottom: .9rem; }
+.kb-demo-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,.4); border: 1px solid var(--terracotta-dim);
+  color: var(--bone); font-family: var(--font-mono); font-size: .95rem; padding: 9px 12px; margin-bottom: .9rem; outline: none; }
+.kb-demo-input:focus { border-color: var(--terracotta); }
+.kb-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 1.1rem; }
+.kb-chip { background: transparent; border: 1px solid var(--terracotta-dim); color: var(--bone);
+  font-family: var(--font-serif); font-size: .92rem; padding: 5px 12px; cursor: pointer; transition: all .2s; }
+.kb-chip:hover { border-color: var(--terracotta); background: rgba(204,78,60,.12); color: var(--amber); }
+
+.kb-result { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: .6rem .2rem .2rem; min-height: 48px; }
+.kb-r-old { font-family: var(--font-serif); font-size: 1.9rem; color: var(--ash-text); text-decoration: line-through; text-decoration-color: var(--neon-red); }
+.kb-r-arrow { font-family: var(--font-mono); color: var(--terracotta); font-size: 1.2rem; }
+.kb-r-new { display: flex; gap: 12px; flex-wrap: wrap; }
+.kb-cand { font-size: 1.9rem; color: var(--amber); }
+.kb-fe { font-family: 'Feminist eKeyboard', var(--font-serif), serif; }
+.kb-r-tag { font-family: var(--font-mono); font-size: .66rem; color: var(--terracotta); letter-spacing: 1px; margin-left: auto; }
+
+/* download + tabs */
+.kb-dl-wrap { margin-bottom: 1.6rem; }
+.kb-dl-btn { display: block; text-align: center; text-decoration: none; font-family: var(--font-mono); letter-spacing: 2px;
+  font-size: .95rem; color: var(--bone); border: 1px solid var(--terracotta); padding: 13px; transition: all .2s; }
+.kb-dl-btn:hover { background: var(--terracotta); color: var(--obsidian); }
+.kb-setup-label { font-family: var(--font-mono); font-size: .68rem; color: var(--amber); letter-spacing: 1px; margin: 1.4rem 0 .7rem; }
+.kb-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0; }
+.kb-tab { background: transparent; border: 1px solid var(--terracotta-dim); border-bottom: none; color: var(--ash-text);
+  font-family: var(--font-mono); font-size: .74rem; padding: 8px 12px; cursor: pointer; transition: all .2s; }
+.kb-tab:hover { color: var(--bone); }
+.kb-tab.active { color: var(--amber); border-color: var(--terracotta); background: rgba(204,78,60,.1); }
+.kb-panel { border: 1px solid var(--terracotta-dim); padding: 1.1rem 1.3rem; background: rgba(0,0,0,.2); }
+.kb-panel ol { margin: 0; padding-left: 1.3rem; }
+.kb-panel li { font-family: var(--font-sans); font-size: .86rem; line-height: 1.9; color: var(--bone); margin-bottom: .5rem; }
+.kb-panel b { color: var(--amber); font-weight: 600; }
+.kb-panel code { font-family: var(--font-mono); font-size: .8rem; background: rgba(204,78,60,.14); color: var(--terracotta); padding: 1px 5px; border-radius: 2px; }
+
+/* credit */
+.kb-credit { border-top: 1px solid var(--terracotta-dim); padding-top: 1.3rem; }
+.kb-credit p { font-family: var(--font-sans); font-size: .9rem; line-height: 1.9; color: var(--bone); margin: 0 0 1rem; }
+.kb-credit b { color: var(--amber); }
+.kb-gh-btn { display: inline-block; text-decoration: none; font-family: var(--font-mono); font-size: .82rem; letter-spacing: 1px;
+  color: var(--amber); border: 1px solid var(--amber); padding: 9px 15px; transition: all .2s; }
+.kb-gh-btn:hover { background: var(--amber); color: var(--obsidian); }
+
+@media (max-width: 640px) {
+  .kb-modal-box { padding: 2rem 1.3rem 1.6rem; max-height: 92vh; }
+  .kb-title { font-size: 1.7rem; }
+  .kb-r-old, .kb-cand { font-size: 1.5rem; }
+  .kb-r-tag { margin-left: 0; width: 100%; }
+  .kb-tab { flex: 1; text-align: center; }
+}

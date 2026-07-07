@@ -23,6 +23,7 @@
             <a onclick="switchPage('page-chronicle', this)" data-tip="获得超200次共鸣的字与历史，永久收录于此" data-tip-en="Words & histories with 200+ resonances, archived here forever">编年史</a>
             <a onclick="switchPage('page-mire', this)" data-tip="发帖、改字、录史、共鸣的社区广场" data-tip-en="The community square — post, reforge, record, resonate">女娲的泥潭</a>
             <a onclick="switchPage('page-rubbing-pavilion', this)" data-tip="你的个人档案与贡献记录" data-tip-en="Your personal archive & contribution log">拓片馆</a>
+            <a onclick="window.openKeyboardModal()" data-tip="爱女输入法 · 日常输入改写过的字" data-tip-en="Feminist eKeyboard · type the rewritten characters">输入法</a>
         </div>
         <div class="nav-right-controls">
             <button id="btn-signal-nav" class="btn-signal-recv unread" onclick="openDrawer()"
@@ -391,6 +392,11 @@
         </div>
     </div>
 
+    <!-- 爱女输入法下载入口弹窗 -->
+    <div id="kb-modal" class="modal-overlay" onclick="window.closeKeyboardModal(event)">
+        <div class="kb-modal-box" id="kb-modal-box" onclick="event.stopPropagation()"></div>
+    </div>
+
     <!-- 拓片馆帖子详情弹窗 -->
     <div id="fp-modal" class="modal-overlay" onclick="closeFootprint(event)">
         <div class="modal-container" id="fp-modal-container" onclick="event.stopPropagation()">
@@ -716,6 +722,7 @@
         <button class="mobile-tab-btn tab-post" onclick="openLabModal()" title="凿字/发帖"><span class="tab-post-circle">+</span></button>
         <button class="mobile-tab-btn" data-page="page-mire" onclick="window.mobileSwitchPage('page-mire', this)">女娲泥潭</button>
         <button class="mobile-tab-btn" data-page="page-rubbing-pavilion" onclick="window.mobileSwitchPage('page-rubbing-pavilion', this)">拓片馆</button>
+        <button class="mobile-tab-btn" onclick="window.openKeyboardModal()">输入法</button>
     </nav>
 
 </body>
