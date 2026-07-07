@@ -3145,7 +3145,7 @@ window.showFirstVisitOverlay = function() {
 
 // ============================================================
 // 爱女输入法 · 下载入口弹窗（demo + 四版教程 + 署名致谢）
-// 由谭惠恩（鸟惠）开发的 Feminist eKeyboard，经授权收录
+// 由鸟惠开发的 Feminist eKeyboard，经授权收录
 // ============================================================
 (function () {
   const REPO = 'https://github.com/enenmia/feministekeyboard';
@@ -3287,8 +3287,8 @@ window.showFirstVisitOverlay = function() {
       </div>
 
       <div class="kb-credit">
-        <p>${t('爱女输入法由 <b>谭惠恩（鸟惠）</b> 开发，基于开源 Rime 输入法框架。感谢她开发出如此具有实用性的输入法，也感谢她的授权与合作！',
-              'The Feminist eKeyboard was created by <b>Tan Huien (Niaohui)</b>, built on the open-source Rime framework. Deep thanks to her for building such a genuinely usable tool, and for her permission and collaboration.')}</p>
+        <p>${t('爱女输入法由 <b>鸟惠</b> 开发，基于开源 Rime 输入法框架。感谢她开发出如此具有实用性的输入法，也感谢她的授权与合作！',
+              'The Feminist eKeyboard was created by <b>Niaohui</b>, built on the open-source Rime framework. Deep thanks to her for building such a genuinely usable tool, and for her permission and collaboration.')}</p>
         <a class="kb-gh-btn" href="${REPO}" target="_blank" rel="noopener">${t('前往 GitHub 项目 · 请给她一颗 star 支持吧！', 'Visit the GitHub project · please give it a star!')} →</a>
       </div>
     `;
