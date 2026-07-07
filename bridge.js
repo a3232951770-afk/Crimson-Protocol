@@ -3161,13 +3161,13 @@ window.showFirstVisitOverlay = function() {
     { o: '奸诈', py: 'jianzha',     r: ['阴险', '讦诈'],       k: '去女字旁', kEn: 'radical removed' },
     { o: '妓女', py: 'jinv',        r: ['伎女', '性工作者'],   k: '去女字旁', kEn: 'radical removed' },
     { o: '婊子', py: 'biaozi',      r: ['男吊子'],             k: '去女字旁', kEn: 'radical removed' },
-    { o: '他',   py: 'ta',          r: ['她', '男也'],         k: '去性别',   kEn: 'de-gendered' },
-    { o: '你',   py: 'ni',          r: ['妳', '男尔'],         k: '去性别',   kEn: 'de-gendered' },
+    { o: '他',   py: 'ta',          r: ['她', '男也'],         k: '公平化',   kEn: 'equalized' },
+    { o: '你',   py: 'ni',          r: ['妳', '男尔'],         k: '公平化',   kEn: 'equalized' },
     { o: '真诚', py: 'zhencheng',   r: ['真娍'],               k: '加女字旁', kEn: 'radical added' },
     { o: '创意', py: 'chuangyi',    r: ['创嬑'],               k: '加女字旁', kEn: 'radical added' },
     { o: '善良', py: 'shanliang',   r: ['嫸良'],               k: '加女字旁', kEn: 'radical added' },
     { o: '尊重', py: 'zunzhong',    r: ['尊媑'],               k: '加女字旁', kEn: 'radical added' },
-    { o: '父组件', py: 'fuzujian',  r: ['母组件'],             k: '彩蛋',     kEn: 'easter egg' },
+    { o: '父组件', py: 'fuzujian',  r: ['母组件'],             k: '禁偷',     kEn: 'no stealing' },
   ];
 
   // 四版教程（中英）。〔PUA〕一律写成「Unicode 私用区（PUA）码位」。
