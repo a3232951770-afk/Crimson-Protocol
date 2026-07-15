@@ -3118,8 +3118,11 @@ window.showFirstVisitOverlay = function() {
     const banner = document.getElementById('announcement-banner') || document.getElementById('announcement-banner-text');
     if (banner && panel) {
       const r = banner.getBoundingClientRect();
-      const pr = panel.getBoundingClientRect();
-      panel.style.transformOrigin = `${(r.left + r.width / 2) - pr.left}px ${(r.top + r.height / 2) - pr.top}px`;
+      // 横幅此时可能尚未显示（量到 0），那就退回默认的居中放大，避免起点跑偏
+      if (r.width > 0 && r.height > 0) {
+        const pr = panel.getBoundingClientRect();
+        panel.style.transformOrigin = `${(r.left + r.width / 2) - pr.left}px ${(r.top + r.height / 2) - pr.top}px`;
+      }
     }
     // 初始态：scale(0) + 透明
     overlay.style.transition = 'opacity 0.3s ease';

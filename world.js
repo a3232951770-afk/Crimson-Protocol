@@ -284,6 +284,9 @@
 
         // 将控制权移交母星系统
         window.enterMotherStar = function() {
+            // 开屏动画一结束就先盖上公告，抢在切页与星空淡出之前，避免先看到主页面
+            if (window.showFirstVisitOverlay) window.showFirstVisitOverlay();
+
             const p5Container = document.getElementById('p5-container');
             const globalNav = document.getElementById('global-nav');
             const chiselBtn = document.getElementById('global-chisel-btn');
@@ -307,9 +310,6 @@
             if (btnSignalNav) { btnSignalNav.style.opacity = '1'; btnSignalNav.style.pointerEvents = 'auto'; }
 
             switchPage('page-mother-star', document.querySelector('.nav-links a.active'));
-
-            // 开屏动画结束后立即弹出公告蒙层（不再延时，避免先看到主页面）
-            if (window.showFirstVisitOverlay) window.showFirstVisitOverlay();
         };
 
         /* -------------------------------------------
