@@ -308,8 +308,8 @@
 
             switchPage('page-mother-star', document.querySelector('.nav-links a.active'));
 
-            // 首次访问：进入主页后弹出公告蒙层（延时等导航/横幅淡入完成）
-            setTimeout(() => { if (window.showFirstVisitOverlay) window.showFirstVisitOverlay(); }, 1300);
+            // 开屏动画结束后立即弹出公告蒙层（不再延时，避免先看到主页面）
+            if (window.showFirstVisitOverlay) window.showFirstVisitOverlay();
         };
 
         /* -------------------------------------------
