@@ -3093,7 +3093,9 @@ window.dedupPosts = async function(dryRun = true) {
 // ============================================================
 window.showFirstVisitOverlay = function() {
   try {
-    if (localStorage.getItem('crimson_seen_intro')) return;
+    // EXPO 期间临时关闭「只弹一次」的记忆，让每次刷新都显示。
+    // 展会结束后把下面这行取消注释，即可恢复「只弹一次」。
+    // if (localStorage.getItem('crimson_seen_intro')) return;
     if (document.getElementById('intro-overlay')) return;
     const isEn = window._lang === 'en';
     const ann = DEFAULT_ANNOUNCEMENT;
@@ -3133,7 +3135,8 @@ window.showFirstVisitOverlay = function() {
     });
 
     const close = () => {
-      localStorage.setItem('crimson_seen_intro', '1');
+      // EXPO 期间临时不写入「已看过」标记，配合上面的关闭判断一起在展会后恢复。
+      // localStorage.setItem('crimson_seen_intro', '1');
       overlay.style.opacity = '0';
       panel.style.transform = 'scale(0)';
       panel.style.opacity = '0';
@@ -3145,7 +3148,7 @@ window.showFirstVisitOverlay = function() {
 
 // ============================================================
 // 爱女输入法 · 下载入口弹窗（demo + 四版教程 + 署名致谢）
-// 由鸟惠开发的 Feminist eKeyboard，经授权收录
+// 由谭惠恩（鸟惠）开发的 Feminist eKeyboard，经授权收录
 // ============================================================
 (function () {
   const REPO = 'https://github.com/enenmia/feministekeyboard';
@@ -3287,8 +3290,8 @@ window.showFirstVisitOverlay = function() {
       </div>
 
       <div class="kb-credit">
-        <p>${t('爱女输入法由 <b>鸟惠</b> 开发，基于开源 Rime 输入法框架。感谢她开发出如此具有实用性的输入法，也感谢她的授权与合作！',
-              'The Feminist eKeyboard was created by <b>Niaohui</b>, built on the open-source Rime framework. Deep thanks to her for building such a genuinely usable tool, and for her permission and collaboration.')}</p>
+        <p>${t('爱女输入法由 <b>谭惠恩（鸟惠）</b> 开发，基于开源 Rime 输入法框架。感谢她开发出如此具有实用性的输入法，也感谢她的授权与合作！',
+              'The Feminist eKeyboard was created by <b>Tan Huien (Niaohui)</b>, built on the open-source Rime framework. Deep thanks to her for building such a genuinely usable tool, and for her permission and collaboration.')}</p>
         <a class="kb-gh-btn" href="${REPO}" target="_blank" rel="noopener">${t('前往 GitHub 项目 · 请给她一颗 star 支持吧！', 'Visit the GitHub project · please give it a star!')} →</a>
       </div>
     `;
